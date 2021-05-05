@@ -5,7 +5,9 @@ import router from "./routes";
 import Vuex from 'vuex'
 import store from './store'
 import VueResource from 'vue-resource'
+import moment from 'moment';
 
+Vue.prototype.moment = moment;
 
 Vue.use(Vuex)
 Vue.use(VueResource)

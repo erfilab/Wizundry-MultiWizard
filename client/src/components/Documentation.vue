@@ -27,8 +27,7 @@
       />
     </div>
     <div class="text-area" v-else>
-      <TextEditor projectPath="project1" docName="doc1"></TextEditor>
-      <TextEditor projectPath="project1" docName="doc6"></TextEditor>
+      <TextEditor ></TextEditor>
       <quill-editor
           class="editor"
           ref="myBubbleEditor"
