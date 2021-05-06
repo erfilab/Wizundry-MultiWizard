@@ -2,20 +2,35 @@ import Vue from "vue";
 import VueRouter from "vue-router";
 
 import ChatBody from "@/components/ChatBody"
-import LoginForm from "@/components/LoginForm"
-import TextArea from "@/components/Documentation"
+import TextArea from "@/components/Paragraph/Documentation"
+
+import { auth } from './firebase'
 
 Vue.use(VueRouter);
 
 const routes = [
-    {path: "/", component: LoginForm, name: "login"},
-    {path: "/chat", component: ChatBody, name: "chat"},
-    {path: "/text", component: TextArea, name: "text"},
+    {
+        path: "/", name: "login",
+        component: () => import("@/components/LoginForm")
+    },
+    {path: "/chat", component: ChatBody, name: "chat", meta: {requiresAuth: true}},
+    {path: "/text", component: TextArea, name: "text", meta: {requiresAuth: true}},
 ];
 
 const router = new VueRouter({
     mode: "history",
+    base: process.env.BASE_URL,
     routes
 });
+
+router.beforeEach((to, from, next) => {
+    const requiresAuth = to.matched.some(x => x.meta.requiresAuth)
+
+    if (requiresAuth && !auth.currentUser) {
+        next('/')
+    } else {
+        next()
+    }
+})
 
 export default router;

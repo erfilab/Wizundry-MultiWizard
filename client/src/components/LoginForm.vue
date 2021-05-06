@@ -1,36 +1,48 @@
 <template>
   <v-card>
     <v-card-text>
-      <v-form>
+      <v-form
+          ref="form"
+          v-model="valid"
+          lazy-validation
+      >
         <v-row>
           <v-col cols="4">
             <v-text-field
                 v-model="email"
-                label="Email"
-                outlined
+                :rules="emailRules"
+                label="E-mail"
+                required
             ></v-text-field>
           </v-col>
-
           <v-col cols="4">
             <v-text-field
-                v-model="username"
-                label="Username"
-                outlined
+                v-model="password"
+                label="Password"
+                required
             ></v-text-field>
           </v-col>
           <v-col cols="3">
-            <v-radio-group v-model="role">
-              <v-radio label="Admin" value="admin" />
-              <v-radio label="Experimenter" value="experimenter" />
-              <v-radio label="Participant" value="participant" />
-            </v-radio-group>
+            <v-select
+                v-model="role"
+                :items="roles"
+                :rules="[v => !!v || 'Role is required']"
+                label="Role"
+                required
+            ></v-select>
           </v-col>
-          <v-col cols="1" class="ma-2">
-            <v-btn @click="join()" color="#3E6189" large>
-              <v-icon>mdi-account-plus</v-icon>
-              Join
-            </v-btn>
-          </v-col>
+          <v-row>
+            <v-spacer />
+            <v-col cols="4" class="mr-2">
+              <v-btn @click="join()" color="#3E6189" large :disabled="!valid">
+                <v-icon>mdi-account-plus</v-icon>
+                Join
+              </v-btn>
+              <v-btn @click="reset" class="ml-2" large>
+                reset
+              </v-btn>
+            </v-col>
+          </v-row>
         </v-row>
       </v-form>
     </v-card-text>
@@ -38,36 +50,45 @@
 </template>
 
 <script>
-import { mapMutations } from 'vuex'
-import dayjs from 'dayjs'
+import { mapActions } from 'vuex'
 
 export default {
   name: "LoginForm",
   data() {
     return {
-      email: null,
-      username: null,
+      valid: true,
+      email: "r@g.com",
+      password: "123456789",
       role: null,
+      roles: [
+          "experimenter",
+          "participant",
+          "admin"
+      ],
+
+      emailRules: [
+        v => !!v || 'E-mail is required',
+        v => /.+@.+\..+/.test(v) || 'E-mail must be valid',
+      ],
     }
   },
   methods: {
-    ...mapMutations('auth', ['setCurrentUser']),
+    ...mapActions('auth', ['loginUser']),
     join() {
-      if (!this.email) {
-        alert("You must enter an email");
+      if (!this.$refs.form.validate()) {
+        alert("Please complete the login form.")
         return;
       }
-      if (!this.username) {
-        alert("You must choose a username");
-        return;
-      }
-      this.setCurrentUser({
+
+      this.loginUser({
         email: this.email,
-        username: this.username,
+        password: this.password,
         role: this.role,
-        createdAt: dayjs()
+        createdAt: this.dayjs()
       })
-      this.$router.push('text')
+    },
+    reset () {
+      this.$refs.form.reset()
     },
   }
 }

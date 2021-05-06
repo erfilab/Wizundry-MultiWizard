@@ -1,4 +1,4 @@
-const { Schema } = require('prosemirror-model');
+const Schema = require('prosemirror-model').Schema
 
 
 const schema = {
@@ -75,6 +75,13 @@ const schema = {
                 }
             ]
         },
+        "underline": {
+          "parseDOM": [
+              {
+                  "tag": "u"
+              }
+          ]
+        },
         "code": {
             "parseDOM": [
                 {
@@ -98,4 +105,4 @@ const schema = {
     }
 }
 
-export default new Schema(schema)
+module.exports = new Schema(schema)
