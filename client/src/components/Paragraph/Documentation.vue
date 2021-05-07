@@ -28,7 +28,7 @@
 
 <script>
 import {mapGetters} from 'vuex'
-import TextEditor from '../TextEditor.vue'
+import TextEditor from './TextEditor.vue'
 
 export default {
   name: "TextArea",
@@ -45,9 +45,6 @@ export default {
 
       newContext: "",
       runTimeContent: "",
-
-      //pre process text
-      keywords: "however but and because whenever whereas thus yet"
     }
   },
   methods: {

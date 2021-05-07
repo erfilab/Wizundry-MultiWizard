@@ -20,6 +20,12 @@
 
       <editor-menu-bar v-show="currentRole==='experimenter'" :editor="editor">
         <div class="menubar" slot-scope="{ commands, isActive }">
+<!--          <button-->
+<!--              @click="this.editor.chain().focus().toggleHighlight().run()"-->
+<!--              :class="{ 'is-active': editor.isActive('highlight') }"-->
+<!--          >-->
+<!--            highlight (any)-->
+<!--          </button>-->
           <button
               class="menubar__button"
               :class="{ 'is-active': isActive.bold() }"
@@ -96,6 +102,14 @@
 
       <editor-content class="editor__content" :editor="editor">
       </editor-content>
+
+      <v-card>
+        <v-card-text>
+          {{localHTML}}
+        </v-card-text>
+      </v-card>
+
+
       <v-row v-show="currentRole==='participant'">
         <v-text-field
             disabled
@@ -112,17 +126,10 @@
 
 <script>
 import io from 'socket.io-client'
-import { Editor, EditorContent, EditorMenuBar } from 'tiptap'
-import {
-  HardBreak,
-  Heading,
-  Bold,
-  Code,
-  Italic,
-  History,
-  Collaboration,
-  Underline,
-} from 'tiptap-extensions'
+import {Editor, EditorContent, EditorMenuBar} from 'tiptap'
+import {Bold, Code, Collaboration, HardBreak, Heading, History, Italic, Underline,} from 'tiptap-extensions'
+// import { TextHighlighter } from "@/plugins/textHighlighter.ts";
+// import { SmilieReplacer } from "@/plugins/smileReplacer.ts";
 
 export default {
   name: "TextEditor",
@@ -148,6 +155,11 @@ export default {
       speechLoading: false,
       selectedText: '',
 
+      localHTML: null,
+      keywords: ["however", "but", "and", "because", "whenever", "whereas", "thus", "yet"],
+      lastAnchor: 0,
+      lastText:"",
+
       loading: true,
       editor: null,
       socket: null,
@@ -165,10 +177,8 @@ export default {
     },
     "editor.state.selection": function(newSelection) {
       const {from, to} = newSelection
-      let st = this.editor.state.doc.textBetween(from, to, ' ')
-      console.log(st)
-      this.selectedText = st
-    }
+      this.selectedText = this.editor.state.doc.textBetween(from, to, ' ')
+    },
   },
   methods: {
     onInit({doc, version}) {
@@ -178,6 +188,16 @@ export default {
       }
       this.editor = new Editor({
         content: doc,
+        onUpdate:({ getHTML }) => {
+          const { textContent } = this.editor.state.doc
+          this.localHTML = getHTML();
+          this.markKeyWord(this.editor.state.selection.anchor, textContent)
+        },
+        onTransaction: ({ state }) => {
+          const {history$} = state
+          //TODO PREVRANGES
+          console.log("anchor >>>", state, history$.prevRanges)
+        },
         extensions: [
           new HardBreak(),
           new Heading({levels: [1, 2, 3]}),
@@ -217,6 +237,29 @@ export default {
       console.log("SP", this.greetingSpeech)
       this.synth.speak(this.greetingSpeech)
     },
+    async markKeyWord(newAnchor, text) {
+      console.log(newAnchor, this.lastAnchor, text, this.localHTML)
+      let containKey = this.keywords.some(k => text.includes(k))
+
+      if (newAnchor < this.lastAnchor)
+        this.lastText = text
+
+      if (text.length - this.lastText.length > 1 && text!==' ' && containKey) {
+        await this.keywords.map(kw =>
+            this.localHTML = this.localHTML.replace(new RegExp(kw, "g"), `<code>${kw}</code>`)
+                .replace(new RegExp(`<code><code>${kw}</code></code>`, "g"), `<code>${kw}</code>`)
+        )
+        console.log("TRANSFORM TEXT\n", this.localHTML)
+
+        this.editor.setContent(this.localHTML)
+
+        const { size } = this.editor.view.state.doc.content
+        const insertTrans = this.editor.state.tr.insertText(` `, size-1)
+        this.editor.view.dispatch(insertTrans)
+        this.lastAnchor = newAnchor
+        this.lastText = text
+      }
+    }
   },
   mounted() {
     console.log(this.docName, this.projectPath)
