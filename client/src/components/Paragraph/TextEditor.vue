@@ -1,15 +1,18 @@
 <template>
   <v-container>
-    <transition name="fade" v-if="speechLoading">
-      <v-progress-circular
-          indeterminate
-          color="purple"
-      />
-    </transition>
     <template v-if="editor && !loading">
-      <v-row class="ma-5" v-show="currentRole==='experimenter'">
-        <v-col>
+      <v-row class="mb-5 mt-5" v-show="currentRole==='experimenter'">
+        <v-col cols="8" align-self="left">
           {{ count }} {{ count === 1 ? 'user' : 'users' }} connected to {{ projectPath }}/{{ docName }}
+        </v-col>
+        <v-spacer />
+        <v-col cols="1">
+          <transition name="fade" v-if="speechLoading">
+            <v-progress-circular
+                indeterminate
+                color="purple"
+            />
+          </transition>
         </v-col>
         <v-col>
           <v-btn @click.stop="greet">
@@ -103,11 +106,11 @@
       <editor-content class="editor__content" :editor="editor">
       </editor-content>
 
-      <v-card>
-        <v-card-text>
-          {{localHTML}}
-        </v-card-text>
-      </v-card>
+<!--      <v-card>-->
+<!--        <v-card-text>-->
+<!--          {{localHTML}}-->
+<!--        </v-card-text>-->
+<!--      </v-card>-->
 
 
       <v-row v-show="currentRole==='participant'">

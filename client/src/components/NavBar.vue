@@ -7,7 +7,7 @@
         scroll-target="#scrolling-techniques-3"
     >
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-app-bar-title>Socket-Chat</v-app-bar-title>
+      <v-app-bar-title>WizardOfOz</v-app-bar-title>
 
       <v-spacer></v-spacer>
 

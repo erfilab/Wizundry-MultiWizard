@@ -10,19 +10,70 @@
         >
           <v-icon>{{ isTesting ? 'mdi-microphone-off' : 'mdi-microphone' }}</v-icon>
         </v-btn>
-        <v-text-field v-model="runTimeContent" />
+        <v-text-field v-model="runTimeContent"/>
       </v-row>
-    </div>
 
-    <div class="editor-area">
-      <TextEditor
-          projectPath="project1"
-          docName="doc2"
-          :newContext="newContext"
-          :runTimeContent="runTimeContent"
-          :currentRole="currentRole"
-      />
+
     </div>
+    <v-tabs>
+      <v-tab>Paragraph One</v-tab>
+      <v-tab>Paragraph Two</v-tab>
+      <v-tab>Paragraph Three</v-tab>
+      <v-spacer />
+      <v-sheet v-if="currentRole === 'experimenter'">
+        <v-row>
+          <v-col>
+            <v-switch
+                v-model="autoHighlight"
+                inset
+                label="Auto HighLight"
+            ></v-switch>
+          </v-col>
+          <v-col>
+            <v-switch
+                v-model="autoPunctuation"
+                inset
+                label="Auto Punctuation"
+            ></v-switch>
+          </v-col>
+        </v-row>
+      </v-sheet>
+      <v-tab-item>
+        <div class="editor-area">
+          <TextEditor
+              projectPath="project1"
+              docName="doc2"
+              :newContext="newContext"
+              :runTimeContent="runTimeContent"
+              :currentRole="currentRole"
+          />
+        </div>
+      </v-tab-item>
+      <v-tab-item>
+        <div class="editor-area">
+          <TextEditor
+              projectPath="project2"
+              docName="doc1"
+              :newContext="newContext"
+              :runTimeContent="runTimeContent"
+              :currentRole="currentRole"
+          />
+        </div>
+      </v-tab-item>
+      <v-tab-item>
+        <div class="editor-area">
+<!--          <TextEditor-->
+<!--              projectPath="project3"-->
+<!--              docName="doc1"-->
+<!--              :newContext="newContext"-->
+<!--              :runTimeContent="runTimeContent"-->
+<!--              :currentRole="currentRole"-->
+<!--          />-->
+        </div>
+      </v-tab-item>
+    </v-tabs>
+
+
   </v-container>
 </template>
 
@@ -45,6 +96,9 @@ export default {
 
       newContext: "",
       runTimeContent: "",
+
+      autoHighlight: true,
+      autoPunctuation: false,
     }
   },
   methods: {
