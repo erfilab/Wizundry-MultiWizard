@@ -22,16 +22,23 @@
                 required
             ></v-text-field>
           </v-col>
-          <v-col cols="3">
-            <v-select
-                v-model="role"
-                :items="roles"
-                :rules="[v => !!v || 'Role is required']"
-                label="Role"
+          <v-col cols="4">
+            <v-text-field
+                v-model="name"
+                label="User Name"
                 required
-            ></v-select>
+            ></v-text-field>
           </v-col>
           <v-row>
+            <v-col cols="3">
+              <v-select
+                  v-model="role"
+                  :items="roles"
+                  :rules="[v => !!v || 'Role is required']"
+                  label="Role"
+                  required
+              ></v-select>
+            </v-col>
             <v-spacer />
             <v-col cols="4" class="mr-2">
               <v-btn @click="join()" color="#3E6189" large :disabled="!valid">
@@ -59,6 +66,7 @@ export default {
       valid: true,
       email: "r@g.com",
       password: "123456789",
+      name: 'ryan',
       role: null,
       roles: [
           "experimenter",
@@ -83,6 +91,7 @@ export default {
       this.loginUser({
         email: this.email,
         password: this.password,
+        name: this.name,
         role: this.role,
         createdAt: this.dayjs()
       })

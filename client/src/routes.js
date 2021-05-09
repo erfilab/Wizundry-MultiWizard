@@ -2,7 +2,7 @@ import Vue from "vue";
 import VueRouter from "vue-router";
 
 import ChatBody from "@/components/ChatBody"
-import TextArea from "@/components/Paragraph/Documentation"
+import TextArea from "@/components/Paragraph/YDoc"
 
 import { auth } from './firebase'
 
