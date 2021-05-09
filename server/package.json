@@ -13,6 +13,7 @@
     "@babel/cli": "^7.13.16",
     "koa": "^2.13.1",
     "koa-router": "^10.0.0",
+    "koa-static": "^5.0.0",
     "lib0": "^0.2.41",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",

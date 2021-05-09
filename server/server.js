@@ -1,5 +1,6 @@
 // setup socket server
 const Koa = require('koa');
+const path = require('path');
 const app = new Koa();
 const server = require('http').createServer(app.callback());
 const io = require('socket.io')(server, {
@@ -7,6 +8,10 @@ const io = require('socket.io')(server, {
         origin: '*',
     }
 });
+const serve = require("koa-static");
+const staticDirPath = path.join(__dirname, "../client/dist");
+app.use(serve(staticDirPath));
+
 
 server.listen(3000, () => {
     console.log('listening on *:3000');
