@@ -2,15 +2,6 @@
   <v-container>
     <div class="text-area" v-if="currentRole === 'experimenter'">
       <v-row>
-        <v-btn
-            @click.stop="isTesting ? endSpeechRecognition() : startSpeechRecognition()"
-            icon
-            :color="!isTesting ? 'grey' : (isSpeaking ? 'red' : 'red darken-3')"
-            :class="{'animated infinite pulse': isTesting}"
-        >
-          <v-icon>{{ isTesting ? 'mdi-microphone-off' : 'mdi-microphone' }}</v-icon>
-        </v-btn>
-        <v-text-field v-model="runTimeContent"/>
       </v-row>
 
 
@@ -58,17 +49,6 @@
               :runTimeContent="runTimeContent"
               :currentRole="currentRole"
           />
-        </div>
-      </v-tab-item>
-      <v-tab-item>
-        <div class="editor-area">
-<!--          <TextEditor-->
-<!--              projectPath="project3"-->
-<!--              docName="doc1"-->
-<!--              :newContext="newContext"-->
-<!--              :runTimeContent="runTimeContent"-->
-<!--              :currentRole="currentRole"-->
-<!--          />-->
         </div>
       </v-tab-item>
     </v-tabs>

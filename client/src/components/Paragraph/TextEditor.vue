@@ -128,11 +128,9 @@
 </template>
 
 <script>
-import io from 'socket.io-client'
+
 import {Editor, EditorContent, EditorMenuBar} from 'tiptap'
 import {Bold, Code, Collaboration, HardBreak, Heading, History, Italic, Underline,} from 'tiptap-extensions'
-// import { TextHighlighter } from "@/plugins/textHighlighter.ts";
-// import { SmilieReplacer } from "@/plugins/smileReplacer.ts";
 
 export default {
   name: "TextEditor",

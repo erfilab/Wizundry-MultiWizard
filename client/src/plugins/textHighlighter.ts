@@ -1,6 +1,13 @@
-import { Node } from 'tiptap'
-import { wrappingInputRule, setBlockType, toggleWrap } from 'tiptap-commands'
+import { Extension } from '@tiptap/core'
+import { InputRule } from 'prosemirror-inputrules'
 
-export default class TextHighlighter extends Node {
+export const TextHighlighter = Extension.create({
+    name: 'textHighlighter',
 
-}
+    addInputRules() {
+        return [
+            // new InputRule(/ $/, ''),
+            new InputRule(/:'-\) $/, '😂 '),
+        ]
+    },
+})
