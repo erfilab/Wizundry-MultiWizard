@@ -43,11 +43,11 @@ namespaces.on('connection', socket => {
             console.log("Mic Event", e)
             namespaces.in(room).emit('wspeech', e)
         })
-        socket.on('speaker', ({e, start}) => {
-            console.log("Speaker Event", e, start)
+        socket.on('speaker', (e) => {
+            console.log("Speaker Event", e)
             namespaces.in(room).emit('wspeaker', {
-                status: e,
-                start: start
+                status: e.status,
+                start: e.start
             })
         })
     })
