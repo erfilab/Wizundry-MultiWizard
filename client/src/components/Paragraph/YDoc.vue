@@ -254,7 +254,7 @@ export default {
 
     let YJS_HOST = 'ws://localhost:3001'
     if (process.env.NODE_ENV === 'production')
-      YJS_HOST = 'wss://ryanyen2.me'
+      YJS_HOST = 'wss://ryanyen2.me/yjs/'
     this.provider = new WebsocketProvider(YJS_HOST, this.room, ydoc)
     this.provider.on('status', event => {
       this.status = event.status
