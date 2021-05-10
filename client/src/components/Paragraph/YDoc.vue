@@ -84,6 +84,7 @@ import {TextHighlighter} from "@/plugins/textHighlighter.ts";
 import {SmilieReplacer} from "@/plugins/smileReplacer.ts";
 
 import io from 'socket.io-client'
+import { todayCollection } from '@/firebase.js'
 
 import {mapGetters} from 'vuex'
 
@@ -162,10 +163,6 @@ export default {
       ])
     },
     // speech recognition
-    markHighlight(text) {
-
-      return text
-    },
     startSpeechRecognition() {
       this.isTesting = true
       this.recognition.onspeechstart = () => {
@@ -264,6 +261,17 @@ export default {
     this.indexdb = new IndexeddbPersistence(this.room, ydoc)
 
     this.editor = new Editor({
+      onUpdate:() => {
+        const { textContent } = this.editor.state.doc
+        todayCollection.add({
+          timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
+          anchor: this.editor.state.selection.anchor,
+          content: textContent,
+          room: this.room,
+          username: this.currentUser.name,
+          userEmail: this.currentUser.email
+        })
+      },
       extensions: [
         StarterKit.configure({
           history: false,
