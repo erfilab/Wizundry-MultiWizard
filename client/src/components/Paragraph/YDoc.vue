@@ -231,7 +231,7 @@ export default {
     const ydoc = new Y.Doc()
     let HOST = 'http://localhost:3000/'
     if (process.env.NODE_ENV === 'production')
-      HOST = 'https://ryanyen2.me'
+      HOST = 'https://ryanyen2.me/'
 
     this.socket = io(HOST+ this.room)
         .on('wspeech', event => {
@@ -253,7 +253,7 @@ export default {
     this.socket.emit('joinRoom', this.room)
 
 
-    this.provider = new WebsocketProvider('wss://localhost:3001/', this.room, ydoc)
+    this.provider = new WebsocketProvider('ws://localhost:3001/', this.room, ydoc)
     this.provider.on('status', event => {
       this.status = event.status
     })
