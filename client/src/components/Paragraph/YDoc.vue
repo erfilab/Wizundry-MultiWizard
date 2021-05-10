@@ -252,8 +252,10 @@ export default {
         })
     this.socket.emit('joinRoom', this.room)
 
-
-    this.provider = new WebsocketProvider('ws://localhost:3001/', this.room, ydoc)
+    let YJS_HOST = 'ws://localhost:3001'
+    if (process.env.NODE_ENV === 'production')
+      YJS_HOST = 'wss://ryanyen2.me'
+    this.provider = new WebsocketProvider(YJS_HOST, this.room, ydoc)
     this.provider.on('status', event => {
       this.status = event.status
     })
