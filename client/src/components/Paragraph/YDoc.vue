@@ -229,7 +229,11 @@ export default {
   },
   mounted() {
     const ydoc = new Y.Doc()
-    this.socket = io('http://localhost:3000/' + this.room)
+    let HOST = 'http://localhost:3000/'
+    if (process.env.NODE_ENV === 'production')
+      HOST = 'https://ryanyen2.me'
+
+    this.socket = io(HOST+ this.room)
         .on('wspeech', event => {
           console.log("Mic event", event)
           if (event && this.curRole === 'participant' && this.isTesting === false) {
@@ -249,7 +253,7 @@ export default {
     this.socket.emit('joinRoom', this.room)
 
 
-    this.provider = new WebsocketProvider('ws://localhost:3001/', this.room, ydoc)
+    this.provider = new WebsocketProvider('wss://localhost:3001/', this.room, ydoc)
     this.provider.on('status', event => {
       this.status = event.status
     })
