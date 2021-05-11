@@ -3,8 +3,9 @@ import VueRouter from "vue-router";
 
 import ChatBody from "@/components/ChatBody"
 import TextArea from "@/components/Paragraph/YDoc"
+import AdminPanel from "@/components/DataCollection/AdminPanel";
 
-import { auth } from './firebase'
+import {auth} from './firebase'
 
 Vue.use(VueRouter);
 
@@ -15,6 +16,12 @@ const routes = [
     },
     {path: "/chat", component: ChatBody, name: "chat", meta: {requiresAuth: true}},
     {path: "/text", component: TextArea, name: "text", meta: {requiresAuth: true}},
+    {
+        path: "/panel",
+        component: AdminPanel,
+        name: "panel",
+        meta: {requiresAuth: true}
+    }
 ];
 
 const router = new VueRouter({

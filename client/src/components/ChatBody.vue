@@ -21,7 +21,7 @@
             max-height="500"
         >
           <v-container style="height: 1000px; background-color: #151E27;">
-            <MessageUnit :messages="messages" :selfUserName="this.currentUser.username"/>
+            <MessageUnit :messages="messages" :selfUserName="this.currentUser.name"/>
           </v-container>
         </v-sheet>
           <v-row class="pt-5 pl-3 pr-3" style="background-color: #212D3B;">
@@ -54,8 +54,8 @@
 <script>
 import SpeechToText from '../services/speech-to-text';
 import MessageUnit from "@/components/MessageUnit";
-import dayjs from "dayjs";
 import { mapGetters } from 'vuex'
+// import io from 'socket.io-client'
 
 export default {
   name: "ChatBody",
@@ -67,18 +67,19 @@ export default {
   },
   data() {
     return {
-      ws: null,
+      socket: null,
 
       message: null,
-      currentUser: null,
+      currentUser: {},
 
       participants: [],
       messages: [
         {
-          sender: 'default',
-          sender_email: 'r@g.com',
-          content: 'This is the default content',
-          time: '2021-03-26',
+          name: 'default',
+          email: 'r@g.com',
+          role: 'participant',
+          message: 'This is the default content',
+          timestamp: '2021-03-26',
         }
       ],
 
@@ -91,12 +92,14 @@ export default {
     // ...mapMutations('user', ['addUserToUserList']),
     send() {
       if (this.message !== "") {
-        this.ws.send(
-            JSON.stringify({
-              username: this.currentUser.username,
+        this.socket.emit("msg",
+            {
+              name: this.currentUser.name,
+              email: this.currentUser.email,
+              role: this.currentUser.role,
               message: this.message,
-              timestamp: dayjs()
-            })
+              timestamp: this.dayjs()
+            }
         );
         this.message = "";
       }
@@ -121,30 +124,18 @@ export default {
     }
   },
   mounted() {
-    this.ws = new WebSocket("wss://" + window.location.host + "/wss");
-    this.ws.addEventListener("message", e => {
-      let msg = JSON.parse(e.data);
-      // console.log("Message", msg)
-      let exists = false
-      this.participants.map(p => {
-        if (p.username === msg.username) exists = true
-      })
-      if (!exists) {
-        this.participants.push({
-          email: msg.email,
-          username: msg.username
-        })
-      }
-
-      this.messages.push({
-        sender: msg.username,
-        sender_email: msg.email,
-        content: msg.message,
-        time: msg.timestamp,
-      })
-    });
-
     this.currentUser = this.getCurrentUser
+    // let HOST = 'http://localhost:3000/'
+    // if (process.env.NODE_ENV === 'production')
+    //   HOST = 'https://ryanyen2.me/'
+    //
+    // this.socket = io(HOST + this.room)
+    //   .on("message", e => {
+    //     let msg = JSON.parse(e.data);
+    //     console.log("Message", msg)
+    //     this.messages.push({...e})
+    // });
+    console.log(this.currentUser)
   },
   created() {
     this.speechService = new SpeechToText();

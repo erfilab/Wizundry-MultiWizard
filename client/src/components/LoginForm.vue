@@ -65,9 +65,9 @@ export default {
     return {
       valid: true,
       email: "r@g.com",
-      password: "",
-      name: '',
-      role: null,
+      password: "123456789",
+      name: 'ryan',
+      role: 'experimenter',
       roles: [
           "experimenter",
           "participant",

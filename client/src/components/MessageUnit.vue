@@ -9,7 +9,7 @@
               <i class="fa fa-circle me"></i>
           </div>
           <div :class="selfUserName===msg.sender? 'message my-message float-right': 'message other-message'">
-            {{ msg.content }}
+            {{ msg.message }}
           </div>
         </li>
       </ul>

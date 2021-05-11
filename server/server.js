@@ -31,7 +31,6 @@ server.listen(3000, () => {
 
 const namespaces = io.of(/^\/[a-zA-Z0-9_\/-]+$/)
 namespaces.on('connection', socket => {
-    console.log('connected')
     const namespace = socket.nsp;
     const namespaceDir = namespace.name
 
@@ -49,6 +48,10 @@ namespaces.on('connection', socket => {
                 status: e.status,
                 start: e.start
             })
+        })
+        socket.on('msg', e => {
+            console.log('mess', e)
+            namespaces.in(room).emit('message', {...e})
         })
     })
 })
