@@ -8,6 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@sap_oss/node-socketio-stream": "^1.0.3",
     "@tiptap/extension-character-count": "^2.0.0-beta.10",
     "@tiptap/extension-collaboration": "^2.0.0-beta.15",
     "@tiptap/extension-collaboration-cursor": "^2.0.0-beta.17",

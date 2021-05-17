@@ -8,6 +8,7 @@ const io = require('socket.io')(server, {
         origin: '*',
     }
 });
+const ss = require('@sap_oss/node-socketio-stream');
 const serve = require("koa-static");
 const staticDirPath = path.join(__dirname, "../client/dist");
 app.use(serve(staticDirPath));
@@ -37,6 +38,45 @@ namespaces.on('connection', socket => {
     socket.on('joinRoom', async (room) => {
         socket.join(room);
         console.log(`connect ${namespaceDir} - ${room}`)
+
+        const Speech = require('@google-cloud/speech');
+        const client = new Speech.SpeechClient();
+
+        const request = {
+            config: {
+                encoding: 'LINEAR16',
+                sampleRateHertz: 16000,
+                languageCode: 'en-US'
+            },
+            interimResults: false // If you want interim results, set this to true
+        };
+
+        socket.on('LANGUAGE_SPEECH', function (language) {
+            console.log('set language');
+            request.config.languageCode = language;
+        })
+
+        // Create a recognize stream
+        const recognizeStream = client
+            .streamingRecognize(request)
+            .on('error', console.error)
+            .on('data', data => {
+                console.log(`Transcription: ${data.results[0].alternatives[0].transcript}`);
+                socket.emit('SPEECH_RESULTS',(data.results[0] && data.results[0].alternatives[0])
+                    ? `${data.results[0].alternatives[0].transcript}\n`
+                    : `Reached_transcription_time_limit`)
+            });
+
+
+        ss(socket).on('START_SPEECH', stream => {
+            stream.pipe(recognizeStream);
+        });
+
+        socket.on('STOP_SPEECH', function () {
+            console.log('Disconnected!');
+        })
+
+
 
         socket.on('mic', (e) => {
             console.log("Mic Event", e)

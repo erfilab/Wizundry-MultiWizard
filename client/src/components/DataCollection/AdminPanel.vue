@@ -4,7 +4,7 @@
       <v-toolbar flat>
         <v-app-bar-nav-icon></v-app-bar-nav-icon>
 
-        <v-toolbar-title>Admin Dashboard</v-toolbar-title>
+        <v-toolbar-title>Admin Dashboard</v-toolbar-title>l
 
         <v-spacer></v-spacer>
         <v-row>
