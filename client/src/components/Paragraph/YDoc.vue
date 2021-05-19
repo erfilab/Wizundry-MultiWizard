@@ -76,22 +76,40 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Highlight from '@tiptap/extension-highlight'
 import CharacterCount from '@tiptap/extension-character-count'
+
 import * as Y from 'yjs'
 import {WebsocketProvider} from 'y-websocket'
 import {IndexeddbPersistence} from 'y-indexeddb'
 import MenuBar from './MenuBar.vue'
-import {TextHighlighter} from "@/plugins/textHighlighter.ts";
 import {SmilieReplacer} from "@/plugins/smileReplacer.ts";
 
 import io from 'socket.io-client'
-import ss from '@sap_oss/node-socketio-stream'
+const BUFFER_SIZE = 2048
+const MEDIA_ACCESS_CONSTRAINTS = {audio: true, video: false};
+const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
+  if (outSampleRate === sampleRate) return buffer;
+  if (outSampleRate > sampleRate) throw 'downsampling rate should be smaller than original sample rate';
+  const sampleRateRatio = sampleRate / outSampleRate;
+  let result = new Int16Array(Math.round(buffer.length / sampleRateRatio));
+  let offsetResult = 0, offsetBuffer = 0;
+  while (offsetResult < result.length) {
+    let nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+    let accum = 0, count = 0;
+    for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+      accum += buffer[i];
+      count++;
+    }
+
+    result[offsetResult] = Math.min(1, accum / count) * 0x7fff;
+    offsetResult++;
+    offsetBuffer = nextOffsetBuffer;
+  }
+  return result.buffer;
+};
+
 import {todayCollection} from '@/firebase.js'
-
 import {mapGetters} from 'vuex'
-
-const getRandomElement = list => {
-  return list[Math.floor(Math.random() * list.length)]
-}
+const getRandomElement = list => list[Math.floor(Math.random() * list.length)]
 
 export default {
   components: {
@@ -115,15 +133,17 @@ export default {
       autoHighlight: true,
       autoPunctuation: false,
 
-      //webspeech
+      //web speech
       recognition: null,
       isTesting: false,
       isSpeaking: false,
-      resultError: false,
-      textResult: "",
-      scriptNode: null,
-      ssStream: null,
-      audioContext: new (window.AudioContext || window.webkitAudioContext)(),
+
+      //web recording
+      audioContext: null,
+      context: null,
+      processor: null,
+      globalStream: null,
+      audioInput: null,
 
       speechLoading: false,
       selectedText: '',
@@ -201,87 +221,60 @@ export default {
       this.isTesting = false
       this.recognition.stop()
     },
-    startRecording() {
-      const languageSelected = 'en-US';
-      this.socket.emit('LANGUAGE_SPEECH', languageSelected);
-      this.isSpeaking = true;
-      this.scriptNode.connect(this.audioContext.destination);
-      ss(this.socket).emit('START_SPEECH', this.ssStream);
-      setInterval(function () {
-        this.stopRecording();
-      }.bind(this), 55000);
-    },
-    stopRecording() {
-      this.isTesting = false
-      this.isSpeaking = false;
-      this.scriptNode.disconnect(this.audioContext.destination);
-      this.ssStream.end();
-      this.socket.emit('STOP_SPEECH', {});
-    },
-    successCallback(stream) {
-      // const vm = this;
-      console.log('successCallback:....IN');
-      let input = this.audioContext.createMediaStreamSource(stream);
-      let bufferSize = 2048;
-      this.scriptNode = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
-      this.scriptNode.onaudioprocess = scriptNodeProcess;
-      input.connect(this.scriptNode);
-
-      // console.log('ScriptNode BufferSize:', scriptNode.bufferSize);
-      function scriptNodeProcess(audioProcessingEvent) {
-        let inputBuffer = audioProcessingEvent.inputBuffer;
-        let outputBuffer = audioProcessingEvent.outputBuffer;
-        let inputData = inputBuffer.getChannelData(0);
-        let outputData = outputBuffer.getChannelData(0);
-
-        // Loop through the 4096 samples
-        for (let sample = 0; sample < inputBuffer.length; sample++) {
-          outputData[sample] = inputData[sample];
-        }
-
-        // this.ssStream.write(new ss.Buffer(vm.downsampleBuffer(inputData, 44100, 16000)));
-      }
-    },
-    downsampleBuffer(buffer, sampleRate, outSampleRate) {
-      if (outSampleRate === sampleRate) {
-        return buffer;
-      }
-      if (outSampleRate > sampleRate) {
-        throw "downsampling rate show be smaller than original sample rate";
-      }
-      let sampleRateRatio = sampleRate / outSampleRate;
-      let newLength = Math.round(buffer.length / sampleRateRatio);
-      let result = new Int16Array(newLength);
-      let offsetResult = 0;
-      let offsetBuffer = 0;
-      while (offsetResult < result.length) {
-        let nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
-        let accum = 0,
-            count = 0;
-        for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
-          accum += buffer[i];
-          count++;
-        }
-
-        result[offsetResult] = Math.min(1, accum / count) * 0x7FFF;
-        offsetResult++;
-        offsetBuffer = nextOffsetBuffer;
-      }
-      return result.buffer;
-    },
-    errorCallback(error) {
-      console.log('errorCallback:', error);
-    },
     emitCloseSR() {
       this.isTesting = false
-      this.socket.emit('mic', false)
+      this.socket.emit('MICROPHONE', false)
     },
     emitOpenSR() {
       this.isTesting = true
-      this.socket.emit('mic', true)
+      this.socket.emit('MICROPHONE', true)
+    },
+    initRecording() {
+      this.isTesting = this.isSpeaking = true;
+      this.socket.emit('startGoogleCloudStream', '');
+      this.audioContext = window.AudioContext || window.webkitAudioContext;
+      this.context = new this.audioContext({
+        latencyHint: 'interactive',
+      })
+      this.processor = this.context.createScriptProcessor(BUFFER_SIZE, 1, 1);
+      this.processor.connect(this.context.destination);
+      this.context.resume();
+
+      const handleSuccess = stream => {
+        console.log("ST", stream)
+        this.globalStream = stream;
+        this.audioInput = this.context.createMediaStreamSource(stream);
+        this.audioInput.connect(this.processor);
+
+        this.processor.onaudioprocess = e => this.microphoneProcess(e);
+      }
+      navigator.mediaDevices.getUserMedia(MEDIA_ACCESS_CONSTRAINTS).then(handleSuccess);
+
+    },
+    endRecording() {
+      this.isTesting = this.isSpeaking = false;
+      this.socket.emit('endGoogleCloudStream', '');
+
+      let track = this.globalStream.getTracks()[0];
+      track.stop();
+
+      this.audioInput.disconnect(this.processor);
+      this.processor.disconnect(this.context.destination);
+      this.context.close().then(() => {
+        this.audioInput = null;
+        this.processor = null;
+        this.context = null;
+        this.audioContext = null;
+      });
+
+    },
+    microphoneProcess(e) {
+      let left = e.inputBuffer.getChannelData(0);
+      let left16 = downSampleBuffer(left, 44100, 16000);
+      this.socket.emit('BINARY_DATA', left16);
     },
     emitTalkEvent(e) {
-      this.socket.emit('speaker', {status: e, start: this.editor.state.selection.anchor})
+      this.socket.emit('SPEAKER', {status: e, start: this.editor.state.selection.anchor})
     },
     listenForSpeechEvents() {
       this.audioSpeech.onstart = () => {
@@ -297,57 +290,43 @@ export default {
       this.selectedText = this.editor.state.doc.textBetween(from, size, ' ')
       this.audioSpeech.text = this.selectedText
       this.audioSpeech.lang = "en-US";
-      console.log(this.audioSpeech)
+
       this.synth.speak(this.audioSpeech)
-    }
+    },
   },
   mounted() {
     const ydoc = new Y.Doc()
-    this.ssStream = ss.createStream()
 
-    let HOST = 'http://localhost:3000/'
-    if (process.env.NODE_ENV === 'production')
-      HOST = 'https://ryanyen2.me/'
-
+    let HOST = (process.env.NODE_ENV === 'production')? 'https://ryanyen2.me/' : 'http://localhost:3000/'
     this.socket = io(HOST + this.room)
-        .on('wspeech', event => {
-          console.log("Mic event", event)
-          if (event && this.curRole === 'participant' && this.isTesting === false) {
-            // this.startSpeechRecognition()
-            this.startRecording()
-          } else if (!event && this.curRole === 'participant' && this.isTesting === true) {
-            // this.endSpeechRecognition()
-            this.stopRecording()
+        .on('WEB_RECORDING', e => {
+          console.log("WEB RECORDING STATUS: ", e)
+          if (e && this.curRole === 'participant' && this.isTesting === false) {
+            // this.startSpeechRecognition();
+            this.initRecording();
+          } else if (!e && this.curRole === 'participant' && this.isTesting === true) {
+            // this.endSpeechRecognition();
+            this.endRecording();
           }
         })
-        .on('wspeaker', event => {
-          console.log("Speaker event", event)
-          if (event.status && this.curRole === 'participant' && this.speechLoading === false) {
-            this.speakBack(event.start)
-          } else if (!event.status && this.curRole === 'participant' && this.speechLoading === true) {
+        .on('WEB_SPEAKER', status => {
+          console.log("Speaker STATUS: ", status)
+          if (status.status && this.curRole === 'participant' && this.speechLoading === false) {
+            this.speakBack(status.start)
+          } else if (!status.status && this.curRole === 'participant' && this.speechLoading === true) {
             this.synth.cancel()
           }
         })
-        .on('SPEECH_RESULTS', text => {
-          if ('Reached_transcription_time_limit' === text) {
-            this.resultError = true;
-          } else {
-            console.log("RE, ", text)
-            this.textResult += text;
-          }
+        .on('SPEECH_DATA', data => {
+          console.log("SPEECH DATA:\n", data.results[0].alternatives[0].transcript);
         })
 
     this.socket.emit('joinRoom', this.room)
 
 
-    let YJS_HOST = 'ws://localhost:3001'
-    if (process.env.NODE_ENV === 'production')
-      YJS_HOST = 'wss://ryanyen2.me/yjs/'
+    let YJS_HOST = (process.env.NODE_ENV === 'production')? 'wss://ryanyen2.me/yjs/' : 'ws://localhost:3001';
     this.provider = new WebsocketProvider(YJS_HOST, this.room, ydoc)
-    this.provider.on('status', event => {
-      this.status = event.status
-    })
-
+    this.provider.on('status', event => this.status = event.status)
     window.ydoc = ydoc
     this.indexdb = new IndexeddbPersistence(this.room, ydoc)
 
@@ -371,7 +350,6 @@ export default {
         TaskList,
         TaskItem,
         SmilieReplacer,
-        TextHighlighter,
         Collaboration.configure({
           document: ydoc,
         }),
@@ -387,7 +365,9 @@ export default {
         }),
       ],
     })
+
     this.currentUser = this.getCurrentUser
+    if(!this.currentUser) this.$router.push({name: 'login'})
     this.currentUser.color = this.getRandomColor()
     this.editor.chain().focus().user(this.currentUser).run()
     localStorage.setItem('currentUser', JSON.stringify(this.currentUser))
@@ -397,22 +377,12 @@ export default {
     // this.recognition = new SpeechRecognition();
     // this.recognition.interimResults = true;
     // this.recognition.lang = "en-US";
-    if (navigator.mediaDevices.getUserMedia) {
-      console.log('getUserMedia supported...');
-      navigator.webkitGetUserMedia({audio: true}, stream => {
-        if (this.ssStream)
-          console.log("SStream: ", this.ssStream)
-          this.successCallback(stream);
-      }, error => this.errorCallback(error));
-    } else {
-      console.log('getUserMedia not supported on your browser!');
-    }
-
     this.listenForSpeechEvents()
   },
   beforeDestroy() {
     this.editor.destroy()
     this.provider.destroy()
+    // this.audioContext.destroy()
   },
 }
 </script>

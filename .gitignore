@@ -28,3 +28,5 @@ pnpm-debug.log*
 
 db/
 firebase.js
+wizardofoz-cloud-speech-api.json
+

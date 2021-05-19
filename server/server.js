@@ -8,14 +8,36 @@ const io = require('socket.io')(server, {
         origin: '*',
     }
 });
-const ss = require('@sap_oss/node-socketio-stream');
+
+//serve static file
 const serve = require("koa-static");
 const staticDirPath = path.join(__dirname, "../client/dist");
 app.use(serve(staticDirPath));
 
+//google cloud speech
+const speech = require('@google-cloud/speech');
+const speechClient = new speech.SpeechClient();
+const encoding = 'LINEAR16';
+const sampleRateHertz = 16000;
+const languageCode = 'en-US';
+const request = {
+    config: {
+        encoding: encoding,
+        sampleRateHertz: sampleRateHertz,
+        languageCode: languageCode,
+        // profanityFilter: false,
+        // enableWordTimeOffsets: false,
+        // speechContexts: [{
+        //     phrases: ["hoful","shwazil"]
+        //    }] // add your own speech context for better recognition
+    },
+    interimResults: true, // If you want interim results, set this to true
+};
 
-server.listen(3000, () => {
-    console.log('listening on *:3000');
+const HOST = process.env.HOST || "localhost";
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`listening on ${HOST}:${PORT}`);
 });
 
 
@@ -38,53 +60,61 @@ namespaces.on('connection', socket => {
     socket.on('joinRoom', async (room) => {
         socket.join(room);
         console.log(`connect ${namespaceDir} - ${room}`)
+        let recognizeStream = null;
 
-        const Speech = require('@google-cloud/speech');
-        const client = new Speech.SpeechClient();
-
-        const request = {
-            config: {
-                encoding: 'LINEAR16',
-                sampleRateHertz: 16000,
-                languageCode: 'en-US'
-            },
-            interimResults: false // If you want interim results, set this to true
-        };
-
-        socket.on('LANGUAGE_SPEECH', function (language) {
-            console.log('set language');
-            request.config.languageCode = language;
+        //mic event
+        socket.on('MICROPHONE', e => {
+            namespaces.in(room).emit('WEB_RECORDING', e)
         })
 
-        // Create a recognize stream
-        const recognizeStream = client
-            .streamingRecognize(request)
-            .on('error', console.error)
-            .on('data', data => {
-                console.log(`Transcription: ${data.results[0].alternatives[0].transcript}`);
-                socket.emit('SPEECH_RESULTS',(data.results[0] && data.results[0].alternatives[0])
-                    ? `${data.results[0].alternatives[0].transcript}\n`
-                    : `Reached_transcription_time_limit`)
-            });
-
-
-        ss(socket).on('START_SPEECH', stream => {
-            stream.pipe(recognizeStream);
+        socket.on('startGoogleCloudStream', data => {
+            startRecognitionStream(this, data);
         });
 
-        socket.on('STOP_SPEECH', function () {
-            console.log('Disconnected!');
-        })
+        socket.on('endGoogleCloudStream', () => {
+            stopRecognitionStream();
+        });
 
+        socket.on('BINARY_DATA', data => {
+            if (recognizeStream !== null) {
+                recognizeStream.write(data);
+            }
+        });
 
+        function startRecognitionStream(client) {
+            console.log("SSR", client)
+            recognizeStream = speechClient
+                .streamingRecognize(request)
+                .on('error', console.error)
+                .on('data', data => {
+                    console.log(
+                        `Transcription: ${data.results[0].alternatives[0].transcript}`
+                    );
+                    process.stdout.write(
+                        data.results[0] && data.results[0].alternatives[0]
+                            ? `Transcription: ${data.results[0].alternatives[0].transcript}\n`
+                            : '\n\nReached transcription time limit, press Ctrl+C\n'
+                    );
+                    console.log("DATA", data)
+                    client.emit("SPEECH_DATA", data);
 
-        socket.on('mic', (e) => {
-            console.log("Mic Event", e)
-            namespaces.in(room).emit('wspeech', e)
-        })
-        socket.on('speaker', (e) => {
+                    if (data.results[0] && data.results[0].isFinal) {
+                        stopRecognitionStream();
+                        startRecognitionStream(client);
+                        console.log('Restarted Stream on Serverside');
+                    }
+                });
+        }
+
+        function stopRecognitionStream() {
+            console.log("CSR")
+            if (recognizeStream) recognizeStream.end();
+            recognizeStream = null;
+        }
+
+        socket.on('SPEAKER', (e) => {
             console.log("Speaker Event", e)
-            namespaces.in(room).emit('wspeaker', {
+            namespaces.in(room).emit('WEB_SPEAKER', {
                 status: e.status,
                 start: e.start
             })
