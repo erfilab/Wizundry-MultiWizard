@@ -12,6 +12,7 @@
   "dependencies": {
     "@babel/cli": "^7.13.16",
     "@google-cloud/speech": "^4.5.0",
+    "dotenv": "^9.0.2",
     "koa": "^2.13.1",
     "koa-router": "^10.0.0",
     "koa-static": "^5.0.0",

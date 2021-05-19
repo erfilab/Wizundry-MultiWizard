@@ -3,6 +3,7 @@ const Koa = require('koa');
 const path = require('path');
 const app = new Koa();
 const server = require('http').createServer(app.callback());
+require('dotenv').config()
 const io = require('socket.io')(server, {
     cors: {
         origin: '*',
@@ -17,6 +18,7 @@ app.use(serve(staticDirPath));
 //google cloud speech
 const speech = require('@google-cloud/speech');
 const speechClient = new speech.SpeechClient();
+let recognizeStream = null;
 const encoding = 'LINEAR16';
 const sampleRateHertz = 16000;
 const languageCode = 'en-US';
@@ -25,8 +27,9 @@ const request = {
         encoding: encoding,
         sampleRateHertz: sampleRateHertz,
         languageCode: languageCode,
-        // profanityFilter: false,
-        // enableWordTimeOffsets: false,
+        profanityFilter: false,
+        enableWordTimeOffsets: true,
+        enableAutomaticPunctuation: true,
         // speechContexts: [{
         //     phrases: ["hoful","shwazil"]
         //    }] // add your own speech context for better recognition
@@ -60,15 +63,14 @@ namespaces.on('connection', socket => {
     socket.on('joinRoom', async (room) => {
         socket.join(room);
         console.log(`connect ${namespaceDir} - ${room}`)
-        let recognizeStream = null;
 
         //mic event
         socket.on('MICROPHONE', e => {
             namespaces.in(room).emit('WEB_RECORDING', e)
         })
 
-        socket.on('startGoogleCloudStream', data => {
-            startRecognitionStream(this, data);
+        socket.on('startGoogleCloudStream', () => {
+            startRecognitionStream(room);
         });
 
         socket.on('endGoogleCloudStream', () => {
@@ -80,37 +82,6 @@ namespaces.on('connection', socket => {
                 recognizeStream.write(data);
             }
         });
-
-        function startRecognitionStream(client) {
-            console.log("SSR", client)
-            recognizeStream = speechClient
-                .streamingRecognize(request)
-                .on('error', console.error)
-                .on('data', data => {
-                    console.log(
-                        `Transcription: ${data.results[0].alternatives[0].transcript}`
-                    );
-                    process.stdout.write(
-                        data.results[0] && data.results[0].alternatives[0]
-                            ? `Transcription: ${data.results[0].alternatives[0].transcript}\n`
-                            : '\n\nReached transcription time limit, press Ctrl+C\n'
-                    );
-                    console.log("DATA", data)
-                    client.emit("SPEECH_DATA", data);
-
-                    if (data.results[0] && data.results[0].isFinal) {
-                        stopRecognitionStream();
-                        startRecognitionStream(client);
-                        console.log('Restarted Stream on Serverside');
-                    }
-                });
-        }
-
-        function stopRecognitionStream() {
-            console.log("CSR")
-            if (recognizeStream) recognizeStream.end();
-            recognizeStream = null;
-        }
 
         socket.on('SPEAKER', (e) => {
             console.log("Speaker Event", e)
@@ -125,3 +96,32 @@ namespaces.on('connection', socket => {
         })
     })
 })
+
+function startRecognitionStream(room) {
+    console.log("SSR", room)
+    recognizeStream = speechClient
+        .streamingRecognize(request)
+        .on('error', console.error)
+        .on('data', data => {
+            // console.log(`Transcription: ${data.results[0].alternatives[0].transcript}`);
+            process.stdout.write(
+                data.results[0] && data.results[0].alternatives[0]
+                    ? `Transcription: ${data.results[0].alternatives[0].transcript}\n`
+                    : '\n\nReached transcription time limit, press Ctrl+C\n'
+            );
+            // console.log("DATA", data)
+            namespaces.in(room).emit("SPEECH_DATA", data);
+
+            if (data.results[0] && data.results[0].isFinal) {
+                stopRecognitionStream();
+                startRecognitionStream(room);
+                console.log('Restarted Stream on Serverside');
+            }
+        });
+}
+
+function stopRecognitionStream() {
+    console.log("CSR")
+    if (recognizeStream) recognizeStream.end();
+    recognizeStream = null;
+}

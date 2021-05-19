@@ -41,7 +41,12 @@
         </transition>
       </v-col>
       <v-col :cols="speechLoading? 9:12">
-        <v-text-field v-model="runTimeContent"/>
+<!--        <v-text-field v-model="runTimeContent"/>-->
+        <v-textarea
+            counter
+            label="Run Time Content"
+            :value="runTimeContent"
+        ></v-textarea>
       </v-col>
     </v-row>
     <div class="editor" v-if="editor" @keyup.esc="speechLoading? emitTalkEvent(false) : emitTalkEvent(true)">
@@ -152,9 +157,10 @@ export default {
 
       runTimeContent: "",
       newContent: "",
+      lastContent: "",
 
       //text preprocess
-      keywords: ["however", "but", "and", "because", "whenever", "whereas", "thus", "yet"],
+      keywords: ["however", "but", "and", "because", "therefore", "whenever", "whereas", "thus", "yet"],
     }
   },
   computed: {
@@ -274,7 +280,9 @@ export default {
       this.socket.emit('BINARY_DATA', left16);
     },
     emitTalkEvent(e) {
+      this.speechLoading = e;
       this.socket.emit('SPEAKER', {status: e, start: this.editor.state.selection.anchor})
+      this.emitCloseSR()
     },
     listenForSpeechEvents() {
       this.audioSpeech.onstart = () => {
@@ -318,7 +326,28 @@ export default {
           }
         })
         .on('SPEECH_DATA', data => {
-          console.log("SPEECH DATA:\n", data.results[0].alternatives[0].transcript);
+          if (data && this.curRole === 'participant' && this.isTesting) {
+            console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
+            this.runTimeContent = data.results[0].alternatives[0].transcript
+
+            const dataFinal = data.results[0].isFinal;
+            const {textContent} = this.editor.state.doc
+
+            if (dataFinal && this.runTimeContent) {
+              this.newContent = this.runTimeContent;
+              this.runTimeContent = "";
+            }
+            todayCollection.add({
+              type: 'SPEECH',
+              lastContent: textContent,
+              newContent: this.newContent,
+              room: this.room,
+              username: this.currentUser.name,
+              userRole: this.curRole,
+              confidence: data.results[0].alternatives[0].confidence,
+              timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
+            })
+          }
         })
 
     this.socket.emit('joinRoom', this.room)
@@ -333,14 +362,19 @@ export default {
     this.editor = new Editor({
       onUpdate: () => {
         const {textContent} = this.editor.state.doc
-        todayCollection.add({
-          timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
-          anchor: this.editor.state.selection.anchor,
-          content: textContent,
-          room: this.room,
-          username: this.currentUser.name,
-          userEmail: this.currentUser.email
-        })
+        if (this.curRole === 'experimenter' && textContent && textContent.length !== this.lastContent.length) {
+          todayCollection.add({
+            type: "EDIT",
+            lastContent: this.lastContent,
+            newContent: textContent,
+            room: this.room,
+            username: this.currentUser.name,
+            userRole: this.curRole,
+            anchor: this.editor.state.selection.anchor,
+            timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
+          })
+        }
+        this.lastContent = textContent
       },
       extensions: [
         StarterKit.configure({
