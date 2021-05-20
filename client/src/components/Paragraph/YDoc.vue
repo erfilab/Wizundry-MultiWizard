@@ -3,7 +3,7 @@
     <v-row v-if="curRole==='experimenter'">
       <v-col cols="3">
         <v-btn
-            @click="isTesting? emitCloseSR() : emitOpenSR()"
+            @click="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
             text
             :color="!isTesting ? 'grey' : (isSpeaking ? 'red' : 'red darken-3')"
             class="mt-4"
@@ -24,8 +24,15 @@
         <v-switch
             v-model="autoPunctuation"
             inset
-            disabled
             label="Auto Punctuation"
+        ></v-switch>
+      </v-col>
+      <v-col>
+        <v-switch
+            v-model="usingNativeRecognition"
+            inset
+            :disabled="isTesting || isSpeaking"
+            :label="usingNativeRecognition? 'Using Google?' : 'Using Native?'"
         ></v-switch>
       </v-col>
     </v-row>
@@ -136,7 +143,8 @@ export default {
 
       //function bar
       autoHighlight: true,
-      autoPunctuation: false,
+      autoPunctuation: true,
+      usingNativeRecognition: false,
 
       //web speech
       recognition: null,
@@ -171,12 +179,10 @@ export default {
   },
   watch: {
     newContent(text) {
-      this.keywords.map(kw =>
-          text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`)
-      )
-      console.log("TText", text)
-      const {size} = this.editor.view.state.doc.content
+      if (this.autoHighlight)
+        this.keywords.map(kw => text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
 
+      const {size} = this.editor.view.state.doc.content
       this.editor.commands.insertContent(` ${text} `, size - 1)
       const insertTrans = this.editor.state.tr.insertText(` `, size - 1)
       this.editor.view.dispatch(insertTrans)
@@ -196,14 +202,18 @@ export default {
     },
     // speech recognition
     startSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      this.recognition = new SpeechRecognition();
+      this.recognition.interimResults = true;
+      this.recognition.lang = "en-US";
       this.isTesting = true
+
+      this.listenForSpeechEvents()
       this.recognition.onspeechstart = () => {
-        console.log("Speech Start")
         this.isSpeaking = true
       }
 
       this.recognition.onspeechend = () => {
-        console.log("Speech End")
         this.isSpeaking = false
       }
       this.recognition.onresult = event => {
@@ -227,13 +237,12 @@ export default {
       this.isTesting = false
       this.recognition.stop()
     },
-    emitCloseSR() {
-      this.isTesting = false
-      this.socket.emit('MICROPHONE', false)
-    },
-    emitOpenSR() {
-      this.isTesting = true
-      this.socket.emit('MICROPHONE', true)
+    emitSpeakerEvent(e) {
+      this.isTesting = e;
+      this.socket.emit('MICROPHONE', {
+        status: e,
+        punctuation: this.autoPunctuation
+      })
     },
     initRecording() {
       this.isTesting = this.isSpeaking = true;
@@ -282,7 +291,7 @@ export default {
     emitTalkEvent(e) {
       this.speechLoading = e;
       this.socket.emit('SPEAKER', {status: e, start: this.editor.state.selection.anchor})
-      this.emitCloseSR()
+      this.emitSpeakerEvent(false)
     },
     listenForSpeechEvents() {
       this.audioSpeech.onstart = () => {
@@ -303,120 +312,113 @@ export default {
     },
   },
   mounted() {
-    const ydoc = new Y.Doc()
+    this.currentUser = this.getCurrentUser
+    if(!this.currentUser) this.$router.push({name: 'login'})
+    else {
+      this.currentUser.color = this.getRandomColor()
+      this.editor.chain().focus().user(this.currentUser).run()
+      localStorage.setItem('currentUser', JSON.stringify(this.currentUser))
 
-    let HOST = (process.env.NODE_ENV === 'production')? 'https://ryanyen2.me/' : 'http://localhost:3000/'
-    this.socket = io(HOST + this.room)
-        .on('WEB_RECORDING', e => {
-          console.log("WEB RECORDING STATUS: ", e)
-          if (e && this.curRole === 'participant' && this.isTesting === false) {
-            // this.startSpeechRecognition();
-            this.initRecording();
-          } else if (!e && this.curRole === 'participant' && this.isTesting === true) {
-            // this.endSpeechRecognition();
-            this.endRecording();
-          }
-        })
-        .on('WEB_SPEAKER', status => {
-          console.log("Speaker STATUS: ", status)
-          if (status.status && this.curRole === 'participant' && this.speechLoading === false) {
-            this.speakBack(status.start)
-          } else if (!status.status && this.curRole === 'participant' && this.speechLoading === true) {
-            this.synth.cancel()
-          }
-        })
-        .on('SPEECH_DATA', data => {
-          if (data && this.curRole === 'participant' && this.isTesting) {
-            console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
-            this.runTimeContent = data.results[0].alternatives[0].transcript
-
-            const dataFinal = data.results[0].isFinal;
-            const {textContent} = this.editor.state.doc
-
-            if (dataFinal && this.runTimeContent) {
-              this.newContent = this.runTimeContent;
-              this.runTimeContent = "";
+      const ydoc = new Y.Doc()
+      let HOST = (process.env.NODE_ENV === 'production')? 'https://ryanyen2.me/' : 'http://localhost:3000/'
+      this.socket = io(HOST + this.room)
+          .on('WEB_RECORDING', e => {
+            console.log("WEB RECORDING STATUS: ", e)
+            if (e && this.curRole === 'participant' && this.isTesting === false) {
+              if(this.usingNativeRecognition) this.startSpeechRecognition();
+              else this.initRecording();
+            } else if (!e && this.curRole === 'participant' && this.isTesting === true) {
+              if (this.usingNativeRecognition) this.endSpeechRecognition();
+              else this.endRecording();
             }
+          })
+          .on('WEB_SPEAKER', status => {
+            console.log("Speaker STATUS: ", status)
+            if (status.status && this.curRole === 'participant' && this.speechLoading === false) {
+              this.speakBack(status.start)
+            } else if (!status.status && this.curRole === 'participant' && this.speechLoading === true) {
+              this.synth.cancel()
+            }
+          })
+          .on('SPEECH_DATA', data => {
+            if (data && this.curRole === 'participant' && this.isTesting) {
+              console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
+              this.runTimeContent = data.results[0].alternatives[0].transcript
+
+              const dataFinal = data.results[0].isFinal;
+              const {textContent} = this.editor.state.doc
+
+              if (dataFinal && this.runTimeContent) {
+                this.newContent = this.runTimeContent;
+                this.runTimeContent = "";
+              }
+              todayCollection.add({
+                type: 'SPEECH',
+                lastContent: textContent,
+                newContent: this.newContent,
+                room: this.room,
+                username: this.currentUser.name,
+                userRole: this.curRole,
+                confidence: data.results[0].alternatives[0].confidence,
+                timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
+              })
+            }
+          })
+
+      this.socket.emit('joinRoom', this.room)
+
+
+      let YJS_HOST = (process.env.NODE_ENV === 'production')? 'wss://ryanyen2.me/yjs/' : 'ws://localhost:3001';
+      this.provider = new WebsocketProvider(YJS_HOST, this.room, ydoc)
+      this.provider.on('status', event => this.status = event.status)
+      window.ydoc = ydoc
+      this.indexdb = new IndexeddbPersistence(this.room, ydoc)
+
+      this.editor = new Editor({
+        onUpdate: () => {
+          const {textContent} = this.editor.state.doc
+          if (this.curRole === 'experimenter' && textContent && textContent.length !== this.lastContent.length) {
             todayCollection.add({
-              type: 'SPEECH',
-              lastContent: textContent,
-              newContent: this.newContent,
+              type: "EDIT",
+              lastContent: this.lastContent,
+              newContent: textContent,
               room: this.room,
               username: this.currentUser.name,
               userRole: this.curRole,
-              confidence: data.results[0].alternatives[0].confidence,
+              anchor: this.editor.state.selection.anchor,
               timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
             })
           }
-        })
-
-    this.socket.emit('joinRoom', this.room)
-
-
-    let YJS_HOST = (process.env.NODE_ENV === 'production')? 'wss://ryanyen2.me/yjs/' : 'ws://localhost:3001';
-    this.provider = new WebsocketProvider(YJS_HOST, this.room, ydoc)
-    this.provider.on('status', event => this.status = event.status)
-    window.ydoc = ydoc
-    this.indexdb = new IndexeddbPersistence(this.room, ydoc)
-
-    this.editor = new Editor({
-      onUpdate: () => {
-        const {textContent} = this.editor.state.doc
-        if (this.curRole === 'experimenter' && textContent && textContent.length !== this.lastContent.length) {
-          todayCollection.add({
-            type: "EDIT",
-            lastContent: this.lastContent,
-            newContent: textContent,
-            room: this.room,
-            username: this.currentUser.name,
-            userRole: this.curRole,
-            anchor: this.editor.state.selection.anchor,
-            timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
-          })
-        }
-        this.lastContent = textContent
-      },
-      extensions: [
-        StarterKit.configure({
-          history: false,
-        }),
-        Highlight,
-        TaskList,
-        TaskItem,
-        SmilieReplacer,
-        Collaboration.configure({
-          document: ydoc,
-        }),
-        CollaborationCursor.configure({
-          provider: this.provider,
-          user: this.currentUser,
-          onUpdate: users => {
-            this.users = users
-          },
-        }),
-        CharacterCount.configure({
-          limit: 10000,
-        }),
-      ],
-    })
-
-    this.currentUser = this.getCurrentUser
-    if(!this.currentUser) this.$router.push({name: 'login'})
-    this.currentUser.color = this.getRandomColor()
-    this.editor.chain().focus().user(this.currentUser).run()
-    localStorage.setItem('currentUser', JSON.stringify(this.currentUser))
-
-    // webspeech
-    // const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    // this.recognition = new SpeechRecognition();
-    // this.recognition.interimResults = true;
-    // this.recognition.lang = "en-US";
-    this.listenForSpeechEvents()
+          this.lastContent = textContent
+        },
+        extensions: [
+          StarterKit.configure({
+            history: false,
+          }),
+          Highlight,
+          TaskList,
+          TaskItem,
+          SmilieReplacer,
+          Collaboration.configure({
+            document: ydoc,
+          }),
+          CollaborationCursor.configure({
+            provider: this.provider,
+            user: this.currentUser,
+            onUpdate: users => {
+              this.users = users
+            },
+          }),
+          CharacterCount.configure({
+            limit: 10000,
+          }),
+        ],
+      })
+    }
   },
   beforeDestroy() {
     this.editor.destroy()
     this.provider.destroy()
-    // this.audioContext.destroy()
   },
 }
 </script>

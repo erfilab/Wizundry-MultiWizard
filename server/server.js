@@ -22,6 +22,8 @@ let recognizeStream = null;
 const encoding = 'LINEAR16';
 const sampleRateHertz = 16000;
 const languageCode = 'en-US';
+let punctuation = true
+
 const request = {
     config: {
         encoding: encoding,
@@ -29,7 +31,7 @@ const request = {
         languageCode: languageCode,
         profanityFilter: false,
         enableWordTimeOffsets: true,
-        enableAutomaticPunctuation: true,
+        enableAutomaticPunctuation: punctuation,
         // speechContexts: [{
         //     phrases: ["hoful","shwazil"]
         //    }] // add your own speech context for better recognition
@@ -43,18 +45,6 @@ server.listen(PORT, () => {
     console.log(`listening on ${HOST}:${PORT}`);
 });
 
-
-// io.on('connection', (socket) => {
-//     console.log("new socket connected")
-//     socket.on('message', (eventData) => {
-//         eventData.processed = Date.now();
-//
-//         // send the message back to the client
-//         console.log(eventData)
-//         socket.broadcast.emit('message', eventData);
-//     });
-// });
-
 const namespaces = io.of(/^\/[a-zA-Z0-9_\/-]+$/)
 namespaces.on('connection', socket => {
     const namespace = socket.nsp;
@@ -66,7 +56,8 @@ namespaces.on('connection', socket => {
 
         //mic event
         socket.on('MICROPHONE', e => {
-            namespaces.in(room).emit('WEB_RECORDING', e)
+            if (e.status) punctuation = e.punctuation
+            namespaces.in(room).emit('WEB_RECORDING', e.status)
         })
 
         socket.on('startGoogleCloudStream', () => {

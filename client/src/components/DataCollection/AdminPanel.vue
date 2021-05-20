@@ -4,7 +4,7 @@
       <v-toolbar flat>
         <v-app-bar-nav-icon></v-app-bar-nav-icon>
 
-        <v-toolbar-title>Admin Dashboard</v-toolbar-title>l
+        <v-toolbar-title>Admin Dashboard</v-toolbar-title>
 
         <v-spacer></v-spacer>
         <v-row>
@@ -75,11 +75,13 @@
 <script>
 import { db } from "@/firebase";
 import AllLogs from "@/components/DataCollection/AllLogs";
+import TextDiff from "@/components/DataCollection/TextDiff";
 
 export default {
   name: "AdminPanel",
   components: {
     AllLogs,
+    TextDiff,
   },
   watch: {
     async date() {
@@ -105,6 +107,10 @@ export default {
         {
           title: 'All Logs',
           content: 'AllLogs'
+        },
+        {
+          title: 'Text Diff',
+          content: 'TextDiff'
         }
       ],
       text: 'Lorem ipsum',
