@@ -22,7 +22,6 @@ let recognizeStream = null;
 const encoding = 'LINEAR16';
 const sampleRateHertz = 16000;
 const languageCode = 'en-US';
-let punctuation = true
 
 const request = {
     config: {
@@ -31,7 +30,7 @@ const request = {
         languageCode: languageCode,
         profanityFilter: false,
         enableWordTimeOffsets: true,
-        enableAutomaticPunctuation: punctuation,
+        enableAutomaticPunctuation: true,
         // speechContexts: [{
         //     phrases: ["hoful","shwazil"]
         //    }] // add your own speech context for better recognition
@@ -56,7 +55,7 @@ namespaces.on('connection', socket => {
 
         //mic event
         socket.on('MICROPHONE', e => {
-            if (e.status) punctuation = e.punctuation
+            if (e.status) request.enableAutomaticPunctuation = e.punctuation
             namespaces.in(room).emit('WEB_RECORDING', e.status)
         })
 
@@ -89,7 +88,7 @@ namespaces.on('connection', socket => {
 })
 
 function startRecognitionStream(room) {
-    console.log("SSR", room)
+    console.log("SSR", room, request.enableAutomaticPunctuation)
     recognizeStream = speechClient
         .streamingRecognize(request)
         .on('error', console.error)

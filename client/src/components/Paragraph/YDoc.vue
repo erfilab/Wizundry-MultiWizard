@@ -316,8 +316,6 @@ export default {
     if(!this.currentUser) this.$router.push({name: 'login'})
     else {
       this.currentUser.color = this.getRandomColor()
-      this.editor.chain().focus().user(this.currentUser).run()
-      localStorage.setItem('currentUser', JSON.stringify(this.currentUser))
 
       const ydoc = new Y.Doc()
       let HOST = (process.env.NODE_ENV === 'production')? 'https://ryanyen2.me/' : 'http://localhost:3000/'
@@ -336,7 +334,7 @@ export default {
             console.log("Speaker STATUS: ", status)
             if (status.status && this.curRole === 'participant' && this.speechLoading === false) {
               this.speakBack(status.start)
-            } else if (!status.status && this.curRole === 'participant' && this.speechLoading === true) {
+            } else if (!status.status && this.curRole === 'participant') {
               this.synth.cancel()
             }
           })
@@ -414,6 +412,8 @@ export default {
           }),
         ],
       })
+      this.editor.chain().focus().user(this.currentUser).run()
+      localStorage.setItem('currentUser', JSON.stringify(this.currentUser))
     }
   },
   beforeDestroy() {

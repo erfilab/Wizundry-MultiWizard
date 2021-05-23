@@ -23,6 +23,7 @@
     "rxjs": "^6.6.7",
     "socket.io-client": "^4.0.2",
     "vue": "^2.6.11",
+    "vue-jsdiff": "^1.0.1",
     "vue-resource": "^1.5.2",
     "vue-router": "^3.5.1",
     "vuetify": "^2.4.0",

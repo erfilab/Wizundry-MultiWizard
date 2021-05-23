@@ -1,6 +1,6 @@
 <template>
-  <v-container fluid>
-    <v-card>
+  <v-container>
+
       <v-toolbar flat>
         <v-app-bar-nav-icon></v-app-bar-nav-icon>
 
@@ -68,7 +68,7 @@
           </v-card>
         </v-tab-item>
       </v-tabs-items>
-    </v-card>
+
   </v-container>
 </template>
 
@@ -117,7 +117,14 @@ export default {
     }
   },
   async mounted() {
-
+    let textEditorLogs = await db.collection(`${this.date}`).get();
+    const logs = [];
+    textEditorLogs.forEach((doc) => {
+      let appData = doc.data();
+      appData.id = doc.id;
+      logs.push({ ...appData });
+    });
+    this.logs = logs;
   }
 }
 </script>

@@ -25,14 +25,29 @@
         :headers="headers"
         :items="filteredLogs"
         :search="search"
+        :footer-props="{
+          showFirstLastPage: true,
+          itemsPerPageOptions: [50, 100, 300],
+        }"
     >
-      <template slot="items" slot-scope="props">
+      <template v-slot:item.type="{ item }">
         <v-chip
-            :color="getTypeColor(props.item.type)"
-            dark
+            :color="getTypeColor(item.type)"
         >
-          {{ props.item.type }}
+          {{ item.type }}
         </v-chip>
+      </template>
+      <template v-slot:item.newContent="{ item }">
+        <span
+            class="d-inline-block text-truncate"
+            style="max-width: 150px;"
+        >{{item.newContent}}</span>
+      </template>
+      <template v-slot:item.lastContent="{ item }">
+        <span
+            class="d-inline-block text-truncate"
+            style="max-width: 100px;"
+        >{{item.lastContent}}</span>
       </template>
     </v-data-table>
   </v-card>
