@@ -39,7 +39,7 @@
                   required
               ></v-select>
             </v-col>
-            <v-spacer />
+            <v-spacer/>
             <v-col cols="4" class="mr-2">
               <v-btn @click="join()" color="#3E6189" large :disabled="!valid">
                 <v-icon>mdi-account-plus</v-icon>
@@ -57,21 +57,21 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import {mapActions} from 'vuex'
 
 export default {
   name: "LoginForm",
   data() {
     return {
       valid: true,
-      email: "r@g.com",
-      password: "123456789",
-      name: 'ryan',
-      role: 'experimenter',
+      email: "",
+      password: "",
+      name: '',
+      role: '',
       roles: [
-          "experimenter",
-          "participant",
-          "admin"
+        "experimenter",
+        "participant",
+        "admin"
       ],
 
       emailRules: [
@@ -96,9 +96,18 @@ export default {
         createdAt: this.dayjs()
       })
     },
-    reset () {
+    reset() {
       this.$refs.form.reset()
     },
+  },
+  mounted() {
+    console.log(process.env.NODE_ENV, process.env)
+    if (process.env.NODE_ENV !== 'production') {
+      this.email = process.env.APP_EMAIL
+      this.password = process.env.APP_PSWD
+      this.name = process.env.DEV_NAME
+      this.role = process.env.DEV_ROLE
+    }
   }
 }
 </script>
