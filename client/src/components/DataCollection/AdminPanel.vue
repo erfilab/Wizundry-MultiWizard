@@ -1,6 +1,6 @@
 <template>
-  <v-container fluid>
-    <v-card>
+  <v-container>
+
       <v-toolbar flat>
         <v-app-bar-nav-icon></v-app-bar-nav-icon>
 
@@ -68,18 +68,20 @@
           </v-card>
         </v-tab-item>
       </v-tabs-items>
-    </v-card>
+
   </v-container>
 </template>
 
 <script>
 import { db } from "@/firebase";
 import AllLogs from "@/components/DataCollection/AllLogs";
+import TextDiff from "@/components/DataCollection/TextDiff";
 
 export default {
   name: "AdminPanel",
   components: {
     AllLogs,
+    TextDiff,
   },
   watch: {
     async date() {
@@ -105,13 +107,24 @@ export default {
         {
           title: 'All Logs',
           content: 'AllLogs'
+        },
+        {
+          title: 'Text Diff',
+          content: 'TextDiff'
         }
       ],
       text: 'Lorem ipsum',
     }
   },
   async mounted() {
-
+    let textEditorLogs = await db.collection(`${this.date}`).get();
+    const logs = [];
+    textEditorLogs.forEach((doc) => {
+      let appData = doc.data();
+      appData.id = doc.id;
+      logs.push({ ...appData });
+    });
+    this.logs = logs;
   }
 }
 </script>
