@@ -3,7 +3,7 @@
     <v-row v-if="curRole==='experimenter'">
       <v-col cols="3">
         <v-btn
-            @click="isTesting? emitCloseSR() : emitOpenSR()"
+            @click="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
             text
             :color="!isTesting ? 'grey' : (isSpeaking ? 'red' : 'red darken-3')"
             class="mt-4"
@@ -24,8 +24,15 @@
         <v-switch
             v-model="autoPunctuation"
             inset
-            disabled
             label="Auto Punctuation"
+        ></v-switch>
+      </v-col>
+      <v-col>
+        <v-switch
+            v-model="usingNativeRecognition"
+            inset
+            :disabled="isTesting || isSpeaking"
+            :label="usingNativeRecognition? 'Using Google?' : 'Using Native?'"
         ></v-switch>
       </v-col>
     </v-row>
@@ -41,10 +48,18 @@
         </transition>
       </v-col>
       <v-col :cols="speechLoading? 9:12">
-        <v-text-field v-model="runTimeContent"/>
+<!--        <v-text-field v-model="runTimeContent"/>-->
+        <v-textarea
+            counter
+            label="Run Time Content"
+            :value="runTimeContent"
+        ></v-textarea>
       </v-col>
     </v-row>
-    <div class="editor" v-if="editor" @keyup.esc="speechLoading? emitTalkEvent(false) : emitTalkEvent(true)">
+    <div class="editor" v-if="editor"
+         @keyup.120="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
+         @keyup.esc="speechLoading? emitTalkEvent(false) : emitTalkEvent(true)"
+    >
       <menu-bar v-show="curRole==='experimenter'" class="editor__header" :editor="editor"/>
       <editor-content class="editor__content" :editor="editor"/>
       <div v-show="curRole==='experimenter'" class="editor__footer">
@@ -76,21 +91,40 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Highlight from '@tiptap/extension-highlight'
 import CharacterCount from '@tiptap/extension-character-count'
+
 import * as Y from 'yjs'
 import {WebsocketProvider} from 'y-websocket'
 import {IndexeddbPersistence} from 'y-indexeddb'
 import MenuBar from './MenuBar.vue'
-import {TextHighlighter} from "@/plugins/textHighlighter.ts";
 import {SmilieReplacer} from "@/plugins/smileReplacer.ts";
 
 import io from 'socket.io-client'
-import { todayCollection } from '@/firebase.js'
+const BUFFER_SIZE = 2048
+const MEDIA_ACCESS_CONSTRAINTS = {audio: true, video: false};
+const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
+  if (outSampleRate === sampleRate) return buffer;
+  if (outSampleRate > sampleRate) throw 'downsampling rate should be smaller than original sample rate';
+  const sampleRateRatio = sampleRate / outSampleRate;
+  let result = new Int16Array(Math.round(buffer.length / sampleRateRatio));
+  let offsetResult = 0, offsetBuffer = 0;
+  while (offsetResult < result.length) {
+    let nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+    let accum = 0, count = 0;
+    for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+      accum += buffer[i];
+      count++;
+    }
 
+    result[offsetResult] = Math.min(1, accum / count) * 0x7fff;
+    offsetResult++;
+    offsetBuffer = nextOffsetBuffer;
+  }
+  return result.buffer;
+};
+
+import {todayCollection} from '@/firebase.js'
 import {mapGetters} from 'vuex'
-
-const getRandomElement = list => {
-  return list[Math.floor(Math.random() * list.length)]
-}
+const getRandomElement = list => list[Math.floor(Math.random() * list.length)]
 
 export default {
   components: {
@@ -112,12 +146,20 @@ export default {
 
       //function bar
       autoHighlight: true,
-      autoPunctuation: false,
+      autoPunctuation: true,
+      usingNativeRecognition: false,
 
-      //webspeech
+      //web speech
       recognition: null,
       isTesting: false,
       isSpeaking: false,
+
+      //web recording
+      audioContext: null,
+      context: null,
+      processor: null,
+      globalStream: null,
+      audioInput: null,
 
       speechLoading: false,
       selectedText: '',
@@ -126,9 +168,10 @@ export default {
 
       runTimeContent: "",
       newContent: "",
+      lastContent: "",
 
       //text preprocess
-      keywords: ["however", "but", "and", "because", "whenever", "whereas", "thus", "yet"],
+      keywords: ["however", "but", "and", "because", "therefore", "whenever", "whereas", "thus", "yet"],
     }
   },
   computed: {
@@ -139,14 +182,12 @@ export default {
   },
   watch: {
     newContent(text) {
-      this.keywords.map(kw =>
-          text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`)
-      )
-      console.log("TText", text)
-      const {size} = this.editor.view.state.doc.content
+      if (this.autoHighlight)
+        this.keywords.map(kw => text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
 
+      const {size} = this.editor.view.state.doc.content
       this.editor.commands.insertContent(` ${text} `, size - 1)
-      const insertTrans = this.editor.state.tr.insertText(` `, size-1)
+      const insertTrans = this.editor.state.tr.insertText(` `, size - 1)
       this.editor.view.dispatch(insertTrans)
     },
   },
@@ -164,14 +205,18 @@ export default {
     },
     // speech recognition
     startSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      this.recognition = new SpeechRecognition();
+      this.recognition.interimResults = true;
+      this.recognition.lang = "en-US";
       this.isTesting = true
+
+      this.listenForSpeechEvents()
       this.recognition.onspeechstart = () => {
-        console.log("Speech Start")
         this.isSpeaking = true
       }
 
       this.recognition.onspeechend = () => {
-        console.log("Speech End")
         this.isSpeaking = false
       }
       this.recognition.onresult = event => {
@@ -195,16 +240,61 @@ export default {
       this.isTesting = false
       this.recognition.stop()
     },
-    emitCloseSR() {
-      this.isTesting = false
-      this.socket.emit('mic', false)
+    emitSpeakerEvent(e) {
+      this.isTesting = e;
+      this.socket.emit('MICROPHONE', {
+        status: e,
+        punctuation: this.autoPunctuation
+      })
     },
-    emitOpenSR() {
-      this.isTesting = true
-      this.socket.emit('mic', true)
+    initRecording() {
+      this.isTesting = this.isSpeaking = true;
+      this.socket.emit('startGoogleCloudStream', '');
+      this.audioContext = window.AudioContext || window.webkitAudioContext;
+      this.context = new this.audioContext({
+        latencyHint: 'interactive',
+      })
+      this.processor = this.context.createScriptProcessor(BUFFER_SIZE, 1, 1);
+      this.processor.connect(this.context.destination);
+      this.context.resume();
+
+      const handleSuccess = stream => {
+        console.log("ST", stream)
+        this.globalStream = stream;
+        this.audioInput = this.context.createMediaStreamSource(stream);
+        this.audioInput.connect(this.processor);
+
+        this.processor.onaudioprocess = e => this.microphoneProcess(e);
+      }
+      navigator.mediaDevices.getUserMedia(MEDIA_ACCESS_CONSTRAINTS).then(handleSuccess);
+
+    },
+    endRecording() {
+      this.isTesting = this.isSpeaking = false;
+      this.socket.emit('endGoogleCloudStream', '');
+
+      let track = this.globalStream.getTracks()[0];
+      track.stop();
+
+      this.audioInput.disconnect(this.processor);
+      this.processor.disconnect(this.context.destination);
+      this.context.close().then(() => {
+        this.audioInput = null;
+        this.processor = null;
+        this.context = null;
+        this.audioContext = null;
+      });
+
+    },
+    microphoneProcess(e) {
+      let left = e.inputBuffer.getChannelData(0);
+      let left16 = downSampleBuffer(left, 44100, 16000);
+      this.socket.emit('BINARY_DATA', left16);
     },
     emitTalkEvent(e) {
-      this.socket.emit('speaker', {status: e, start: this.editor.state.selection.anchor})
+      this.speechLoading = e;
+      this.socket.emit('SPEAKER', {status: e, start: this.editor.state.selection.anchor})
+      this.emitSpeakerEvent(false)
     },
     listenForSpeechEvents() {
       this.audioSpeech.onstart = () => {
@@ -220,94 +310,114 @@ export default {
       this.selectedText = this.editor.state.doc.textBetween(from, size, ' ')
       this.audioSpeech.text = this.selectedText
       this.audioSpeech.lang = "en-US";
-      console.log(this.audioSpeech)
+
       this.synth.speak(this.audioSpeech)
-    }
+    },
   },
   mounted() {
-    const ydoc = new Y.Doc()
-    let HOST = 'http://localhost:3000/'
-    if (process.env.NODE_ENV === 'production')
-      HOST = 'https://ryanyen2.me/'
-
-    this.socket = io(HOST+ this.room)
-        .on('wspeech', event => {
-          console.log("Mic event", event)
-          if (event && this.curRole === 'participant' && this.isTesting === false) {
-            this.startSpeechRecognition()
-          } else if (!event && this.curRole === 'participant' && this.isTesting === true) {
-            this.endSpeechRecognition()
-          }
-        })
-        .on('wspeaker', event => {
-          console.log("Speaker event", event)
-          if (event.status && this.curRole === 'participant' && this.speechLoading === false) {
-            this.speakBack(event.start)
-          } else if (!event.status && this.curRole === 'participant' && this.speechLoading === true) {
-            this.synth.cancel()
-          }
-        })
-    this.socket.emit('joinRoom', this.room)
-
-    let YJS_HOST = 'ws://localhost:3001'
-    if (process.env.NODE_ENV === 'production')
-      YJS_HOST = 'wss://ryanyen2.me/yjs/'
-    this.provider = new WebsocketProvider(YJS_HOST, this.room, ydoc)
-    this.provider.on('status', event => {
-      this.status = event.status
-    })
-
-    window.ydoc = ydoc
-    this.indexdb = new IndexeddbPersistence(this.room, ydoc)
-
-    this.editor = new Editor({
-      onUpdate:() => {
-        const { textContent } = this.editor.state.doc
-        todayCollection.add({
-          timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
-          anchor: this.editor.state.selection.anchor,
-          content: textContent,
-          room: this.room,
-          username: this.currentUser.name,
-          userEmail: this.currentUser.email
-        })
-      },
-      extensions: [
-        StarterKit.configure({
-          history: false,
-        }),
-        Highlight,
-        TaskList,
-        TaskItem,
-        SmilieReplacer,
-        TextHighlighter,
-        Collaboration.configure({
-          document: ydoc,
-        }),
-        CollaborationCursor.configure({
-          provider: this.provider,
-          user: this.currentUser,
-          onUpdate: users => {
-            this.users = users
-          },
-        }),
-        CharacterCount.configure({
-          limit: 10000,
-        }),
-      ],
-    })
     this.currentUser = this.getCurrentUser
-    this.currentUser.color = this.getRandomColor()
-    this.editor.chain().focus().user(this.currentUser).run()
-    localStorage.setItem('currentUser', JSON.stringify(this.currentUser))
+    if(!this.currentUser) this.$router.push({name: 'login'})
+    else {
+      this.currentUser.color = this.getRandomColor()
 
-    // webspeech
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    this.recognition = new SpeechRecognition();
-    this.recognition.interimResults = true;
-    this.recognition.lang = "en-US";
+      const ydoc = new Y.Doc()
+      let HOST = (process.env.NODE_ENV === 'production')? 'https://ryanyen2.me/' : 'http://localhost:3000/'
+      this.socket = io(HOST + this.room)
+          .on('WEB_RECORDING', e => {
+            console.log("WEB RECORDING STATUS: ", e)
+            if (e && this.curRole === 'participant' && this.isTesting === false) {
+              if(this.usingNativeRecognition) this.startSpeechRecognition();
+              else this.initRecording();
+            } else if (!e && this.curRole === 'participant' && this.isTesting === true) {
+              if (this.usingNativeRecognition) this.endSpeechRecognition();
+              else this.endRecording();
+            }
+          })
+          .on('WEB_SPEAKER', status => {
+            console.log("Speaker STATUS: ", status)
+            if (status.status && this.curRole === 'participant' && this.speechLoading === false) {
+              this.speakBack(status.start)
+            } else if (!status.status && this.curRole === 'participant') {
+              this.synth.cancel()
+            }
+          })
+          .on('SPEECH_DATA', data => {
+            if (data && this.curRole === 'participant' && this.isTesting) {
+              console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
+              this.runTimeContent = data.results[0].alternatives[0].transcript
 
-    this.listenForSpeechEvents()
+              const dataFinal = data.results[0].isFinal;
+              const {textContent} = this.editor.state.doc
+
+              if (dataFinal && this.runTimeContent) {
+                this.newContent = this.runTimeContent;
+                this.runTimeContent = "";
+              }
+              todayCollection.add({
+                type: 'SPEECH',
+                lastContent: textContent,
+                newContent: this.newContent,
+                room: this.room,
+                username: this.currentUser.name,
+                userRole: this.curRole,
+                confidence: data.results[0].alternatives[0].confidence,
+                timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
+              })
+            }
+          })
+
+      this.socket.emit('joinRoom', this.room)
+
+
+      let YJS_HOST = (process.env.NODE_ENV === 'production')? 'wss://ryanyen2.me/yjs/' : 'ws://localhost:3001';
+      this.provider = new WebsocketProvider(YJS_HOST, this.room, ydoc)
+      this.provider.on('status', event => this.status = event.status)
+      window.ydoc = ydoc
+      this.indexdb = new IndexeddbPersistence(this.room, ydoc)
+
+      this.editor = new Editor({
+        onUpdate: () => {
+          const {textContent} = this.editor.state.doc
+          if (this.curRole === 'experimenter' && textContent && textContent.length !== this.lastContent.length) {
+            todayCollection.add({
+              type: "EDIT",
+              lastContent: this.lastContent,
+              newContent: textContent,
+              room: this.room,
+              username: this.currentUser.name,
+              userRole: this.curRole,
+              anchor: this.editor.state.selection.anchor,
+              timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
+            })
+          }
+          this.lastContent = textContent
+        },
+        extensions: [
+          StarterKit.configure({
+            history: false,
+          }),
+          Highlight,
+          TaskList,
+          TaskItem,
+          SmilieReplacer,
+          Collaboration.configure({
+            document: ydoc,
+          }),
+          CollaborationCursor.configure({
+            provider: this.provider,
+            user: this.currentUser,
+            onUpdate: users => {
+              this.users = users
+            },
+          }),
+          CharacterCount.configure({
+            limit: 10000,
+          }),
+        ],
+      })
+      this.editor.chain().focus().user(this.currentUser).run()
+      localStorage.setItem('currentUser', JSON.stringify(this.currentUser))
+    }
   },
   beforeDestroy() {
     this.editor.destroy()
