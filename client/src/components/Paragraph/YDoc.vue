@@ -56,7 +56,10 @@
         ></v-textarea>
       </v-col>
     </v-row>
-    <div class="editor" v-if="editor" @keyup.esc="speechLoading? emitTalkEvent(false) : emitTalkEvent(true)">
+    <div class="editor" v-if="editor"
+         @keyup.120="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
+         @keyup.esc="speechLoading? emitTalkEvent(false) : emitTalkEvent(true)"
+    >
       <menu-bar v-show="curRole==='experimenter'" class="editor__header" :editor="editor"/>
       <editor-content class="editor__content" :editor="editor"/>
       <div v-show="curRole==='experimenter'" class="editor__footer">
