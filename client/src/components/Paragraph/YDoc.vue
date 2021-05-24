@@ -86,7 +86,7 @@
 import {Editor, EditorContent} from '@tiptap/vue-2'
 import StarterKit from '@tiptap/starter-kit'
 import Collaboration from '@tiptap/extension-collaboration'
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
+// import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Highlight from '@tiptap/extension-highlight'
@@ -403,13 +403,13 @@ export default {
           Collaboration.configure({
             document: ydoc,
           }),
-          CollaborationCursor.configure({
-            provider: this.provider,
-            user: this.currentUser,
-            onUpdate: users => {
-              this.users = users
-            },
-          }),
+          // CollaborationCursor.configure({
+          //   provider: this.provider,
+          //   user: this.currentUser,
+          //   onUpdate: users => {
+          //     this.users = users
+          //   },
+          // }),
           CharacterCount.configure({
             limit: 10000,
           }),
