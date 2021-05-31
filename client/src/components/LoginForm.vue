@@ -48,6 +48,7 @@
               <v-btn @click="reset" class="ml-2" large>
                 reset
               </v-btn>
+              <v-btn @click="loginByGoogle">Using Google</v-btn>
             </v-col>
           </v-row>
         </v-row>
@@ -58,6 +59,8 @@
 
 <script>
 import {mapActions} from 'vuex'
+import * as firebase from "@/firebase";
+import {provider} from "@/firebase";
 
 export default {
   name: "LoginForm",
@@ -96,17 +99,24 @@ export default {
         createdAt: this.dayjs()
       })
     },
+    async loginByGoogle(){
+      await firebase.auth.signInWithPopup(provider).then(result => {
+        let token = result.credential.accessToken;
+        let user = result.user;
+        console.log(token) // Token
+        console.log(user) // User that was authenticated
+      }).catch(console.error)
+    },
     reset() {
       this.$refs.form.reset()
     },
   },
   mounted() {
-    console.log(process.env.NODE_ENV, process.env)
     if (process.env.NODE_ENV !== 'production') {
-      this.email = process.env.APP_EMAIL
-      this.password = process.env.APP_PSWD
-      this.name = process.env.DEV_NAME
-      this.role = process.env.DEV_ROLE
+      this.email = process.env.VUE_APP_EMAIL
+      this.password = process.env.VUE_APP_PSWD
+      this.name = process.env.VUE_APP_NAME
+      this.role = process.env.VUE_APP_ROLE
     }
   }
 }
