@@ -73,9 +73,16 @@
 </template>
 
 <script>
-import { db } from "@/firebase";
+import { db } from "@/services/firebase";
 import AllLogs from "@/components/DataCollection/AllLogs";
 import TextDiff from "@/components/DataCollection/TextDiff";
+import axios from 'axios'
+import * as firebase from "@/services/firebase";
+
+const client = axios.create({
+  baseURL: 'http://localhost:3000',
+  json: true
+})
 
 export default {
   name: "AdminPanel",
@@ -117,14 +124,30 @@ export default {
     }
   },
   async mounted() {
-    let textEditorLogs = await db.collection(`${this.date}`).get();
-    const logs = [];
-    textEditorLogs.forEach((doc) => {
-      let appData = doc.data();
-      appData.id = doc.id;
-      logs.push({ ...appData });
-    });
-    this.logs = logs;
+    await firebase.auth.currentUser.getIdToken(true)
+        .then((idToken) => {
+          client({
+            method: 'get',
+            url: '/admin',
+            headers: {
+              'authorization': `Bearer ${idToken}`
+            }
+          }).then(async (res) => {
+            console.log("SUCCESS", res)
+            let textEditorLogs = await db.collection(`${this.date}`).get();
+            const logs = [];
+            textEditorLogs.forEach((doc) => {
+              let appData = doc.data();
+              appData.id = doc.id;
+              logs.push({ ...appData });
+            });
+            this.logs = logs;
+          }).catch((error) => {
+            console.log("EROOR", error)
+          })
+        }).catch(() => {
+          console.log("ERROR on getting token")
+    })
   }
 }
 </script>

@@ -1,38 +1,32 @@
-// setup socket server
-const Koa = require('koa');
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
 const path = require('path');
-
-const cookieParser = require('cookie-parser');
-const cors = require('cors')
-const firebaseAdmin = require('firebase-admin')
-
-const serviceAccount = require("./config/wizardofoz-b2c61-firebase-adminsdk-ltw9w-910969f592.json")
-firebaseAdmin.initializeApp({
-    credential: firebaseAdmin.credential.cert(serviceAccount)
-})
-
-const app = new Koa();
-
-const server = require('http').createServer(app.callback());
 require('dotenv').config()
+
+
+const app = express();
+const server = require('http').createServer();
 const io = require('socket.io')(server, {
     cors: {
         origin: '*',
     }
 });
 
-//serve static file
-const serve = require("koa-static");
-const staticDirPath = path.join(__dirname, "../client/dist");
-app.use(serve(staticDirPath));
 app.use(cors());
-app.use(cookieParser());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "../client/dist")))
+app.use('*', express.static(path.join(__dirname, "../client/dist")));
 
-const Router = require('@koa/router');
-const router = new Router();
+const routes = require('./routes/index')
+app.use('/', routes)
 
-router.get('/', (req, res) => {
-    res.status(200).json({message: 'connected to api'});
+
+const HOST = process.env.HOST || "localhost";
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`listening on ${HOST}:${PORT}`);
 });
 
 //google cloud speech
@@ -57,12 +51,6 @@ const request = {
     },
     interimResults: true, // If you want interim results, set this to true
 };
-
-const HOST = process.env.HOST || "localhost";
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`listening on ${HOST}:${PORT}`);
-});
 
 const namespaces = io.of(/^\/[a-zA-Z0-9_\/-]+$/)
 namespaces.on('connection', socket => {

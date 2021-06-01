@@ -8,7 +8,7 @@ import VueResource from 'vue-resource'
 
 import dayjs from 'dayjs'
 Vue.prototype.dayjs = dayjs;
-import { auth } from './firebase'
+import { auth } from './services/firebase'
 
 
 Vue.use(Vuex)

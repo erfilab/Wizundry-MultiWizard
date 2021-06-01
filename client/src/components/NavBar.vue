@@ -51,7 +51,7 @@
           </v-list-item>
 
           <v-list-item>
-            <v-list-item-title @click="$router.push({name: 'panel'})">Data Collection</v-list-item-title>
+            <v-list-item-title @click="$router.push({name: 'admin'})">Data Collection</v-list-item-title>
           </v-list-item>
         </v-list-item-group>
       </v-list>

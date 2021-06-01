@@ -1,4 +1,4 @@
-import * as firebase from "../../firebase"
+import * as firebase from "../../services/firebase"
 import router from '../../routes'
 
 export default {
@@ -24,7 +24,7 @@ export default {
             if (router.currentRoute.path === '/' && userInfo.role !== 'admin') {
                 await router.push('/text')
             }
-            else await router.push({name: 'panel'})
+            else await router.push({name: 'admin'})
         }
     }
 };

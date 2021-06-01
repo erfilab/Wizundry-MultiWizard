@@ -5,7 +5,7 @@ import ChatBody from "@/components/ChatBody"
 import TextArea from "@/components/Paragraph/YDoc"
 import AdminPanel from "@/components/DataCollection/AdminPanel";
 
-import {auth} from './firebase'
+import {auth} from './services/firebase'
 
 Vue.use(VueRouter);
 
@@ -17,9 +17,9 @@ const routes = [
     {path: "/chat", component: ChatBody, name: "chat", meta: {requiresAuth: true}},
     {path: "/text", component: TextArea, name: "text", meta: {requiresAuth: true}},
     {
-        path: "/panel",
+        path: "/admin",
         component: AdminPanel,
-        name: "panel",
+        name: "admin",
         meta: {requiresAuth: true}
     }
 ];

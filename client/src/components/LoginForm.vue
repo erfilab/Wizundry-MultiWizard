@@ -49,6 +49,7 @@
                 reset
               </v-btn>
               <v-btn @click="loginByGoogle">Using Google</v-btn>
+              <v-btn @click="createUserAccount">Create Account</v-btn>
             </v-col>
           </v-row>
         </v-row>
@@ -59,8 +60,8 @@
 
 <script>
 import {mapActions} from 'vuex'
-import * as firebase from "@/firebase";
-import {provider} from "@/firebase";
+import * as firebase from "@/services/firebase";
+import {provider} from "@/services/firebase";
 import axios from 'axios'
 
 const client = axios.create({
@@ -110,6 +111,15 @@ export default {
         console.log("USER: ", user)
       }).catch(console.error)
     },
+    createUserAccount() {
+      axios.post('/user/signup', {
+        email: this.email,
+        password: this.password,
+        name: this.name,
+        role: this.role,
+        createdAt: this.dayjs()
+      }).then(res => console.log("SGUP", res))
+    },
     reset() {
       this.$refs.form.reset()
     },
@@ -123,13 +133,14 @@ export default {
     }
 
     if (firebase.auth.currentUser) {
+      console.log("FBAUTH", firebase.auth.currentUser);
       firebase.auth.currentUser.getIdToken(true)
           .then((idToken) => {
             client({
               method: 'get',
-              url: '/',
+              url: '/user/login',
               headers: {
-                'AuthToken': idToken
+                'authorization': `Bearer ${idToken}`
               }
             }).then((res) => {
               this.response = res.data.message

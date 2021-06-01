@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon server.js --ignore './db",
+    "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -12,20 +12,19 @@
   "dependencies": {
     "@babel/cli": "^7.13.16",
     "@google-cloud/speech": "^4.5.0",
-    "@koa/router": "^10.0.0",
-    "cookie-parser": "^1.4.5",
+    "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^9.0.2",
+    "express": "^4.17.1",
     "firebase-admin": "^9.9.0",
-    "koa": "^2.13.1",
-    "koa-router": "^10.0.0",
-    "koa-static": "^5.0.0",
     "lib0": "^0.2.41",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
+    "mysql2": "^2.2.5",
     "process": "^0.11.10",
     "prosemirror-model": "^1.14.1",
     "prosemirror-transform": "^1.3.2",
+    "sequelize": "^6.6.2",
     "socket.io": "^4.0.1",
     "y-protocols": "^1.0.4",
     "yjs": "^13.5.5"

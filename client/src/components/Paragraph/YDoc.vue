@@ -122,7 +122,7 @@ const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
   return result.buffer;
 };
 
-import {todayCollection} from '@/firebase.js'
+import {todayCollection} from '@/services/firebase'
 import {mapGetters} from 'vuex'
 const getRandomElement = list => list[Math.floor(Math.random() * list.length)]
 

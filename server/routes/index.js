@@ -1,8 +1,12 @@
-const Router = require('@koa/router');
-const router = new Router();
+const routes = require('express').Router();
+const UserRoute = require('./UserRoute');
+const AdminRoute = require('./AdminRoute');
 
-router.get('/', (req, res) => {
-    res.status(200).json({message: 'connected to api'});
-});
+routes.use('/user', UserRoute);
+routes.use('/admin', AdminRoute);
 
-module.exports = router;
+routes.get('/', (req, res) => {
+    res.status(200).json({message: 'Connected to API'})
+})
+
+module.exports = routes;
