@@ -61,6 +61,12 @@
 import {mapActions} from 'vuex'
 import * as firebase from "@/firebase";
 import {provider} from "@/firebase";
+import axios from 'axios'
+
+const client = axios.create({
+  baseURL: 'http://localhost:3000',
+  json: true
+})
 
 export default {
   name: "LoginForm",
@@ -100,24 +106,40 @@ export default {
       })
     },
     async loginByGoogle(){
-      await firebase.auth.signInWithPopup(provider).then(result => {
-        let token = result.credential.accessToken;
-        let user = result.user;
-        console.log(token) // Token
-        console.log(user) // User that was authenticated
+      await firebase.auth.signInWithPopup(provider).then( (user) => {
+        console.log("USER: ", user)
       }).catch(console.error)
     },
     reset() {
       this.$refs.form.reset()
     },
   },
-  mounted() {
+  async mounted() {
     if (process.env.NODE_ENV !== 'production') {
       this.email = process.env.VUE_APP_EMAIL
       this.password = process.env.VUE_APP_PSWD
       this.name = process.env.VUE_APP_NAME
       this.role = process.env.VUE_APP_ROLE
     }
+
+    if (firebase.auth.currentUser) {
+      firebase.auth.currentUser.getIdToken(true)
+          .then((idToken) => {
+            client({
+              method: 'get',
+              url: '/',
+              headers: {
+                'AuthToken': idToken
+              }
+            }).then((res) => {
+              this.response = res.data.message
+            }).catch((error) => {
+              this.response = error
+            })
+          }).catch(() => {
+        this.response = "Error getting auth token"
+      })}
+    // await firebase.auth.currentUser.getIdToken(true).then(res => console.log('token, ', res))
   }
 }
 </script>

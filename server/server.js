@@ -8,7 +8,7 @@ const firebaseAdmin = require('firebase-admin')
 
 const serviceAccount = require("./config/wizardofoz-b2c61-firebase-adminsdk-ltw9w-910969f592.json")
 firebaseAdmin.initializeApp({
-    credential: serviceAccount |> firebaseAdmin.credential.cert
+    credential: firebaseAdmin.credential.cert(serviceAccount)
 })
 
 const app = new Koa();
@@ -25,21 +25,15 @@ const io = require('socket.io')(server, {
 const serve = require("koa-static");
 const staticDirPath = path.join(__dirname, "../client/dist");
 app.use(serve(staticDirPath));
-app.use(cors())
+app.use(cors());
 app.use(cookieParser());
 
-function checkAuth(req, res, next) {
-    if (req.headers.authtoken) {
-        firebaseAdmin.auth().verifyIdToken(req.headers.authtoken)
-            .then(() => {
-                next()
-            }).catch(() => {
-            res.status(403).send('Unauthorized')
-        });
-    } else {
-        res.status(403).send('Unauthorized')
-    }
-}
+const Router = require('@koa/router');
+const router = new Router();
+
+router.get('/', (req, res) => {
+    res.status(200).json({message: 'connected to api'});
+});
 
 //google cloud speech
 const speech = require('@google-cloud/speech');
@@ -141,12 +135,3 @@ function stopRecognitionStream() {
     if (recognizeStream) recognizeStream.end();
     recognizeStream = null;
 }
-
-app.use('/', checkAuth)
-app.get('/', (req, res) => {
-    res.json({
-        message: 'Hello World!'
-    })
-})
-
-module.exports = app;

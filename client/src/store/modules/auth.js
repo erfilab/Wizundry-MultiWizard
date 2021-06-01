@@ -16,7 +16,9 @@ export default {
     },
     actions: {
         async loginUser({commit}, userInfo) {
-            await firebase.auth.signInWithEmailAndPassword(userInfo.email, userInfo.password)
+            await firebase.auth.signInWithEmailAndPassword(userInfo.email, userInfo.password).then(() => {
+
+            })
             commit('setCurrentUser', userInfo)
 
             if (router.currentRoute.path === '/' && userInfo.role !== 'admin') {

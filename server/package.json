@@ -12,6 +12,7 @@
   "dependencies": {
     "@babel/cli": "^7.13.16",
     "@google-cloud/speech": "^4.5.0",
+    "@koa/router": "^10.0.0",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "dotenv": "^9.0.2",
