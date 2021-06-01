@@ -20,7 +20,7 @@ const checkIfAuthenticated = (req, res, next) => {
                 .auth()
                 .verifyIdToken(authToken);
             req.authId = userInfo.uid;
-            return next();
+            return next(null, userInfo);
         } catch (e) {
             return res
                 .status(401)
@@ -37,7 +37,8 @@ const checkIfAdmin = (req, res, next) => {
                 .auth()
                 .verifyIdToken(authToken);
 
-            if (userInfo.admin === true) {
+            console.log("USERINFO", userInfo)
+            if (userInfo.role === 'admin') {
                 req.authId = userInfo.uid;
                 return next();
             }

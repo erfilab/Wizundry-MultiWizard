@@ -132,23 +132,23 @@ export default {
       this.role = process.env.VUE_APP_ROLE
     }
 
+    console.log("FBAC", firebase.auth.currentUser)
     if (firebase.auth.currentUser) {
-      console.log("FBAUTH", firebase.auth.currentUser);
       firebase.auth.currentUser.getIdToken(true)
           .then((idToken) => {
             client({
               method: 'get',
-              url: '/user/login',
+              url: '/user/loginTK',
               headers: {
                 'authorization': `Bearer ${idToken}`
               }
-            }).then((res) => {
-              this.response = res.data.message
-            }).catch((error) => {
-              this.response = error
+            }).then(() => {
+              this.$router.push({name: 'text'})
+            }).catch((err) => {
+              console.error(err)
             })
           }).catch(() => {
-        this.response = "Error getting auth token"
+        console.log("Error getting auth token")
       })}
     // await firebase.auth.currentUser.getIdToken(true).then(res => console.log('token, ', res))
   }

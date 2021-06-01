@@ -415,7 +415,7 @@ export default {
           }),
         ],
       })
-      this.editor.chain().focus().user(this.currentUser).run()
+      // this.editor.chain().focus().user(this.currentUser).run()
       localStorage.setItem('currentUser', JSON.stringify(this.currentUser))
     }
   },

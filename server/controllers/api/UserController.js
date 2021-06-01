@@ -2,7 +2,25 @@ const User = require("../../models/user.js");
 const firebaseAdmin = require('../../config/firebase');
 
 exports.loginUser = async (req, res) => {
+    let {uid, email, name, role, createdAt} = req.body;
+    createdAt = new Date(createdAt).toISOString().slice(0, 19).replace('T', ' ');
+    User.addLoginLog({uid, email, name, role, createdAt}, async (err, data) => {
+        if (err)
+            res.status(500).send({
+                message:
+                    err.message || "Some error occurred while login the User"
+            });
+        else {
+            await firebaseAdmin.auth().setCustomUserClaims(uid, {role: role, name: name})
+            return res.status(200).json({data: data})
+        }
+    })
+}
 
+exports.upgradeUser = async (req, res) => {
+    const { uid } = req.body;
+    await firebaseAdmin.auth().setCustomUserClaims(uid, {role: 'admin'})
+    return res.status(200).send({uid});
 }
 
 // Create and Save a new Customer
@@ -14,8 +32,8 @@ exports.create = async (req, res) => {
         });
     }
 
-    const { email, password, name, role, createdAt } = req.body;
-    const user = await firebaseAdmin.auth().createUser({ email, password, name, role, createdAt });
+    const {email, password, name, role, createdAt} = req.body;
+    const user = await firebaseAdmin.auth().createUser({email, password, name, role, createdAt});
 
     res.send(user);
     // const customer = new User({
@@ -107,7 +125,7 @@ exports.delete = (req, res) => {
                     message: "Could not delete Customer with id " + req.params.customerId
                 });
             }
-        } else res.send({ message: `Customer was deleted successfully!` });
+        } else res.send({message: `Customer was deleted successfully!`});
     });
 };
 
@@ -119,6 +137,6 @@ exports.deleteAll = (req, res) => {
                 message:
                     err.message || "Some error occurred while removing all customers."
             });
-        else res.send({ message: `All Customers were deleted successfully!` });
+        else res.send({message: `All Customers were deleted successfully!`});
     });
 };

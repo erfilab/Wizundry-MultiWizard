@@ -1,13 +1,25 @@
 const sql = require("./db.js");
 
 // constructor
-const Customer = function(customer) {
+const User = function(customer) {
     this.email = customer.email;
     this.name = customer.name;
     this.active = customer.active;
 };
 
-Customer.create = (newCustomer, result) => {
+User.addLoginLog = ({uid, email, name, role, createdAt}, result) => {
+    sql.query("INSERT INTO login_log SET ?", {uid, email, name, role, createdAt}, (err, res) => {
+        if (err) {
+            console.log("error: ", err);
+            result(err, null);
+            return;
+        }
+
+        result(null, {email, name, role, createdAt});
+    });
+}
+
+User.create = ({...newUser}, result) => {
     sql.query("INSERT INTO customers SET ?", newCustomer, (err, res) => {
         if (err) {
             console.log("error: ", err);
@@ -20,10 +32,10 @@ Customer.create = (newCustomer, result) => {
     });
 };
 
-Customer.findById = (customerId, result) => {
-    sql.query(`SELECT * FROM customers WHERE id = ${customerId}`, (err, res) => {
+User.findByEmail = (userEmail, result) => {
+    sql.query(`SELECT * FROM customers WHERE email = ${userEmail}`, (err, res) => {
         if (err) {
-            console.log("error: ", err);
+            console.error(err)
             result(err, null);
             return;
         }
@@ -39,7 +51,7 @@ Customer.findById = (customerId, result) => {
     });
 };
 
-Customer.getAll = result => {
+User.getAll = result => {
     sql.query("SELECT * FROM customers", (err, res) => {
         if (err) {
             console.log("error: ", err);
@@ -52,7 +64,7 @@ Customer.getAll = result => {
     });
 };
 
-Customer.updateById = (id, customer, result) => {
+User.updateById = (id, customer, result) => {
     sql.query(
         "UPDATE customers SET email = ?, name = ?, active = ? WHERE id = ?",
         [customer.email, customer.name, customer.active, id],
@@ -75,7 +87,7 @@ Customer.updateById = (id, customer, result) => {
     );
 };
 
-Customer.remove = (id, result) => {
+User.remove = (id, result) => {
     sql.query("DELETE FROM customers WHERE id = ?", id, (err, res) => {
         if (err) {
             console.log("error: ", err);
@@ -94,7 +106,7 @@ Customer.remove = (id, result) => {
     });
 };
 
-Customer.removeAll = result => {
+User.removeAll = result => {
     sql.query("DELETE FROM customers", (err, res) => {
         if (err) {
             console.log("error: ", err);
@@ -107,4 +119,4 @@ Customer.removeAll = result => {
     });
 };
 
-module.exports = Customer;
+module.exports = User;
