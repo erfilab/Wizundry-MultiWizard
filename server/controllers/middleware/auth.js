@@ -20,7 +20,7 @@ const checkIfAuthenticated = (req, res, next) => {
                 .auth()
                 .verifyIdToken(authToken);
             req.authId = userInfo.uid;
-            return next(null, userInfo);
+            return next();
         } catch (e) {
             return res
                 .status(401)
@@ -42,7 +42,6 @@ const checkIfAdmin = (req, res, next) => {
                 req.authId = userInfo.uid;
                 return next();
             }
-
             throw new Error('unauthorized')
         } catch (e) {
             return res

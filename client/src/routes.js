@@ -6,7 +6,7 @@ import TextArea from "@/components/Paragraph/YDoc"
 import AdminPanel from "@/components/DataCollection/AdminPanel";
 
 import axios from 'axios'
-import { auth } from './services/firebase'
+import {auth} from './services/firebase'
 import * as firebase from "@/services/firebase";
 
 Vue.use(VueRouter);
@@ -14,7 +14,12 @@ Vue.use(VueRouter);
 const routes = [
     {
         path: "/", name: "login",
-        component: () => import("@/components/LoginForm")
+        component: () => import("@/components/LoginForm"),
+        // beforeEnter: async (to, from, next) => await checkToken(to, from, next)
+    },
+    {
+        path: '/lobby', name: "lobby",
+        component: () => import('@/components/Lobby')
     },
     {path: "/chat", component: ChatBody, name: "chat", meta: {requiresAuth: true}},
     {path: "/text", component: TextArea, name: "text", meta: {requiresAuth: true}},
@@ -40,15 +45,18 @@ const client = axios.create({
     json: true
 })
 
+
 const checkAdmin = async (to, from, next) => {
     await firebase.auth.currentUser.getIdToken(true)
         .then((idToken) => {
             client({
                 method: 'get',
                 url: '/admin',
-                headers: { 'authorization': `Bearer ${idToken}` }
-            }).then(() => { next() }).catch(err => {
-                window.location.href = '/'
+                headers: {'authorization': `Bearer ${idToken}`}
+            }).then(() => {
+                next()
+            }).catch(err => {
+                window.location.href = '/lobby'
                 console.log(err)
             })
         }).catch(console.error)

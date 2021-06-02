@@ -29,11 +29,11 @@ service.interceptors.response.use(
 );
 
 
-// Add a request interceptor
-service.interceptors.request.use(function (config) {
-    const token = localStorage.getItem('jwt');
-    config.headers.Authorization = "Bearer " + token;
-    return config;
-});
+// // Add a request interceptor
+// service.interceptors.request.use(function (config) {
+//     const token = localStorage.getItem('jwt');
+//     config.headers.Authorization = "Bearer " + token;
+//     return config;
+// });
 
 export default service;

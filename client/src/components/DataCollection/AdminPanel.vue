@@ -1,6 +1,5 @@
 <template>
   <v-container>
-
       <v-toolbar flat>
         <v-app-bar-nav-icon></v-app-bar-nav-icon>
 
@@ -76,12 +75,14 @@
 import { db } from "@/services/firebase";
 import AllLogs from "@/components/DataCollection/AllLogs";
 import TextDiff from "@/components/DataCollection/TextDiff";
+import CreateUser from '@/components/DataCollection/CreateUser';
 
 export default {
   name: "AdminPanel",
   components: {
     AllLogs,
     TextDiff,
+    CreateUser,
   },
   watch: {
     async date() {
@@ -105,6 +106,10 @@ export default {
       tab: null,
       items: [
         {
+          title: 'Create User',
+          content: 'CreateUser'
+        },
+        {
           title: 'All Logs',
           content: 'AllLogs'
         },
@@ -113,7 +118,6 @@ export default {
           content: 'TextDiff'
         }
       ],
-      text: 'Lorem ipsum',
     }
   },
   async mounted() {

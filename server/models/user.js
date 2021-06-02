@@ -1,10 +1,12 @@
 const sql = require("./db.js");
 
 // constructor
-const User = function(customer) {
-    this.email = customer.email;
-    this.name = customer.name;
-    this.active = customer.active;
+const User = function(user) {
+    this.uid = user.uid;
+    this.email = user.email;
+    this.name = user.name;
+    this.role = user.role;
+    this.createdAt = user.createdAt;
 };
 
 User.addLoginLog = ({uid, email, name, role, createdAt}, result) => {
@@ -19,18 +21,17 @@ User.addLoginLog = ({uid, email, name, role, createdAt}, result) => {
     });
 }
 
-User.create = ({...newUser}, result) => {
-    sql.query("INSERT INTO customers SET ?", newCustomer, (err, res) => {
+User.create = ({uid, email, password, name, role, createdAt}, result) => {
+    sql.query("INSERT INTO user_info SET ?", {uid, email, password, name, role, createdAt}, (err, res) => {
         if (err) {
             console.log("error: ", err);
             result(err, null);
             return;
         }
 
-        console.log("created customer: ", { id: res.insertId, ...newCustomer });
-        result(null, { id: res.insertId, ...newCustomer });
+        result(null, {uid, email, name, role, createdAt});
     });
-};
+}
 
 User.findByEmail = (userEmail, result) => {
     sql.query(`SELECT * FROM customers WHERE email = ${userEmail}`, (err, res) => {
