@@ -6,12 +6,7 @@ require('dotenv').config()
 
 
 const app = express();
-const server = require('http').createServer();
-const io = require('socket.io')(server, {
-    cors: {
-        origin: '*',
-    }
-});
+// const server = require('http').createServer(app);
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -25,9 +20,11 @@ app.use('/', routes)
 
 const HOST = process.env.HOST || "localhost";
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`listening on ${HOST}:${PORT}`);
 });
+const { Server } = require('socket.io');
+const io = new Server(server, { cors: { origin: '*' }});
 
 //google cloud speech
 const speech = require('@google-cloud/speech');

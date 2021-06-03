@@ -1,7 +1,6 @@
 import firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/firestore'
-import dayjs from "dayjs";
 
 // firebase init - add your own config here
 const firebaseConfig = {
@@ -18,12 +17,8 @@ firebase.initializeApp(firebaseConfig)
 const auth = firebase.auth()
 const db = firebase.firestore()
 
-const todayCollection = db.collection(dayjs().format("YYYY-MM-DD"))
-const provider = new firebase.auth.GoogleAuthProvider()
 
 export {
-    provider,
     db,
     auth,
-    todayCollection,
 }

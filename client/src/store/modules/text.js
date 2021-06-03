@@ -1,21 +1,23 @@
+import text from '../../api/text';
+
 export default {
     namespaced: true,
     state: {
-        currentText: null,
-        textHistory: []
+        textLists: [],
     },
     getters: {
-        getCurrentText: state => state.currentText
+        textLists: state => state.textLists,
     },
     mutations: {
-        addTextToHistory(state, newText) {
-            state.textHistory = [...state.textHistory, newText]
-        },
-        setCurrentText(state, text) {
-            state.setCurrentText = text
+        appendTextData(state, text) {
+            state.textLists.push(text);
         }
     },
     actions: {
-
+        async storeTextData({commit}, params) {
+            await text.storeTextData(params).then(res => {
+                commit('appendTextData', res)
+            })
+        },
     }
 };

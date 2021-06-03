@@ -42,7 +42,6 @@
 
 <script>
 import {mapActions} from 'vuex'
-import * as firebase from '@/services/firebase';
 
 export default {
   name: "LoginForm",
@@ -81,16 +80,6 @@ export default {
       this.email = process.env.VUE_APP_EMAIL
       this.password = process.env.VUE_APP_PSWD
     }
-
-    if(firebase.auth.currentUser) {
-      firebase.auth.currentUser.getIdToken(true)
-          .then(async (idToken) => {
-            await this.loginUserWithToken(idToken).then(() => this.$router.push({name: 'lobby'}));
-          }).catch(() => {
-        console.log("Error getting auth token")
-      })
-    }
-
   }
 }
 </script>

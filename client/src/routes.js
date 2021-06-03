@@ -6,8 +6,10 @@ import TextArea from "@/components/Paragraph/YDoc"
 import AdminPanel from "@/components/DataCollection/AdminPanel";
 
 import axios from 'axios'
-import {auth} from './services/firebase'
+import { auth } from './services/firebase'
 import * as firebase from "@/services/firebase";
+
+import store from './store/index';
 
 Vue.use(VueRouter);
 
@@ -57,7 +59,7 @@ const checkAdmin = async (to, from, next) => {
                 next()
             }).catch(err => {
                 window.location.href = '/lobby'
-                console.log(err)
+                console.error(err)
             })
         }).catch(console.error)
 }
@@ -68,7 +70,13 @@ router.beforeEach((to, from, next) => {
     if (requiresAuth && !auth.currentUser) {
         next('/')
     } else {
-        next()
+        auth.currentUser.getIdToken(true)
+            .then(async (idToken) => {
+                await store.dispatch('user/loginUserWithToken', idToken).then(() => next());
+            }).catch((err) => {
+            next('/')
+            console.error(err)
+        })
     }
 })
 

@@ -5,29 +5,28 @@ export default {
     namespaced: true,
     state: {
         currentUser: null,
-        projectLists: [],
         userLists: [],
+        projectUserLists: [],
     },
     getters: {
         getCurrentUser: state => state.currentUser,
-        projectLists: state => state.projectLists,
         userLists: state => state.userLists,
+        projectUserLists: state => state.projectUserLists,
     },
     mutations: {
         setCurrentUser(state, userInfo) {
             state.currentUser = userInfo;
         },
-        appendProjectList(state, projectInfo) {
-            state.projectLists.push(projectInfo);
+        setUserList(state, users) {
+            state.userLists = users;
         },
-        appendUserList(state, userInfo) {
-            state.userLists.push(userInfo);
+        setProjectUserLists(state, pus) {
+            state.projectUserLists = pus;
         }
     },
     actions: {
         async loginUser({commit}, userInfo) {
             await user.loginByEmailPassword(userInfo).then(res => {
-                console.log("RES", res)
                 commit('setCurrentUser', res)
             })
 
@@ -35,13 +34,21 @@ export default {
             else await router.push({name: 'admin'})
         },
         async loginUserWithToken({commit}, token) {
-            await user.loginUserWithToken(token).then(res => commit('setCurrentUser', res)).catch(console.error);
-        },
-        async createUserAndProject({commit}, {userInfo, projectInfo}) {
-            await user.createUserAndProject({userInfo, projectInfo}).then(res => {
-                commit('appendProjectList', res.projectInfo)
-                commit('appendUserList', res.userInfo)
+            await user.loginUserWithToken(token).then(res => {
+                commit('setCurrentUser', res)
             }).catch(console.error);
+        },
+        async createUserAndProject(_, {userInfo, projectInfo}) {
+            await user.createUserAndProject({userInfo, projectInfo}).then(res => {
+                // commit('project/appendProjectList', res.projectInfo)
+                // commit('appendUserList', res.userInfo)
+                console.log(res)
+            }).catch(console.error);
+        },
+        async fetchAllProjectsAndUsers({commit}) {
+            await user.fetchAllProjectsAndUsers().then(res => {
+                commit('setProjectUserLists', res);
+            })
         }
     }
 };

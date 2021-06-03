@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-row v-if="curRole==='experimenter'">
+    <v-row v-if="curRole !== 'participant'">
       <v-col cols="3">
         <v-btn
             @click="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
@@ -48,7 +48,7 @@
         </transition>
       </v-col>
       <v-col :cols="speechLoading? 9:12">
-<!--        <v-text-field v-model="runTimeContent"/>-->
+        <!--        <v-text-field v-model="runTimeContent"/>-->
         <v-textarea
             counter
             label="Run Time Content"
@@ -60,12 +60,12 @@
          @keyup.120="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
          @keyup.esc="speechLoading? emitTalkEvent(false) : emitTalkEvent(true)"
     >
-      <menu-bar v-show="curRole==='experimenter'" class="editor__header" :editor="editor"/>
+      <menu-bar v-show="curRole!== 'participant'" class="editor__header" :editor="editor"/>
       <editor-content class="editor__content" :editor="editor"/>
-      <div v-show="curRole==='experimenter'" class="editor__footer">
+      <div v-show="curRole !== 'participant'" class="editor__footer">
         <div :class="`editor__status editor__status--${status}`">
           <template v-if="status === 'connected'">
-            {{ users.length }} user{{ users.length === 1 ? '' : 's' }} online in {{ room }}
+            {{ users.length }} user{{ users.length === 1 ? '' : 's' }} online in {{ projectInfo.projectName }}
           </template>
           <template v-else>
             offline
@@ -99,6 +99,7 @@ import MenuBar from './MenuBar.vue'
 import {SmilieReplacer} from "@/plugins/smileReplacer.ts";
 
 import io from 'socket.io-client'
+
 const BUFFER_SIZE = 2048
 const MEDIA_ACCESS_CONSTRAINTS = {audio: true, video: false};
 const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
@@ -122,8 +123,8 @@ const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
   return result.buffer;
 };
 
-import {todayCollection} from '@/services/firebase'
-import {mapGetters} from 'vuex'
+import {mapGetters, mapActions} from 'vuex'
+
 const getRandomElement = list => list[Math.floor(Math.random() * list.length)]
 
 export default {
@@ -140,7 +141,11 @@ export default {
       editor: null,
       users: [],
       status: 'connecting',
-      room: 'project1',
+
+      projectInfo: {
+        projectName: '',
+        projectId: '',
+      },
 
       socket: null,
 
@@ -175,7 +180,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('auth', ['getCurrentUser']),
+    ...mapGetters('user', ['getCurrentUser']),
     curRole() {
       return this.currentUser.role
     }
@@ -192,6 +197,7 @@ export default {
     },
   },
   methods: {
+    ...mapActions('text', ['storeTextData']),
     getRandomColor() {
       return getRandomElement([
         '#958DF1',
@@ -315,109 +321,112 @@ export default {
     },
   },
   mounted() {
+    if (this.$route.params.projectInfo) {
+      const { id, project_name } = this.$route.params.projectInfo;
+      this.projectInfo = { projectName: project_name, projectId: id};
+    }
+
     this.currentUser = this.getCurrentUser
-    if(!this.currentUser) this.$router.push({name: 'login'})
-    else {
-      this.currentUser.color = this.getRandomColor()
+    this.currentUser.color = this.getRandomColor()
 
-      const ydoc = new Y.Doc()
-      let HOST = (process.env.NODE_ENV === 'production')? 'https://ryanyen2.me/' : 'http://localhost:3000/'
-      this.socket = io(HOST + this.room)
-          .on('WEB_RECORDING', e => {
-            console.log("WEB RECORDING STATUS: ", e)
-            if (e && this.curRole === 'participant' && this.isTesting === false) {
-              if(this.usingNativeRecognition) this.startSpeechRecognition();
-              else this.initRecording();
-            } else if (!e && this.curRole === 'participant' && this.isTesting === true) {
-              if (this.usingNativeRecognition) this.endSpeechRecognition();
-              else this.endRecording();
-            }
-          })
-          .on('WEB_SPEAKER', status => {
-            console.log("Speaker STATUS: ", status)
-            if (status.status && this.curRole === 'participant' && this.speechLoading === false) {
-              this.speakBack(status.start)
-            } else if (!status.status && this.curRole === 'participant') {
-              this.synth.cancel()
-            }
-          })
-          .on('SPEECH_DATA', data => {
-            if (data && this.curRole === 'participant' && this.isTesting) {
-              console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
-              this.runTimeContent = data.results[0].alternatives[0].transcript
+    const ydoc = new Y.Doc()
+    let HOST = (process.env.NODE_ENV === 'production') ? 'https://ryanyen2.me/' : 'http://localhost:3000/'
+    this.socket = io(HOST + this.projectInfo.projectName)
+        .on('WEB_RECORDING', e => {
+          console.log("WEB RECORDING STATUS: ", e)
+          if (e && this.curRole === 'participant' && this.isTesting === false) {
+            if (this.usingNativeRecognition) this.startSpeechRecognition();
+            else this.initRecording();
+          } else if (!e && this.curRole === 'participant' && this.isTesting === true) {
+            if (this.usingNativeRecognition) this.endSpeechRecognition();
+            else this.endRecording();
+          }
+        })
+        .on('WEB_SPEAKER', status => {
+          console.log("Speaker STATUS: ", status)
+          if (status.status && this.curRole === 'participant' && this.speechLoading === false) {
+            this.speakBack(status.start)
+          } else if (!status.status && this.curRole === 'participant') {
+            this.synth.cancel()
+          }
+        })
+        .on('SPEECH_DATA', async data => {
+          if (data && this.curRole === 'participant' && this.isTesting) {
+            console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
+            this.runTimeContent = data.results[0].alternatives[0].transcript
 
-              const dataFinal = data.results[0].isFinal;
-              const {textContent} = this.editor.state.doc
+            const dataFinal = data.results[0].isFinal;
+            const {textContent} = this.editor.state.doc
 
-              if (dataFinal && this.runTimeContent) {
-                this.newContent = this.runTimeContent;
-                this.runTimeContent = "";
-              }
-              todayCollection.add({
+            if (dataFinal && this.runTimeContent) {
+              this.newContent = this.runTimeContent;
+              this.runTimeContent = "";
+
+              await this.storeTextData({
                 type: 'SPEECH',
                 lastContent: textContent,
                 newContent: this.newContent,
-                room: this.room,
+                projectId: this.projectInfo.projectId,
+                projectName: this.projectInfo.projectName,
                 username: this.currentUser.name,
                 userRole: this.curRole,
-                confidence: data.results[0].alternatives[0].confidence,
-                timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
+                timestamp: this.dayjs().valueOf(),
               })
             }
-          })
-
-      this.socket.emit('joinRoom', this.room)
-
-
-      let YJS_HOST = (process.env.NODE_ENV === 'production')? 'wss://ryanyen2.me/yjs/' : 'ws://localhost:3001';
-      this.provider = new WebsocketProvider(YJS_HOST, this.room, ydoc)
-      this.provider.on('status', event => this.status = event.status)
-      window.ydoc = ydoc
-      this.indexdb = new IndexeddbPersistence(this.room, ydoc)
-
-      this.editor = new Editor({
-        onUpdate: () => {
-          const {textContent} = this.editor.state.doc
-          if (this.curRole === 'experimenter' && textContent && textContent.length !== this.lastContent.length) {
-            todayCollection.add({
-              type: "EDIT",
-              lastContent: this.lastContent,
-              newContent: textContent,
-              room: this.room,
-              username: this.currentUser.name,
-              userRole: this.curRole,
-              anchor: this.editor.state.selection.anchor,
-              timestamp: this.dayjs().format("YYYY-MM-DD HH:mm:ss"),
-            })
           }
-          this.lastContent = textContent
-        },
-        extensions: [
-          StarterKit.configure({
-            history: false,
-          }),
-          Highlight,
-          TaskList,
-          TaskItem,
-          SmilieReplacer,
-          Collaboration.configure({
-            document: ydoc,
-          }),
-          // CollaborationCursor.configure({
-          //   provider: this.provider,
-          //   user: this.currentUser,
-          //   onUpdate: users => {
-          //     this.users = users
-          //   },
-          // }),
-          CharacterCount.configure({
-            limit: 10000,
-          }),
-        ],
-      })
-      // this.editor.chain().focus().user(this.currentUser).run()
-      localStorage.setItem('currentUser', JSON.stringify(this.currentUser))
-    }
+        })
+
+    this.socket.emit('joinRoom', this.projectInfo.projectName)
+
+
+    let YJS_HOST = (process.env.NODE_ENV === 'production') ? 'wss://ryanyen2.me/yjs/' : 'ws://localhost:3001';
+    this.provider = new WebsocketProvider(YJS_HOST, this.projectInfo.projectName, ydoc)
+    this.provider.on('status', event => this.status = event.status)
+    window.ydoc = ydoc
+    this.indexdb = new IndexeddbPersistence(this.projectInfo.projectName, ydoc)
+
+    this.editor = new Editor({
+      onUpdate: () => {
+        const {textContent} = this.editor.state.doc
+        if (this.curRole !== 'participant' && textContent && textContent.length !== this.lastContent.length) {
+          this.storeTextData({
+            type: 'EDIT',
+            lastContent: this.lastContent,
+            newContent: textContent,
+            projectId: this.projectInfo.projectId,
+            projectName: this.projectInfo.projectName,
+            username: this.currentUser.name,
+            userRole: this.curRole,
+            timestamp: this.dayjs().valueOf(),
+          })
+        }
+        this.lastContent = textContent
+      },
+      extensions: [
+        StarterKit.configure({
+          history: false,
+        }),
+        Highlight,
+        TaskList,
+        TaskItem,
+        SmilieReplacer,
+        Collaboration.configure({
+          document: ydoc,
+        }),
+        // CollaborationCursor.configure({
+        //   provider: this.provider,
+        //   user: this.currentUser,
+        //   onUpdate: users => {
+        //     this.users = users
+        //   },
+        // }),
+        CharacterCount.configure({
+          limit: 10000,
+        }),
+      ],
+    })
+    // this.editor.chain().focus().user(this.currentUser).run()
+    localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
   },
   beforeDestroy() {
     this.editor.destroy()

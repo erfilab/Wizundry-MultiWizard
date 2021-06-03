@@ -3,9 +3,9 @@ const Project = require('../../models/project');
 const firebaseAdmin = require('../../config/firebase');
 
 exports.loginUser = async (req, res) => {
-    let {uid, email, name, role, createdAt} = req.body;
+    let {uid, email, username, role, createdAt} = req.body;
     createdAt = new Date(createdAt).toISOString().slice(0, 19).replace('T', ' ');
-    User.addLoginLog({uid, email, name, role, createdAt}, async (err, data) => {
+    User.addLoginLog({uid, email, username, role, createdAt}, async (err, data) => {
         if (err)
             res.status(500).send({
                 message:
@@ -53,22 +53,20 @@ exports.create = async (req, res) => {
 
     let {userInfo, projectInfo} = req.body;
 
-    let {email, password, name, role, createdAt} = userInfo;
+    let {email, password, username, role, createdAt} = userInfo;
     // createdAt = firebaseAdmin.firestore.Timestamp.fromDate(new Date())
     createdAt = new Date(createdAt).getTime();
-    console.log(createdAt)
-    const user = await firebaseAdmin.auth().createUser({email, password, name, role, createdAt});
+    const user = await firebaseAdmin.auth().createUser({email, password, username, role, createdAt});
     const { uid } = user;
-    User.create({uid, email, password, name, role, createdAt}, async (err, data) => {
+    User.create({uid, email, password, username, role, createdAt}, async (err, data) => {
         if (err)
             res.status(500).send({message: err.message || "Some error occurred while create the User"});
         else {
             // await firebaseAdmin.auth().setCustomUserClaims(uid, {role: role})
-            console.log("USER>>>", data);
-            let { name, creator, participant, createdAt } = projectInfo;
+            let { project_name, creator, participant, createdAt } = projectInfo;
             createdAt = new Date(createdAt).getTime();
             console.log(createdAt)
-            Project.create({ name, creator, participant, createdAt }, async (err, data) => {
+            Project.create({ project_name, creator, participant, createdAt }, async (err, data) => {
                 if (err) res.status(500).send({message: err.message || "Some error occurred while create the project"});
                 else console.log("Project>>>", data);
             })
@@ -78,33 +76,14 @@ exports.create = async (req, res) => {
     res.status(201).json({data: {user: user, project: projectInfo}});
 };
 
-
-// // Update a Customer identified by the customerId in the request
-// exports.update = (req, res) => {
-//     // Validate Request
-//     if (!req.body) {
-//         res.status(400).send({
-//             message: "Content can not be empty!"
-//         });
-//     }
-//
-//     console.log(req.body);
-//
-//     User.updateById(
-//         req.params.customerId,
-//         new User(req.body),
-//         (err, data) => {
-//             if (err) {
-//                 if (err.kind === "not_found") {
-//                     res.status(404).send({
-//                         message: `Not found Customer with id ${req.params.customerId}.`
-//                     });
-//                 } else {
-//                     res.status(500).send({
-//                         message: "Error updating Customer with id " + req.params.customerId
-//                     });
-//                 }
-//             } else res.send(data);
-//         }
-//     );
-// };
+exports.listAllUsers = (req, res) => {
+    User.getAll((err, data) => {
+        console.log(data)
+        if (err)
+            res.status(500).send({
+                message:
+                    err.message || "Some error occurred while retrieving users."
+            });
+        else res.status(200).json({data: data});
+    })
+}

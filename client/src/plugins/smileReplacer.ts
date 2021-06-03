@@ -2,7 +2,7 @@ import { Extension } from '@tiptap/core'
 import { InputRule } from 'prosemirror-inputrules'
 
 export const SmilieReplacer = Extension.create({
-    name: 'smilieReplacer',
+    username: 'smilieReplacer',
 
     addInputRules() {
         return [

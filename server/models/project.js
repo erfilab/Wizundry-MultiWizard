@@ -8,17 +8,28 @@ const Project = function(project) {
     this.createdAt = project.createdAt;
 };
 
-Project.create = ({ name, creator, participant, createdAt }, result) => {
-    sql.query("INSERT INTO project_info SET ?", { name, creator, participant, createdAt}, (err, res) => {
+Project.create = ({ project_name, creator, participant, createdAt }, result) => {
+    sql.query("INSERT INTO project_info SET ?", { project_name, creator, participant, createdAt}, (err, res) => {
         if (err) {
-            console.log("error: ", err);
+            console.error(err);
             result(err, null);
             return;
         }
 
-        result(null, { name, creator, participant, createdAt });
+        result(null, { project_name, creator, participant, createdAt });
     });
 }
+
+Project.getAll = result => {
+    sql.query("SELECT * FROM project_info", (err, res) => {
+        if (err) {
+            console.log("error: ", err);
+            result(null, err);
+            return;
+        }
+        result(null, res);
+    });
+};
 
 
 module.exports = Project;

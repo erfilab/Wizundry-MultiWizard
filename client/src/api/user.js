@@ -15,5 +15,8 @@ export default {
     async createUserAndProject({userInfo, projectInfo}) {
         console.log({userInfo, projectInfo})
         return await axios.post('/user/create', {userInfo, projectInfo}).then(res => res.data).catch(console.error);
+    },
+    async fetchAllProjectsAndUsers() {
+        return await axios.get('/user/index').then(res => res.data).catch(console.error);
     }
 }

@@ -43,15 +43,15 @@
             active-class="deep-purple--text text--accent-4"
         >
           <v-list-item>
-            <v-list-item-title @click="$router.push({name: 'chat'})">Chat</v-list-item-title>
+            <v-list-item-title @click="$router.push({username: 'chat'})">Chat</v-list-item-title>
           </v-list-item>
 
           <v-list-item>
-            <v-list-item-title @click="$router.push({name: 'text'})">Document</v-list-item-title>
+            <v-list-item-title @click="$router.push({username: 'text'})">Document</v-list-item-title>
           </v-list-item>
 
           <v-list-item>
-            <v-list-item-title @click="$router.push({name: 'admin'})">Data Collection</v-list-item-title>
+            <v-list-item-title @click="$router.push({username: 'admin'})">Data Collection</v-list-item-title>
           </v-list-item>
         </v-list-item-group>
       </v-list>

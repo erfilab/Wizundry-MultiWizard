@@ -25,7 +25,7 @@
           </v-col>
           <v-col cols="4">
             <v-text-field
-                v-model="userInfo.name"
+                v-model="userInfo.username"
                 label="User Name"
                 required
             ></v-text-field>
@@ -59,7 +59,7 @@ export default {
       userInfo: {
         email: "",
         password: "",
-        name: '',
+        username: '',
       },
       projectInfo: {},
 
@@ -80,9 +80,9 @@ export default {
         this.userInfo = {...this.userInfo, createdAt: this.dayjs(), role: 'participant'};
         console.log("UI", this.userInfo, "\nCU", this.getCurrentUser)
         this.projectInfo = {
-          name: `${this.userInfo.name}-${this.dayjs().format('YYYY-MM-DD')}`,
+          project_name: `${this.userInfo.username}-${this.dayjs().format('YYYY-MM-DD')}`,
           creator: this.getCurrentUser.email,
-          participant: this.userInfo.name,
+          participant: this.userInfo.username,
           createdAt: this.dayjs(),
         }
         await this.createUserAndProject({userInfo: this.userInfo, projectInfo: this.projectInfo}).catch(console.error);
