@@ -2,7 +2,7 @@ const sql = require("./db.js");
 
 // constructor
 const Project = function(project) {
-    this.name = project.name;
+    this.project_name = project.project_name;
     this.creator = project.creator;
     this.participant = project.participant;
     this.createdAt = project.createdAt;

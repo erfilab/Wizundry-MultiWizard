@@ -35,5 +35,16 @@ Text.getAll = result => {
     });
 };
 
+Text.createBehav = ({ projectId, type, status, timestamp }, result) => {
+    sql.query("INSERT INTO behavior_log SET ?", { projectId, type, status, timestamp }, (err, res) => {
+        if (err) {
+            console.error(err)
+            result(err, null);
+            return;
+        }
+
+        result(null, { projectId, type, status, timestamp });
+    });
+}
 
 module.exports = Text;

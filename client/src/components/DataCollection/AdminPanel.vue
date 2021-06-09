@@ -77,6 +77,7 @@ import AllLogs from "@/components/DataCollection/AllLogs";
 import TextDiff from "@/components/DataCollection/TextDiff";
 import CreateUser from '@/components/DataCollection/CreateUser';
 
+import {mapGetters} from 'vuex';
 export default {
   name: "AdminPanel",
   components: {
@@ -95,7 +96,16 @@ export default {
       });
       this.logs = logs;
       console.log(this.logs)
+    },
+    getCurrentUser(newVal) {
+      if (newVal) {
+        console.log("NV >> ", newVal)
+        this.initProject();
+      }
     }
+  },
+  computed: {
+    ...mapGetters('user', ['getCurrentUser']),
   },
   data() {
     return {
@@ -120,15 +130,19 @@ export default {
       ],
     }
   },
+  methods: {
+    async initProject() {
+      let textEditorLogs = await db.collection(`${this.date}`).get();
+      const logs = [];
+      textEditorLogs.forEach((doc) => {
+        let appData = doc.data();
+        appData.id = doc.id;
+        logs.push({ ...appData });
+      });
+      this.logs = logs;
+    }
+  },
   async mounted() {
-    let textEditorLogs = await db.collection(`${this.date}`).get();
-    const logs = [];
-    textEditorLogs.forEach((doc) => {
-      let appData = doc.data();
-      appData.id = doc.id;
-      logs.push({ ...appData });
-    });
-    this.logs = logs;
   }
 }
 </script>

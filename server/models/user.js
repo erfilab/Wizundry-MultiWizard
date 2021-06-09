@@ -3,8 +3,9 @@ const sql = require("./db.js");
 // constructor
 const User = function(user) {
     this.uid = user.uid;
+    this.password = user.password;
     this.email = user.email;
-    this.name = user.name;
+    this.username = user.username;
     this.role = user.role;
     this.createdAt = user.createdAt;
 };
@@ -44,5 +45,19 @@ User.getAll = result => {
     });
 };
 
+User.findById = (firebaseUid, result) => {
+    sql.query(`SELECT * FROM user_info WHERE uid = '${firebaseUid}'`, (err, res) => {
+        if (err) {
+            console.error(err);
+            result(err, null);
+            return;
+        }
+
+        if (res.length) {
+            console.log("Found User: ", res[0]);
+            result(null, res[0]);
+        }
+    });
+};
 
 module.exports = User;

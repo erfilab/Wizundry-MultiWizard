@@ -16,3 +16,13 @@ exports.listAllTexts = (req, res) => {
         else res.status(200).json({data: data});
     })
 }
+
+exports.createBehavior = (req, res) => {
+    if (!req.body) res.status(400).send({ message: "Content can not be empty!" });
+
+    let { projectId, type, status, timestamp } = req.body;
+    Text.createBehav({ projectId, type, status, timestamp }, async (err, data) => {
+        if (err) res.status(500).send({message: err.message || "Some error occurred while create the Behavior"});
+        else res.status(201).json({data: data});
+    })
+}

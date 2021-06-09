@@ -3,34 +3,25 @@ const Project = require('../../models/project');
 const firebaseAdmin = require('../../config/firebase');
 
 exports.loginUser = async (req, res) => {
-    let {uid, email, username, role, createdAt} = req.body;
-    createdAt = new Date(createdAt).toISOString().slice(0, 19).replace('T', ' ');
-    User.addLoginLog({uid, email, username, role, createdAt}, async (err, data) => {
-        if (err)
-            res.status(500).send({
-                message:
-                    err.message || "Some error occurred while login the User"
-            });
-        else {
-            await firebaseAdmin.auth().setCustomUserClaims(uid, {role: role, name: name})
-            return res.status(200).json({data: data})
-        }
+    User.findById(req.params.uid, async (err, data) => {
+        if (err) res.status(500).send({message: err.message || "Some error occurred while create the User"});
+        res.status(200).json({data: data})
     })
 }
 
 exports.upgradeUser = async (req, res) => {
-    const { uid } = req.body;
+    const {uid} = req.body;
     await firebaseAdmin.auth().setCustomUserClaims(uid, {role: 'admin'})
     return res.status(200).send({uid});
 }
 
 exports.loginWithToken = async (req, res) => {
-    if ( req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
+    if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
         req.authToken = req.headers.authorization.split(' ')[1];
     } else req.authToken = null;
 
     try {
-        const { authToken } = req;
+        const {authToken} = req;
         const userInfo = await firebaseAdmin
             .auth()
             .verifyIdToken(authToken);
@@ -39,7 +30,7 @@ exports.loginWithToken = async (req, res) => {
     } catch (e) {
         return res
             .status(401)
-            .send({ error: 'You are not authorized to make this request' });
+            .send({error: 'You are not authorized to make this request'});
     }
 }
 
@@ -56,17 +47,17 @@ exports.create = async (req, res) => {
     let {email, password, username, role, createdAt} = userInfo;
     // createdAt = firebaseAdmin.firestore.Timestamp.fromDate(new Date())
     createdAt = new Date(createdAt).getTime();
-    const user = await firebaseAdmin.auth().createUser({email, password, username, role, createdAt});
-    const { uid } = user;
+    const user = await firebaseAdmin.auth().createUser({email, password})
+    const {uid} = user;
     User.create({uid, email, password, username, role, createdAt}, async (err, data) => {
         if (err)
             res.status(500).send({message: err.message || "Some error occurred while create the User"});
         else {
-            // await firebaseAdmin.auth().setCustomUserClaims(uid, {role: role})
-            let { project_name, creator, participant, createdAt } = projectInfo;
+            await firebaseAdmin.auth().setCustomUserClaims(uid, {role: role, name: username})
+            let {project_name, creator, participant, createdAt} = projectInfo;
             createdAt = new Date(createdAt).getTime();
             console.log(createdAt)
-            Project.create({ project_name, creator, participant, createdAt }, async (err, data) => {
+            Project.create({project_name, creator, participant, createdAt}, async (err, data) => {
                 if (err) res.status(500).send({message: err.message || "Some error occurred while create the project"});
                 else console.log("Project>>>", data);
             })

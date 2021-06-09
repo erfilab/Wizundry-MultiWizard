@@ -69,7 +69,7 @@ export default {
         email: this.email,
         password: this.password,
         createdAt: this.dayjs()
-      })
+      }).then(() => this.$router.push({name: 'lobby'})).catch(console.error);
     },
     reset() {
       this.$refs.form.reset()

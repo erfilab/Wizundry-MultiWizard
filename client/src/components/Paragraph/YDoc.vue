@@ -1,6 +1,10 @@
 <template>
   <v-container>
     <v-row v-if="curRole !== 'participant'">
+      <v-col cols="12">
+        {{Object.keys(projectInfo).slice(2, 12)}} <br/>
+        {{Object.values(projectInfo).slice(2, 12)}}
+      </v-col>
       <v-col cols="3">
         <v-btn
             @click="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
@@ -176,7 +180,7 @@ export default {
       lastContent: "",
 
       //text preprocess
-      keywords: ["however", "but", "and", "because", "therefore", "whenever", "whereas", "thus", "yet"],
+      keywords: ["However", "But", "but", "and", "And", "because", "Because", "Therefore", "whenever", "whereas", "Thus", "yet"],
     }
   },
   computed: {
@@ -187,7 +191,7 @@ export default {
   },
   watch: {
     newContent(text) {
-      if (this.autoHighlight)
+      if (text && this.autoHighlight)
         this.keywords.map(kw => text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
 
       const {size} = this.editor.view.state.doc.content
@@ -195,6 +199,25 @@ export default {
       const insertTrans = this.editor.state.tr.insertText(` `, size - 1)
       this.editor.view.dispatch(insertTrans)
     },
+    getCurrentUser(newVal) {
+      if (newVal) {
+        console.log("Current USER >> ", newVal)
+        this.initProject();
+      }
+    },
+    runTimeContent(newVal, oldVal) {
+      const {size} = this.editor.view.state.doc.content
+      if(newVal && !oldVal) {
+        this.editor.commands.insertContent(`${newVal}`, size-1)
+      }
+      else if (newVal && oldVal) {
+        if(size > 1) this.editor.commands.keyboardShortcut('c-z')
+        this.editor.commands.insertContent(` ${newVal}`, size-1)
+      }
+      else if (!newVal && oldVal) {
+        this.editor.commands.keyboardShortcut('c-z')
+      }
+    }
   },
   methods: {
     ...mapActions('text', ['storeTextData']),
@@ -309,6 +332,12 @@ export default {
 
       this.audioSpeech.onend = () => {
         this.speechLoading = false
+        this.storeBehaviorLog({
+          projectId: this.projectInfo.projectId,
+          type: "SPEAKER",
+          status: false,
+          timestamp: this.dayjs().valueOf(),
+        })
       }
     },
     speakBack(from) {
@@ -319,116 +348,147 @@ export default {
 
       this.synth.speak(this.audioSpeech)
     },
+    initProject() {
+      if (this.$route.params.projectInfo) {
+        const { projectInfo } = this.$route.params;
+        this.projectInfo = {
+          projectName: projectInfo.project_name,
+          projectId: projectInfo.id,
+          ...projectInfo,
+        };
+        this.storeBehaviorLog({
+          projectId: this.projectInfo.projectId,
+          type: "PROJ",
+          status: true,
+          timestamp: this.dayjs().valueOf(),
+        })
+      }
+
+      this.currentUser = this.getCurrentUser
+      this.currentUser.color = this.getRandomColor()
+
+      const ydoc = new Y.Doc()
+      let HOST = (process.env.NODE_ENV === 'production') ? 'https://ryanyen2.me/' : 'http://localhost:3000/'
+      this.socket = io(HOST + this.projectInfo.projectName)
+          .on('WEB_RECORDING', async e => {
+            console.log("WEB RECORDING STATUS: ", e)
+            if (e && this.curRole === 'participant' && this.isTesting === false) {
+              if (this.usingNativeRecognition) this.startSpeechRecognition();
+              else this.initRecording();
+            } else if (!e && this.curRole === 'participant' && this.isTesting === true) {
+              if (this.usingNativeRecognition) this.endSpeechRecognition();
+              else this.endRecording();
+            }
+            await this.storeBehaviorLog({
+              projectId: this.projectInfo.projectId,
+              type: "RECORD",
+              status: e,
+              timestamp: this.dayjs().valueOf(),
+            })
+          })
+          .on('WEB_SPEAKER', async status => {
+            console.log("Speaker STATUS: ", status)
+            if (status.status && this.curRole === 'participant' && this.speechLoading === false) {
+              this.speakBack(status.start)
+            } else if (!status.status && this.curRole === 'participant') {
+              this.synth.cancel()
+            }
+            await this.storeBehaviorLog({
+              projectId: this.projectInfo.projectId,
+              type: "SPEAKER",
+              status: status.status,
+              timestamp: this.dayjs().valueOf(),
+            })
+          })
+          .on('SPEECH_DATA', async data => {
+            if (data && this.curRole === 'participant' && this.isTesting) {
+              // console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
+              this.runTimeContent = data.results[0].alternatives[0].transcript
+
+              const dataFinal = data.results[0].isFinal;
+              const {textContent} = this.editor.state.doc
+
+              if (dataFinal && this.runTimeContent) {
+                this.newContent = this.runTimeContent;
+                this.runTimeContent = "";
+
+                await this.storeTextData({
+                  type: 'SPEECH',
+                  lastContent: textContent,
+                  newContent: this.newContent,
+                  projectId: this.projectInfo.projectId,
+                  projectName: this.projectInfo.projectName,
+                  username: this.currentUser.name,
+                  userRole: this.curRole,
+                  timestamp: this.dayjs().valueOf(),
+                })
+              }
+            }
+          })
+
+      this.socket.emit('joinRoom', this.projectInfo.projectName)
+
+
+      let YJS_HOST = (process.env.NODE_ENV === 'production') ? 'wss://ryanyen2.me/yjs/' : 'ws://localhost:3001';
+      this.provider = new WebsocketProvider(YJS_HOST, this.projectInfo.projectName, ydoc)
+      this.provider.on('status', event => this.status = event.status)
+      window.ydoc = ydoc
+      this.indexdb = new IndexeddbPersistence(this.projectInfo.projectName, ydoc)
+
+      this.editor = new Editor({
+        onUpdate: () => {
+          const {textContent} = this.editor.state.doc
+          if (this.curRole !== 'participant' && textContent && textContent.length !== this.lastContent.length) {
+            this.storeTextData({
+              type: 'EDIT',
+              lastContent: this.lastContent,
+              newContent: textContent,
+              projectId: this.projectInfo.projectId,
+              projectName: this.projectInfo.projectName,
+              username: this.currentUser.name,
+              userRole: this.curRole,
+              timestamp: this.dayjs().valueOf(),
+            })
+          }
+          this.lastContent = textContent
+        },
+        extensions: [
+          StarterKit.configure({
+            history: false,
+          }),
+          Highlight,
+          TaskList,
+          TaskItem,
+          SmilieReplacer,
+          Collaboration.configure({
+            document: ydoc,
+          }),
+          // CollaborationCursor.configure({
+          //   provider: this.provider,
+          //   user: this.currentUser,
+          //   onUpdate: users => {
+          //     this.users = users
+          //   },
+          // }),
+          CharacterCount.configure({
+            limit: 10000,
+          }),
+        ],
+      })
+      // this.editor.chain().focus().user(this.currentUser).run()
+      localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+    }
   },
   mounted() {
-    if (this.$route.params.projectInfo) {
-      const { id, project_name } = this.$route.params.projectInfo;
-      this.projectInfo = { projectName: project_name, projectId: id};
-    }
 
-    this.currentUser = this.getCurrentUser
-    this.currentUser.color = this.getRandomColor()
-
-    const ydoc = new Y.Doc()
-    let HOST = (process.env.NODE_ENV === 'production') ? 'https://ryanyen2.me/' : 'http://localhost:3000/'
-    this.socket = io(HOST + this.projectInfo.projectName)
-        .on('WEB_RECORDING', e => {
-          console.log("WEB RECORDING STATUS: ", e)
-          if (e && this.curRole === 'participant' && this.isTesting === false) {
-            if (this.usingNativeRecognition) this.startSpeechRecognition();
-            else this.initRecording();
-          } else if (!e && this.curRole === 'participant' && this.isTesting === true) {
-            if (this.usingNativeRecognition) this.endSpeechRecognition();
-            else this.endRecording();
-          }
-        })
-        .on('WEB_SPEAKER', status => {
-          console.log("Speaker STATUS: ", status)
-          if (status.status && this.curRole === 'participant' && this.speechLoading === false) {
-            this.speakBack(status.start)
-          } else if (!status.status && this.curRole === 'participant') {
-            this.synth.cancel()
-          }
-        })
-        .on('SPEECH_DATA', async data => {
-          if (data && this.curRole === 'participant' && this.isTesting) {
-            console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
-            this.runTimeContent = data.results[0].alternatives[0].transcript
-
-            const dataFinal = data.results[0].isFinal;
-            const {textContent} = this.editor.state.doc
-
-            if (dataFinal && this.runTimeContent) {
-              this.newContent = this.runTimeContent;
-              this.runTimeContent = "";
-
-              await this.storeTextData({
-                type: 'SPEECH',
-                lastContent: textContent,
-                newContent: this.newContent,
-                projectId: this.projectInfo.projectId,
-                projectName: this.projectInfo.projectName,
-                username: this.currentUser.name,
-                userRole: this.curRole,
-                timestamp: this.dayjs().valueOf(),
-              })
-            }
-          }
-        })
-
-    this.socket.emit('joinRoom', this.projectInfo.projectName)
-
-
-    let YJS_HOST = (process.env.NODE_ENV === 'production') ? 'wss://ryanyen2.me/yjs/' : 'ws://localhost:3001';
-    this.provider = new WebsocketProvider(YJS_HOST, this.projectInfo.projectName, ydoc)
-    this.provider.on('status', event => this.status = event.status)
-    window.ydoc = ydoc
-    this.indexdb = new IndexeddbPersistence(this.projectInfo.projectName, ydoc)
-
-    this.editor = new Editor({
-      onUpdate: () => {
-        const {textContent} = this.editor.state.doc
-        if (this.curRole !== 'participant' && textContent && textContent.length !== this.lastContent.length) {
-          this.storeTextData({
-            type: 'EDIT',
-            lastContent: this.lastContent,
-            newContent: textContent,
-            projectId: this.projectInfo.projectId,
-            projectName: this.projectInfo.projectName,
-            username: this.currentUser.name,
-            userRole: this.curRole,
-            timestamp: this.dayjs().valueOf(),
-          })
-        }
-        this.lastContent = textContent
-      },
-      extensions: [
-        StarterKit.configure({
-          history: false,
-        }),
-        Highlight,
-        TaskList,
-        TaskItem,
-        SmilieReplacer,
-        Collaboration.configure({
-          document: ydoc,
-        }),
-        // CollaborationCursor.configure({
-        //   provider: this.provider,
-        //   user: this.currentUser,
-        //   onUpdate: users => {
-        //     this.users = users
-        //   },
-        // }),
-        CharacterCount.configure({
-          limit: 10000,
-        }),
-      ],
-    })
-    // this.editor.chain().focus().user(this.currentUser).run()
-    localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
   },
   beforeDestroy() {
+    this.storeBehaviorLog({
+      projectId: this.projectInfo.projectId,
+      type: "PROJ",
+      status: false,
+      timestamp: this.dayjs().valueOf(),
+    })
     this.editor.destroy()
     this.provider.destroy()
   },

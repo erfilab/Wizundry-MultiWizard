@@ -4,6 +4,8 @@ import VueRouter from "vue-router";
 import ChatBody from "@/components/ChatBody"
 import TextArea from "@/components/Paragraph/YDoc"
 import AdminPanel from "@/components/DataCollection/AdminPanel";
+import Login from "@/components/LoginForm";
+import Lobby from '@/components/Lobby';
 
 import axios from 'axios'
 import { auth } from './services/firebase'
@@ -16,12 +18,13 @@ Vue.use(VueRouter);
 const routes = [
     {
         path: "/", name: "login",
-        component: () => import("@/components/LoginForm"),
+        component: Login,
         // beforeEnter: async (to, from, next) => await checkToken(to, from, next)
     },
     {
         path: '/lobby', name: "lobby",
-        component: () => import('@/components/Lobby')
+        component: Lobby,
+        meta: {requiresAuth: true}
     },
     {path: "/chat", component: ChatBody, name: "chat", meta: {requiresAuth: true}},
     {path: "/text", component: TextArea, name: "text", meta: {requiresAuth: true}},
@@ -70,13 +73,18 @@ router.beforeEach((to, from, next) => {
     if (requiresAuth && !auth.currentUser) {
         next('/')
     } else {
-        auth.currentUser.getIdToken(true)
-            .then(async (idToken) => {
-                await store.dispatch('user/loginUserWithToken', idToken).then(() => next());
-            }).catch((err) => {
-            next('/')
-            console.error(err)
-        })
+        if(auth.currentUser){
+            auth.currentUser.getIdToken(true)
+                .then(async (idToken) => {
+                    await store.dispatch('user/loginUserWithToken', idToken).then(() => {
+                        if (to.name === 'login') next('/lobby')
+                        else next()
+                    });
+                }).catch((err) => {
+                console.error(err)
+            })
+        }
+        next()
     }
 })
 
