@@ -4,13 +4,16 @@ export default {
     namespaced: true,
     state: {
         textLists: [],
+        behaviorLogs: [],
     },
     getters: {
-        textLists: state => state.textLists,
     },
     mutations: {
         appendTextData(state, text) {
             state.textLists.push(text);
+        },
+        appendBehaviorLogs(state, behavior) {
+            state.behaviorLogs.push(behavior);
         }
     },
     actions: {
@@ -19,5 +22,8 @@ export default {
                 commit('appendTextData', res)
             })
         },
+        async storeBehaviorLog({commit}, params) {
+            await text.storeBehaviorLog(params).then(res => commit('appendBehaviorLogs', res))
+        }
     }
 };

@@ -51,14 +51,14 @@
           />
         </transition>
       </v-col>
-      <v-col :cols="speechLoading? 9:12">
-        <!--        <v-text-field v-model="runTimeContent"/>-->
-        <v-textarea
-            counter
-            label="Run Time Content"
-            :value="runTimeContent"
-        ></v-textarea>
-      </v-col>
+<!--      <v-col :cols="speechLoading? 9:12">-->
+<!--        &lt;!&ndash;        <v-text-field v-model="runTimeContent"/>&ndash;&gt;-->
+<!--        <v-textarea-->
+<!--            counter-->
+<!--            label="Run Time Content"-->
+<!--            :value="runTimeContent"-->
+<!--        ></v-textarea>-->
+<!--      </v-col>-->
     </v-row>
     <div class="editor" v-if="editor"
          @keyup.120="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
@@ -220,7 +220,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('text', ['storeTextData']),
+    ...mapActions('text', ['storeTextData', 'storeBehaviorLog']),
     getRandomColor() {
       return getRandomElement([
         '#958DF1',
