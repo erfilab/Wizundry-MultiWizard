@@ -8,14 +8,6 @@
     </v-row>
 
     <v-row>
-      <v-data-table
-          v-show="getCurrentUser.role !== 'participant'"
-          :headers="headers"
-          :items="projectUserLists"
-          :items-per-page="20"
-          class="elevation-1"
-      ></v-data-table>
-
       <v-col
           v-for="(item, i) in projectUserLists"
           :key="i"
@@ -73,18 +65,6 @@ export default {
   name: "Lobby",
   data() {
     return {
-      headers: [
-        {text: 'ID', value: 'id'},
-        {text: 'Project Name', value: 'project_name'},
-        {text: 'Firebase UID', align: 'start', value: 'uid'},
-        {text: 'Email', value: 'email'},
-        {text: 'Password', value: 'password'},
-        {text: 'Role', value: 'role'},
-        {text: 'Creator', value: 'creator'},
-        {text: 'Participant', value: 'participant'},
-        {text: 'Created Time', value: 'createdAt'}
-
-      ],
     }
   },
   computed: {

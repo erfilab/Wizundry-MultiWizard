@@ -9452,6 +9452,11 @@ vue-jsdiff@^1.0.1:
   resolved "https://registry.yarnpkg.com/vue-jsdiff/-/vue-jsdiff-1.0.1.tgz#be292d0f0d187dc84bdce2690b994b9d630e68e4"
   integrity sha512-xzPi9JsNilpL1egxMqGHCiiYAXhbBi+ikejMsz4//N7U78yGH66lsflSQsz4k53xXeKc6slWPtqnIexNW/wpGg==
 
+vue-json-to-csv@^1.1.8:
+  version "1.1.8"
+  resolved "https://registry.yarnpkg.com/vue-json-to-csv/-/vue-json-to-csv-1.1.8.tgz#10b5652ca1bcc11e5cfd3637b303b7a1e06a12a0"
+  integrity sha512-xdV2cUyLQYPnG6ChjLJn3+PYnP8zxZG5u6QtFjAMzcsUtGvLFrTvMN4XnD/he4M67Y14nXE0i/20xeyaVfhylQ==
+
 "vue-loader-v16@npm:vue-loader@^16.1.0":
   version "16.2.0"
   resolved "https://registry.yarnpkg.com/vue-loader/-/vue-loader-16.2.0.tgz#046a53308dd47e58efe20ddec1edec027ce3b46e"

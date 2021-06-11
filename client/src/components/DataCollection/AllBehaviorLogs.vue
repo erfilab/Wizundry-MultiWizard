@@ -21,7 +21,7 @@
             ></v-select>
           </v-col>
           <v-col cols="2">
-            <vue-json-to-csv :json-data="textLists" :csv-title="'text-'+query_time">
+            <vue-json-to-csv :json-data="behaviorLogs" :csv-title="'behavior-'+query_time">
               <button class="orange button pa-1" style="border-radius: 5px">
                 <b>Download CSV</b>
               </button>
@@ -31,7 +31,7 @@
       </v-card-title>
       <v-data-table
           :headers="headers"
-          :items="textLists"
+          :items="behaviorLogs"
           :search="search"
           :footer-props="{
           showFirstLastPage: true,
@@ -44,18 +44,6 @@
           >
             {{ item.type }}
           </v-chip>
-        </template>
-        <template v-slot:item.newContent="{ item }">
-        <span
-            class="d-inline-block text-truncate"
-            style="max-width: 150px;"
-        >{{ item.newContent }}</span>
-        </template>
-        <template v-slot:item.lastContent="{ item }">
-        <span
-            class="d-inline-block text-truncate"
-            style="max-width: 100px;"
-        >{{ item.lastContent }}</span>
         </template>
       </v-data-table>
     </v-card>
@@ -75,15 +63,15 @@ import {mapGetters, mapActions} from 'vuex';
 import VueJsonToCsv from 'vue-json-to-csv'
 
 export default {
-  name: "AllLogs",
+  name: "AllBehaviorLogs",
   components: {VueJsonToCsv},
   props: {
     query_time: Number,
   },
   watch: {
     query_time(newTime) {
-      this.listAllTexts(newTime).then(() => {
-        this.snackText = 'Successfully retrieve text data!'
+      this.listAllBehaviors(newTime).then(() => {
+        this.snackText = 'Successfully retrieve behavior data!'
         this.snackColor = 'green'
         this.snackbar = true;
       }).catch(err => {
@@ -98,25 +86,20 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('text', ['textLists']),
+    ...mapGetters('text', ['behaviorLogs']),
   },
   data() {
     return {
       search: '',
+
       headers: [
-        {text: 'Type', value: 'type'},
         {text: 'Project ID', value: 'projectId'},
-        {text: 'Project Name', value: 'projectName'},
-        {text: 'Last Content', value: 'lastContent'},
-        {text: 'New Content', value: 'newContent'},
-        {text: 'User Name', value: 'username'},
-        {text: 'User Role', value: 'userRole'},
-        // { text: 'Confidence', value: 'confidence' },
-        // { text: 'Anchor', value: 'anchor', filterable: false },
+        {text: 'Type', value: 'type'},
+        {text: 'Status', value: 'status'},
         {text: 'Timestamp ⏰', value: 'timestamp'},
       ],
 
-      viewItems: ['ALL', 'SPEECH', "EDIT"],
+      viewItems: ['ALL', 'PROJ', 'RECORD', "SPEAKER"],
       selectedView: 'ALL',
 
 
@@ -126,10 +109,11 @@ export default {
     }
   },
   methods: {
-    ...mapActions('text', ['listAllTexts']),
+    ...mapActions('text', ['listAllBehaviors']),
     getTypeColor(type) {
-      if (type === 'EDIT') return 'orange'
-      else return 'green'
+      if (type === 'PROJ') return 'orange'
+      else if (type === 'RECORD') return 'green'
+      else if (type === 'SPEAKER') return 'cyan'
     },
   }
 }

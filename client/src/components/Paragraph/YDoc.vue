@@ -191,12 +191,12 @@ export default {
   },
   watch: {
     newContent(text) {
+      this.editor.commands.keyboardShortcut('c-z')
       if (text && this.autoHighlight)
         this.keywords.map(kw => text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
-
       const {size} = this.editor.view.state.doc.content
       this.editor.commands.insertContent(` ${text} `, size - 1)
-      const insertTrans = this.editor.state.tr.insertText(` `, size - 1)
+      const insertTrans = this.editor.state.tr.insertText(``, size - 1)
       this.editor.view.dispatch(insertTrans)
     },
     getCurrentUser(newVal) {
@@ -207,15 +207,17 @@ export default {
     },
     runTimeContent(newVal, oldVal) {
       const {size} = this.editor.view.state.doc.content
+
       if(newVal && !oldVal) {
         this.editor.commands.insertContent(`${newVal}`, size-1)
       }
       else if (newVal && oldVal) {
         if(size > 1) this.editor.commands.keyboardShortcut('c-z')
-        this.editor.commands.insertContent(` ${newVal}`, size-1)
+        // if (this.autoHighlight) this.keywords.map(kw => newVal = newVal.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
+        this.editor.commands.insertContent(` ${newVal} `, size-1)
       }
       else if (!newVal && oldVal) {
-        this.editor.commands.keyboardShortcut('c-z')
+        // this.editor.commands.keyboardShortcut('c-z')
       }
     }
   },
@@ -257,8 +259,9 @@ export default {
 
       this.recognition.onend = () => {
         if (this.runTimeContent !== "") {
-          this.newContent = this.runTimeContent
+          let temp_rtc = this.runTimeContent;
           this.runTimeContent = ""
+          this.newContent = temp_rtc;
         }
         this.recognition.stop()
         if (this.isTesting) this.recognition.start()
@@ -288,7 +291,6 @@ export default {
       this.context.resume();
 
       const handleSuccess = stream => {
-        console.log("ST", stream)
         this.globalStream = stream;
         this.audioInput = this.context.createMediaStreamSource(stream);
         this.audioInput.connect(this.processor);
@@ -356,12 +358,14 @@ export default {
           projectId: projectInfo.id,
           ...projectInfo,
         };
-        this.storeBehaviorLog({
-          projectId: this.projectInfo.projectId,
-          type: "PROJ",
-          status: true,
-          timestamp: this.dayjs().valueOf(),
-        })
+        if(this.curRole !== 'participant') {
+          this.storeBehaviorLog({
+            projectId: this.projectInfo.projectId,
+            type: "PROJ",
+            status: true,
+            timestamp: this.dayjs().valueOf(),
+          })
+        }
       }
 
       this.currentUser = this.getCurrentUser
@@ -379,12 +383,15 @@ export default {
               if (this.usingNativeRecognition) this.endSpeechRecognition();
               else this.endRecording();
             }
-            await this.storeBehaviorLog({
-              projectId: this.projectInfo.projectId,
-              type: "RECORD",
-              status: e,
-              timestamp: this.dayjs().valueOf(),
-            })
+            if(this.curRole !== 'participant') {
+              await this.storeBehaviorLog({
+                projectId: this.projectInfo.projectId,
+                type: "RECORD",
+                status: e,
+                timestamp: this.dayjs().valueOf(),
+              })
+            }
+
           })
           .on('WEB_SPEAKER', async status => {
             console.log("Speaker STATUS: ", status)
@@ -393,12 +400,14 @@ export default {
             } else if (!status.status && this.curRole === 'participant') {
               this.synth.cancel()
             }
-            await this.storeBehaviorLog({
-              projectId: this.projectInfo.projectId,
-              type: "SPEAKER",
-              status: status.status,
-              timestamp: this.dayjs().valueOf(),
-            })
+            if(this.curRole !== 'participant') {
+              await this.storeBehaviorLog({
+                projectId: this.projectInfo.projectId,
+                type: "SPEAKER",
+                status: status.status,
+                timestamp: this.dayjs().valueOf(),
+              })
+            }
           })
           .on('SPEECH_DATA', async data => {
             if (data && this.curRole === 'participant' && this.isTesting) {
@@ -409,8 +418,9 @@ export default {
               const {textContent} = this.editor.state.doc
 
               if (dataFinal && this.runTimeContent) {
-                this.newContent = this.runTimeContent;
+                let temp_cont = this.runTimeContent;
                 this.runTimeContent = "";
+                this.newContent = temp_cont;
 
                 await this.storeTextData({
                   type: 'SPEECH',
@@ -483,12 +493,6 @@ export default {
 
   },
   beforeDestroy() {
-    this.storeBehaviorLog({
-      projectId: this.projectInfo.projectId,
-      type: "PROJ",
-      status: false,
-      timestamp: this.dayjs().valueOf(),
-    })
     this.editor.destroy()
     this.provider.destroy()
   },

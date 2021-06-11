@@ -24,8 +24,9 @@ Text.create = ({type, lastContent, newContent, projectId, projectName, username,
     });
 }
 
-Text.getAll = result => {
-    sql.query("SELECT * FROM text_data", (err, res) => {
+Text.getAll = ({query_time}, result) => {
+    sql.query(`SELECT * FROM text_data WHERE text_data.timestamp >= ${query_time} AND text_data.timestamp < ${parseInt(query_time)+86400000}`,
+        (err, res) => {
         if (err) {
             console.error(err)
             result(null, err);
@@ -33,6 +34,18 @@ Text.getAll = result => {
         }
         result(null, res);
     });
+};
+
+Text.getAllBehaviors = ({query_time}, result) => {
+    sql.query(`SELECT * FROM behavior_log WHERE behavior_log.timestamp >= ${query_time} AND behavior_log.timestamp < ${parseInt(query_time)+86400000}`,
+        (err, res) => {
+            if (err) {
+                console.error(err)
+                result(null, err);
+                return;
+            }
+            result(null, res);
+        });
 };
 
 Text.createBehav = ({ projectId, type, status, timestamp }, result) => {

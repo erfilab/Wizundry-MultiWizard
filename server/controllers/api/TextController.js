@@ -11,8 +11,9 @@ exports.create = async (req, res) => {
 };
 
 exports.listAllTexts = (req, res) => {
-    Text.getAll((err, data) => {
-        if (err) res.status(500).send({ message: err.message || "Some error occurred while retrieving users." });
+    const { query_time } = req.params;
+    Text.getAll({query_time}, (err, data) => {
+        if (err) res.status(500).send({ message: err.message || "Some error occurred while retrieving text data." });
         else res.status(200).json({data: data});
     })
 }
@@ -24,5 +25,13 @@ exports.createBehavior = (req, res) => {
     Text.createBehav({ projectId, type, status, timestamp }, async (err, data) => {
         if (err) res.status(500).send({message: err.message || "Some error occurred while create the Behavior"});
         else res.status(201).json({data: data});
+    })
+}
+
+exports.listAllBehaviors = (req, res) => {
+    const { query_time } = req.params;
+    Text.getAllBehaviors({query_time}, (err, data) => {
+        if (err) res.status(500).send({ message: err.message || "Some error occurred while retrieving behaviors." });
+        else res.status(200).json({data: data});
     })
 }

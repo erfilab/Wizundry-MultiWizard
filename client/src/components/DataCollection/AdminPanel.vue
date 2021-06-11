@@ -1,8 +1,6 @@
 <template>
-  <v-container>
+  <v-container fluid>
       <v-toolbar flat>
-        <v-app-bar-nav-icon></v-app-bar-nav-icon>
-
         <v-toolbar-title>Admin Dashboard</v-toolbar-title>
 
         <v-spacer></v-spacer>
@@ -62,7 +60,7 @@
         >
           <v-card flat>
             <v-card-text>
-              <component :is="item.content" :logs="logs"></component>
+              <component :is="item.content" :query_time="formatDate"></component>
             </v-card-text>
           </v-card>
         </v-tab-item>
@@ -72,10 +70,11 @@
 </template>
 
 <script>
-import { db } from "@/services/firebase";
 import AllLogs from "@/components/DataCollection/AllLogs";
 import TextDiff from "@/components/DataCollection/TextDiff";
 import CreateUser from '@/components/DataCollection/CreateUser';
+import ProjectUserRecord from "@/components/DataCollection/ProjectUserRecord";
+import AllBehaviorLogs from "@/components/DataCollection/AllBehaviorLogs";
 
 import {mapGetters} from 'vuex';
 export default {
@@ -84,22 +83,15 @@ export default {
     AllLogs,
     TextDiff,
     CreateUser,
+    ProjectUserRecord,
+    AllBehaviorLogs,
   },
   watch: {
-    async date() {
-      let textEditorLogs = await db.collection(`${this.date}`).get();
-      const logs = [];
-      textEditorLogs.forEach((doc) => {
-        let appData = doc.data();
-        appData.id = doc.id;
-        logs.push({ ...appData });
-      });
-      this.logs = logs;
-      console.log(this.logs)
+    date(newVal) {
+      this.formatDate =  this.dayjs(newVal).valueOf()
     },
     getCurrentUser(newVal) {
       if (newVal) {
-        console.log("NV >> ", newVal)
         this.initProject();
       }
     }
@@ -110,6 +102,7 @@ export default {
   data() {
     return {
       date: new Date().toISOString().substr(0, 10),
+      formatDate: this.dayjs().valueOf(),
       menu: false,
       logs: [],
 
@@ -120,8 +113,16 @@ export default {
           content: 'CreateUser'
         },
         {
-          title: 'All Logs',
+          title: 'Projects-Users',
+          content: 'ProjectUserRecord'
+        },
+        {
+          title: 'All Text Logs',
           content: 'AllLogs'
+        },
+        {
+          title: 'All Behavior Logs',
+          content: 'AllBehaviorLogs'
         },
         {
           title: 'Text Diff',
@@ -132,14 +133,6 @@ export default {
   },
   methods: {
     async initProject() {
-      let textEditorLogs = await db.collection(`${this.date}`).get();
-      const logs = [];
-      textEditorLogs.forEach((doc) => {
-        let appData = doc.data();
-        appData.id = doc.id;
-        logs.push({ ...appData });
-      });
-      this.logs = logs;
     }
   },
   async mounted() {

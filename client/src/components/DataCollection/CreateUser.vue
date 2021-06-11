@@ -78,14 +78,18 @@ export default {
       if (!this.$refs.form.validate()) alert("Please complete the login form.")
       else {
         this.userInfo = {...this.userInfo, createdAt: this.dayjs(), role: 'participant'};
-        console.log("UI", this.userInfo, "\nCU", this.getCurrentUser)
         this.projectInfo = {
           project_name: `${this.userInfo.username}-${this.dayjs().format('YYYY-MM-DD')}`,
           creator: this.getCurrentUser.email,
           participant: this.userInfo.username,
           createdAt: this.dayjs(),
         }
-        await this.createUserAndProject({userInfo: this.userInfo, projectInfo: this.projectInfo}).catch(console.error);
+        await this.createUserAndProject({userInfo: this.userInfo, projectInfo: this.projectInfo})
+            .then(() => {
+              alert('successfully created user')
+              // this.$router.push({name: 'lobby'})
+            })
+            .catch(console.error);
       }
     },
     reset() {
@@ -93,7 +97,6 @@ export default {
     },
   },
   mounted() {
-    console.log('jheniej', this.getCurrentUser)
   }
 }
 </script>
