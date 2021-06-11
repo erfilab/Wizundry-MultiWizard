@@ -191,7 +191,8 @@ export default {
   },
   watch: {
     newContent(text) {
-      this.editor.commands.keyboardShortcut('c-z')
+      // this.editor.commands.keyboardShortcut('c-z')
+      this.editor.chain().focus().undo().run()
       if (text && this.autoHighlight)
         this.keywords.map(kw => text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
       const {size} = this.editor.view.state.doc.content
@@ -212,7 +213,7 @@ export default {
         this.editor.commands.insertContent(`${newVal}`, size-1)
       }
       else if (newVal && oldVal) {
-        if(size > 1) this.editor.commands.keyboardShortcut('c-z')
+        if(size > 1) this.editor.chain().focus().undo().run()
         // if (this.autoHighlight) this.keywords.map(kw => newVal = newVal.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
         this.editor.commands.insertContent(` ${newVal} `, size-1)
       }
