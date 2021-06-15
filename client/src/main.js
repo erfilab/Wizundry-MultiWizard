@@ -10,6 +10,11 @@ import dayjs from 'dayjs'
 Vue.prototype.dayjs = dayjs;
 import { auth } from './services/firebase'
 
+import VueApexCharts from 'vue-apexcharts'
+Vue.use(VueApexCharts)
+
+Vue.component('apexchart', VueApexCharts)
+
 
 Vue.use(Vuex)
 Vue.use(VueResource)
