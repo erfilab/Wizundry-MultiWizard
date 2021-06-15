@@ -2,46 +2,58 @@
   <v-container>
     <v-row v-if="curRole !== 'participant'">
       <v-col cols="12">
-        <v-btn outlined @click="requestEditing">Ctrl + Q = Request Editing Log</v-btn>
-        <v-btn outlined @click="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)">Fn + F9 = 🎤 Microphone</v-btn>
-        <v-btn outlined @click="speechLoading? emitTalkEvent(false) : emitTalkEvent(true)">Esc = 🔊 Speaker</v-btn>
+        <v-btn outlined @click="requestEditing"
+          >Ctrl + Q = Request Editing Log</v-btn
+        >
+        <v-btn
+          outlined
+          @click="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
+          >Fn + F9 = 🎤 Microphone</v-btn
+        >
+        <v-btn
+          outlined
+          @click="speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)"
+          >Esc = 🔊 Speaker</v-btn
+        >
       </v-col>
       <v-col cols="12">
-        {{Object.keys(projectInfo).slice(2, 12)}} <br/>
-        {{Object.values(projectInfo).slice(2, 12)}}
+        {{ Object.keys(projectInfo).slice(2, 12) }} <br />
+        {{ Object.values(projectInfo).slice(2, 12) }}
       </v-col>
       <v-col cols="3">
         <v-btn
-            @click="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
-            text
-            :color="!isTesting ? 'grey' : (isSpeaking ? 'red' : 'red darken-3')"
-            class="mt-4"
+          @click="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
+          text
+          :color="!isTesting ? 'grey' : isSpeaking ? 'red' : 'red darken-3'"
+          class="mt-4"
         >
-          <v-icon>{{ isTesting ? 'mdi-microphone-off' : 'mdi-microphone' }}</v-icon>
-          {{ isTesting ? 'speaking...' : 'closed' }}
+          <v-icon>{{
+            isTesting ? "mdi-microphone-off" : "mdi-microphone"
+          }}</v-icon>
+          {{ isTesting ? "speaking..." : "closed" }}
         </v-btn>
       </v-col>
-      <v-spacer/>
+      <v-spacer />
       <v-col>
         <v-switch
-            v-model="autoHighlight"
-            inset
-            label="Auto HighLight"
+          v-model="autoHighlight"
+          inset
+          label="Auto HighLight"
         ></v-switch>
       </v-col>
       <v-col>
         <v-switch
-            v-model="autoPunctuation"
-            inset
-            label="Auto Punctuation"
+          v-model="autoPunctuation"
+          inset
+          label="Auto Punctuation"
         ></v-switch>
       </v-col>
       <v-col>
         <v-switch
-            v-model="usingNativeRecognition"
-            inset
-            :disabled="isTesting || isSpeaking"
-            :label="usingNativeRecognition? 'Using Google?' : 'Using Native?'"
+          v-model="usingNativeRecognition"
+          inset
+          :disabled="isTesting || isSpeaking"
+          :label="usingNativeRecognition ? 'Using Google?' : 'Using Native?'"
         ></v-switch>
       </v-col>
     </v-row>
@@ -49,33 +61,40 @@
       <v-col class="mt-3" cols="3" v-if="speechLoading">
         Rewound
         <transition name="fade" class="pl-2">
-          <v-progress-circular
-              indeterminate
-              color="purple"
-              small
-          />
+          <v-progress-circular indeterminate color="purple" small />
         </transition>
       </v-col>
-<!--      <v-col :cols="speechLoading? 9:12">-->
-<!--        &lt;!&ndash;        <v-text-field v-model="runTimeContent"/>&ndash;&gt;-->
-<!--        <v-textarea-->
-<!--            counter-->
-<!--            label="Run Time Content"-->
-<!--            :value="runTimeContent"-->
-<!--        ></v-textarea>-->
-<!--      </v-col>-->
+      <!--      <v-col :cols="speechLoading? 9:12">-->
+      <!--        &lt;!&ndash;        <v-text-field v-model="runTimeContent"/>&ndash;&gt;-->
+      <!--        <v-textarea-->
+      <!--            counter-->
+      <!--            label="Run Time Content"-->
+      <!--            :value="runTimeContent"-->
+      <!--        ></v-textarea>-->
+      <!--      </v-col>-->
     </v-row>
-    <div class="editor" v-if="editor"
-         @keyup.120="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
-         @keyup.esc="speechLoading? emitTalkEvent(false) : emitTalkEvent(true)"
-         @keyup.ctrl.81="requestEditing"
+    <div
+      class="editor"
+      v-if="editor"
+      @keyup.120="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
+      @keyup.esc="speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)"
+      @keyup.ctrl.81="requestEditing"
     >
-      <menu-bar v-show="curRole!== 'participant'" class="editor__header" :editor="editor"/>
-      <editor-content style="height: 500px" class="editor__content" :editor="editor"/>
+      <menu-bar
+        v-show="curRole !== 'participant'"
+        class="editor__header"
+        :editor="editor"
+      />
+      <editor-content
+        style="height: 500px"
+        class="editor__content"
+        :editor="editor"
+      />
       <div v-show="curRole !== 'participant'" class="editor__footer">
         <div :class="`editor__status editor__status--${status}`">
           <template v-if="status === 'connected'">
-            {{ users.length }} user{{ users.length === 1 ? '' : 's' }} online in {{ projectInfo.projectName }}
+            {{ users.length }} user{{ users.length === 1 ? "" : "s" }} online in
+            {{ projectInfo.projectName }}
           </template>
           <template v-else>
             offline
@@ -89,38 +108,40 @@
       </div>
     </div>
   </v-container>
-
 </template>
 
 <script>
-import {Editor, EditorContent} from '@tiptap/vue-2'
-import StarterKit from '@tiptap/starter-kit'
-import Collaboration from '@tiptap/extension-collaboration'
+import { Editor, EditorContent } from "@tiptap/vue-2";
+import StarterKit from "@tiptap/starter-kit";
+import Collaboration from "@tiptap/extension-collaboration";
 // import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
-import TaskList from '@tiptap/extension-task-list'
-import TaskItem from '@tiptap/extension-task-item'
-import Highlight from '@tiptap/extension-highlight'
-import CharacterCount from '@tiptap/extension-character-count'
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import Highlight from "@tiptap/extension-highlight";
+import CharacterCount from "@tiptap/extension-character-count";
 
-import * as Y from 'yjs'
-import {WebsocketProvider} from 'y-websocket'
-import {IndexeddbPersistence} from 'y-indexeddb'
-import MenuBar from './MenuBar.vue'
-import {SmilieReplacer} from "@/plugins/smileReplacer.ts";
+import * as Y from "yjs";
+import { WebsocketProvider } from "y-websocket";
+import { IndexeddbPersistence } from "y-indexeddb";
+import MenuBar from "./MenuBar.vue";
+import { SmilieReplacer } from "@/plugins/smileReplacer.ts";
 
-import io from 'socket.io-client'
+import io from "socket.io-client";
 
-const BUFFER_SIZE = 2048
-const MEDIA_ACCESS_CONSTRAINTS = {audio: true, video: false};
+const BUFFER_SIZE = 2048;
+const MEDIA_ACCESS_CONSTRAINTS = { audio: true, video: false };
 const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
   if (outSampleRate === sampleRate) return buffer;
-  if (outSampleRate > sampleRate) throw 'downsampling rate should be smaller than original sample rate';
+  if (outSampleRate > sampleRate)
+    throw "downsampling rate should be smaller than original sample rate";
   const sampleRateRatio = sampleRate / outSampleRate;
   let result = new Int16Array(Math.round(buffer.length / sampleRateRatio));
-  let offsetResult = 0, offsetBuffer = 0;
+  let offsetResult = 0,
+    offsetBuffer = 0;
   while (offsetResult < result.length) {
     let nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
-    let accum = 0, count = 0;
+    let accum = 0,
+      count = 0;
     for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
       accum += buffer[i];
       count++;
@@ -133,9 +154,10 @@ const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
   return result.buffer;
 };
 
-import {mapGetters, mapActions} from 'vuex'
+import { mapGetters, mapActions } from "vuex";
 
-const getRandomElement = list => list[Math.floor(Math.random() * list.length)]
+const getRandomElement = (list) =>
+  list[Math.floor(Math.random() * list.length)];
 
 export default {
   components: {
@@ -150,11 +172,11 @@ export default {
       indexdb: null,
       editor: null,
       users: [],
-      status: 'connecting',
+      status: "connecting",
 
       projectInfo: {
-        projectName: '',
-        projectId: '',
+        projectName: "",
+        projectId: "",
       },
 
       socket: null,
@@ -177,7 +199,7 @@ export default {
       audioInput: null,
 
       speechLoading: false,
-      selectedText: '',
+      selectedText: "",
       synth: window.speechSynthesis,
       audioSpeech: new window.SpeechSynthesisUtterance(),
 
@@ -186,60 +208,83 @@ export default {
       lastContent: "",
 
       //text preprocess
-      keywords: ["However", "But", "but", "and", "And", "because", "Because", "Therefore", "whenever", "whereas", "Thus", "yet"],
-    }
+      keywords: [
+        "However",
+        "But",
+        "but",
+        "and",
+        "And",
+        "because",
+        "Because",
+        "Therefore",
+        "whenever",
+        "whereas",
+        "Thus",
+        "yet",
+      ],
+    };
   },
   computed: {
-    ...mapGetters('user', ['getCurrentUser']),
+    ...mapGetters("user", ["getCurrentUser"]),
     curRole() {
-      return this.currentUser.role
-    }
+      return this.currentUser.role;
+    },
   },
   watch: {
     newContent(text) {
       // this.editor.commands.keyboardShortcut('c-z')
-      this.editor.chain().focus().undo().run()
+      this.editor
+        .chain()
+        .focus()
+        .undo()
+        .run();
       if (text && this.autoHighlight)
-        this.keywords.map(kw => text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
-      const {size} = this.editor.view.state.doc.content
-      this.editor.commands.insertContent(` ${text} `, size - 1)
-      const insertTrans = this.editor.state.tr.insertText(``, size - 1)
-      this.editor.view.dispatch(insertTrans)
+        this.keywords.map(
+          (kw) =>
+            (text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
+        );
+      const { size } = this.editor.view.state.doc.content;
+      this.editor.commands.insertContent(` ${text} `, size - 1);
+      const insertTrans = this.editor.state.tr.insertText(``, size - 1);
+      this.editor.view.dispatch(insertTrans);
     },
     getCurrentUser(newVal) {
       if (newVal) {
-        console.log("Current USER >> ", newVal)
+        console.log("Current USER >> ", newVal);
         this.initProject();
       }
     },
     runTimeContent(newVal, oldVal) {
-      const {size} = this.editor.view.state.doc.content
+      const { size } = this.editor.view.state.doc.content;
 
-      if(newVal && !oldVal) {
-        this.editor.commands.insertContent(`${newVal}`, size-1)
-      }
-      else if (newVal && oldVal) {
-        if(size > 1) this.editor.chain().focus().undo().run()
+      if (newVal && !oldVal) {
+        this.editor.commands.insertContent(`${newVal}`, size - 1);
+      } else if (newVal && oldVal) {
+        if (size > 1)
+          this.editor
+            .chain()
+            .focus()
+            .undo()
+            .run();
         // if (this.autoHighlight) this.keywords.map(kw => newVal = newVal.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
-        this.editor.commands.insertContent(` ${newVal} `, size-1)
-      }
-      else if (!newVal && oldVal) {
+        this.editor.commands.insertContent(` ${newVal} `, size - 1);
+      } else if (!newVal && oldVal) {
         // this.editor.commands.keyboardShortcut('c-z')
       }
-    }
+    },
   },
   methods: {
-    ...mapActions('text', ['storeTextData', 'storeBehaviorLog']),
+    ...mapActions("text", ["storeTextData", "storeBehaviorLog"]),
     getRandomColor() {
       return getRandomElement([
-        '#958DF1',
-        '#F98181',
-        '#FBBC88',
-        '#FAF594',
-        '#70CFF8',
-        '#94FADB',
-        '#B9F18D',
-      ])
+        "#958DF1",
+        "#F98181",
+        "#FBBC88",
+        "#FAF594",
+        "#70CFF8",
+        "#94FADB",
+        "#B9F18D",
+      ]);
     },
     requestEditing() {
       this.storeBehaviorLog({
@@ -247,77 +292,79 @@ export default {
         type: "REQUEST",
         status: true,
         timestamp: this.dayjs().valueOf(),
-      })
+      });
     },
     // speech recognition
     startSpeechRecognition() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
       this.recognition = new SpeechRecognition();
       this.recognition.interimResults = true;
       this.recognition.lang = "en-US";
-      this.isTesting = true
+      this.isTesting = true;
 
-      this.listenForSpeechEvents()
+      this.listenForSpeechEvents();
       this.recognition.onspeechstart = () => {
-        this.isSpeaking = true
-      }
+        this.isSpeaking = true;
+      };
 
       this.recognition.onspeechend = () => {
-        this.isSpeaking = false
-      }
-      this.recognition.onresult = event => {
+        this.isSpeaking = false;
+      };
+      this.recognition.onresult = (event) => {
         this.runTimeContent = Array.from(event.results)
-            .map(result => result[0])
-            .map(result => result.transcript)
-            .join('')
-      }
+          .map((result) => result[0])
+          .map((result) => result.transcript)
+          .join("");
+      };
 
       this.recognition.onend = () => {
         if (this.runTimeContent !== "") {
           let temp_rtc = this.runTimeContent;
-          this.runTimeContent = ""
+          this.runTimeContent = "";
           this.newContent = temp_rtc;
         }
-        this.recognition.stop()
-        if (this.isTesting) this.recognition.start()
-      }
-      this.recognition.start()
+        this.recognition.stop();
+        if (this.isTesting) this.recognition.start();
+      };
+      this.recognition.start();
     },
     endSpeechRecognition() {
-      this.isTesting = false
-      this.recognition.stop()
+      this.isTesting = false;
+      this.recognition.stop();
     },
     emitSpeakerEvent(e) {
       this.isTesting = e;
-      this.socket.emit('MICROPHONE', {
+      this.socket.emit("MICROPHONE", {
         status: e,
-        punctuation: this.autoPunctuation
-      })
+        punctuation: this.autoPunctuation,
+      });
     },
     initRecording() {
       this.isTesting = this.isSpeaking = true;
-      this.socket.emit('startGoogleCloudStream', '');
+      this.socket.emit("startGoogleCloudStream", "");
       this.audioContext = window.AudioContext || window.webkitAudioContext;
       this.context = new this.audioContext({
-        latencyHint: 'interactive',
-      })
+        latencyHint: "interactive",
+      });
       this.processor = this.context.createScriptProcessor(BUFFER_SIZE, 1, 1);
       this.processor.connect(this.context.destination);
       this.context.resume();
 
-      const handleSuccess = stream => {
+      const handleSuccess = (stream) => {
         this.globalStream = stream;
         this.audioInput = this.context.createMediaStreamSource(stream);
         this.audioInput.connect(this.processor);
 
-        this.processor.onaudioprocess = e => this.microphoneProcess(e);
-      }
-      navigator.mediaDevices.getUserMedia(MEDIA_ACCESS_CONSTRAINTS).then(handleSuccess);
-
+        this.processor.onaudioprocess = (e) => this.microphoneProcess(e);
+      };
+      navigator.mediaDevices
+        .getUserMedia(MEDIA_ACCESS_CONSTRAINTS)
+        .then(handleSuccess);
     },
     endRecording() {
       this.isTesting = this.isSpeaking = false;
-      this.socket.emit('endGoogleCloudStream', '');
+      this.socket.emit("endGoogleCloudStream", "");
 
       let track = this.globalStream.getTracks()[0];
       track.stop();
@@ -330,40 +377,36 @@ export default {
         this.context = null;
         this.audioContext = null;
       });
-
     },
     microphoneProcess(e) {
       let left = e.inputBuffer.getChannelData(0);
       let left16 = downSampleBuffer(left, 44100, 16000);
-      this.socket.emit('BINARY_DATA', left16);
+      this.socket.emit("BINARY_DATA", left16);
     },
     emitTalkEvent(e) {
       this.speechLoading = e;
-      this.socket.emit('SPEAKER', {status: e, start: this.editor.state.selection.anchor})
-      this.emitSpeakerEvent(false)
+      this.socket.emit("SPEAKER", {
+        status: e,
+        start: this.editor.state.selection.anchor,
+      });
+      this.emitSpeakerEvent(false);
     },
     listenForSpeechEvents() {
       this.audioSpeech.onstart = () => {
-        this.speechLoading = true
-      }
+        this.speechLoading = true;
+      };
 
       this.audioSpeech.onend = () => {
-        this.speechLoading = false
-        this.storeBehaviorLog({
-          projectId: this.projectInfo.projectId,
-          type: "SPEAKER",
-          status: false,
-          timestamp: this.dayjs().valueOf(),
-        })
-      }
+        this.speechLoading = false;
+      };
     },
     speakBack(from) {
-      const {size} = this.editor.view.state.doc.content
-      this.selectedText = this.editor.state.doc.textBetween(from, size, ' ')
-      this.audioSpeech.text = this.selectedText
+      const { size } = this.editor.view.state.doc.content;
+      this.selectedText = this.editor.state.doc.textBetween(from, size, " ");
+      this.audioSpeech.text = this.selectedText;
       this.audioSpeech.lang = "en-US";
 
-      this.synth.speak(this.audioSpeech)
+      this.synth.speak(this.audioSpeech);
     },
     initProject() {
       if (this.$route.params.projectInfo) {
@@ -373,99 +416,124 @@ export default {
           projectId: projectInfo.id,
           ...projectInfo,
         };
-        if(this.curRole !== 'participant') {
+        if (this.curRole !== "participant") {
           this.storeBehaviorLog({
             projectId: this.projectInfo.projectId,
             type: "PROJ",
             status: true,
             timestamp: this.dayjs().valueOf(),
-          })
+          });
         }
       }
 
-      this.currentUser = this.getCurrentUser
-      this.currentUser.color = this.getRandomColor()
+      this.currentUser = this.getCurrentUser;
+      this.currentUser.color = this.getRandomColor();
 
-      const ydoc = new Y.Doc()
-      let HOST = (process.env.NODE_ENV === 'production') ? 'https://ryanyen2.me/' : 'http://localhost:3000/'
+      const ydoc = new Y.Doc();
+      let HOST =
+        process.env.NODE_ENV === "production"
+          ? "https://ryanyen2.me/"
+          : "http://localhost:3000/";
       this.socket = io(HOST + this.projectInfo.projectName)
-          .on('WEB_RECORDING', async e => {
-            console.log("WEB RECORDING STATUS: ", e)
-            if (e && this.curRole === 'participant' && this.isTesting === false) {
-              if (this.usingNativeRecognition) this.startSpeechRecognition();
-              else this.initRecording();
-            } else if (!e && this.curRole === 'participant' && this.isTesting === true) {
-              if (this.usingNativeRecognition) this.endSpeechRecognition();
-              else this.endRecording();
-            }
-            if(this.curRole !== 'participant') {
-              await this.storeBehaviorLog({
+        .on("WEB_RECORDING", async (e) => {
+          console.log("WEB RECORDING STATUS: ", e);
+          if (e && this.curRole === "participant" && this.isTesting === false) {
+            if (this.usingNativeRecognition) this.startSpeechRecognition();
+            else this.initRecording();
+          } else if (
+            !e &&
+            this.curRole === "participant" &&
+            this.isTesting === true
+          ) {
+            if (this.usingNativeRecognition) this.endSpeechRecognition();
+            else this.endRecording();
+          }
+          if (this.curRole !== "participant" && this.isTesting) {
+            await this.storeBehaviorLog({
+              projectId: this.projectInfo.projectId,
+              type: "RECORD",
+              status: e,
+              timestamp: this.dayjs().valueOf(),
+            });
+          }
+        })
+        .on("WEB_SPEAKER", async (status) => {
+          console.log("Speaker STATUS: ", status);
+          if (
+            status.status &&
+            this.curRole === "participant" &&
+            this.speechLoading === false
+          ) {
+            this.speakBack(status.start);
+          } else if (!status.status && this.curRole === "participant") {
+            this.synth.cancel();
+          }
+          if (this.curRole !== "participant") {
+            await this.storeBehaviorLog({
+              projectId: this.projectInfo.projectId,
+              type: "SPEAKER",
+              status: status.status,
+              timestamp: this.dayjs().valueOf(),
+            });
+          }
+        })
+        .on("SPEECH_DATA", async (data) => {
+          if (data && this.curRole === "participant" && this.isTesting) {
+            // console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
+            this.runTimeContent = data.results[0].alternatives[0].transcript;
+
+            const dataFinal = data.results[0].isFinal;
+            const { textContent } = this.editor.state.doc;
+
+            if (dataFinal && this.runTimeContent) {
+              let temp_cont = this.runTimeContent;
+              this.runTimeContent = "";
+              this.newContent = temp_cont;
+
+              await this.storeTextData({
+                type: "SPEECH",
+                lastContent: textContent,
+                newContent: this.newContent,
                 projectId: this.projectInfo.projectId,
-                type: "RECORD",
-                status: e,
+                projectName: this.projectInfo.projectName,
+                username: this.currentUser.name,
+                userRole: this.curRole,
                 timestamp: this.dayjs().valueOf(),
-              })
+              });
             }
+          }
+        });
 
-          })
-          .on('WEB_SPEAKER', async status => {
-            console.log("Speaker STATUS: ", status)
-            if (status.status && this.curRole === 'participant' && this.speechLoading === false) {
-              this.speakBack(status.start)
-            } else if (!status.status && this.curRole === 'participant') {
-              this.synth.cancel()
-            }
-            if(this.curRole !== 'participant') {
-              await this.storeBehaviorLog({
-                projectId: this.projectInfo.projectId,
-                type: "SPEAKER",
-                status: status.status,
-                timestamp: this.dayjs().valueOf(),
-              })
-            }
-          })
-          .on('SPEECH_DATA', async data => {
-            if (data && this.curRole === 'participant' && this.isTesting) {
-              // console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
-              this.runTimeContent = data.results[0].alternatives[0].transcript
+      this.socket.emit("joinRoom", this.projectInfo.projectName);
 
-              const dataFinal = data.results[0].isFinal;
-              const {textContent} = this.editor.state.doc
-
-              if (dataFinal && this.runTimeContent) {
-                let temp_cont = this.runTimeContent;
-                this.runTimeContent = "";
-                this.newContent = temp_cont;
-
-                await this.storeTextData({
-                  type: 'SPEECH',
-                  lastContent: textContent,
-                  newContent: this.newContent,
-                  projectId: this.projectInfo.projectId,
-                  projectName: this.projectInfo.projectName,
-                  username: this.currentUser.name,
-                  userRole: this.curRole,
-                  timestamp: this.dayjs().valueOf(),
-                })
-              }
-            }
-          })
-
-      this.socket.emit('joinRoom', this.projectInfo.projectName)
-
-
-      let YJS_HOST = (process.env.NODE_ENV === 'production') ? 'wss://ryanyen2.me/yjs/' : 'ws://localhost:3001';
-      this.provider = new WebsocketProvider(YJS_HOST, this.projectInfo.projectName, ydoc)
-      this.provider.on('status', event => this.status = event.status)
-      window.ydoc = ydoc
-      this.indexdb = new IndexeddbPersistence(this.projectInfo.projectName, ydoc)
+      let YJS_HOST =
+        process.env.NODE_ENV === "production"
+          ? "wss://ryanyen2.me/yjs/"
+          : "ws://localhost:3001";
+      this.provider = new WebsocketProvider(
+        YJS_HOST,
+        this.projectInfo.projectName,
+        ydoc
+      );
+      this.provider.on("status", (event) => (this.status = event.status));
+      window.ydoc = ydoc;
+      this.indexdb = new IndexeddbPersistence(
+        this.projectInfo.projectName,
+        ydoc
+      );
 
       this.editor = new Editor({
         onUpdate: () => {
-          const {textContent} = this.editor.state.doc
-          if (this.curRole !== 'participant' && textContent.length > 0 && !this.isSpeaking && textContent.length !== this.lastContent.length) {
+          const { textContent } = this.editor.state.doc;
+          if (
+            this.curRole !== "participant" &&
+            textContent.length > 0 &&
+            !this.isTesting &&
+            textContent.length !== this.lastContent.length &&
+            this.runTimeContent === ''
+          ) {
             this.storeTextData({
-              type: 'EDIT',
+              type: "EDIT",
               lastContent: this.lastContent,
               newContent: textContent,
               projectId: this.projectInfo.projectId,
@@ -473,9 +541,9 @@ export default {
               username: this.currentUser.name,
               userRole: this.curRole,
               timestamp: this.dayjs().valueOf(),
-            })
+            });
           }
-          this.lastContent = textContent
+          this.lastContent = textContent;
         },
         extensions: [
           StarterKit.configure({
@@ -499,19 +567,17 @@ export default {
             limit: 10000,
           }),
         ],
-      })
+      });
       // this.editor.chain().focus().user(this.currentUser).run()
-      localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-    }
+      localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
+    },
   },
-  mounted() {
-
-  },
+  mounted() {},
   beforeDestroy() {
-    this.editor.destroy()
-    this.provider.destroy()
+    this.editor.destroy();
+    this.provider.destroy();
   },
-}
+};
 </script>
 
 <style scoped>
@@ -564,7 +630,7 @@ export default {
 }
 
 .editor__status::before {
-  content: ' ';
+  content: " ";
   flex: 0 0 auto;
   display: inline-block;
   width: 0.5rem;
@@ -626,11 +692,17 @@ export default {
   white-space: nowrap;
 }
 
-.ProseMirror ul, .ProseMirror ol {
+.ProseMirror ul,
+.ProseMirror ol {
   padding: 0 1rem;
 }
 
-.ProseMirror h1, .ProseMirror h2, .ProseMirror h3, .ProseMirror h4, .ProseMirror h5, .ProseMirror h6 {
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
   line-height: 1.1;
 }
 
@@ -642,7 +714,7 @@ export default {
 .ProseMirror pre {
   background: #0d0d0d;
   color: #fff;
-  font-family: 'JetBrainsMono', monospace;
+  font-family: "JetBrainsMono", monospace;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
 }

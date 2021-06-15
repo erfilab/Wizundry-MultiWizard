@@ -7,7 +7,10 @@ export default {
         behaviorLogs: [],
     },
     getters: {
-        textLists: state => state.textLists,
+        textLists: state => {
+            state.textLists.map(t => t.timestamp = (t.timestamp).toString())
+            return state.textLists
+        },
         behaviorLogs: state => state.behaviorLogs,
     },
     mutations: {
@@ -34,7 +37,9 @@ export default {
             await text.storeBehaviorLog(params).then(res => commit('appendBehaviorLogs', res))
         },
         async listAllTexts({commit}, date) {
-            await text.listAllTexts(date).then(res => commit('setTextLists', res))
+            await text.listAllTexts(date).then(res => {
+                commit('setTextLists', res)
+            })
         },
         async listAllBehaviors({commit}, date) {
             await text.listAllBehaviors(date).then(res => commit('setBehaviorLogs', res))
