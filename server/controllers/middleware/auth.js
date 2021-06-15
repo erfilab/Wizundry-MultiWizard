@@ -32,12 +32,12 @@ const checkIfAuthenticated = (req, res, next) => {
 const checkIfAdmin = (req, res, next) => {
     getAuthToken(req, res, async () => {
         try {
-            const { authToken } = req;
+            const { authToken } = req.headers;
+
             const userInfo = await firebaseAdmin
                 .auth()
                 .verifyIdToken(authToken);
 
-            console.log("USERINFO", userInfo)
             if (userInfo.role === 'admin') {
                 req.authId = userInfo.uid;
                 return next();

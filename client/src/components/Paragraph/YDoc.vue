@@ -2,6 +2,11 @@
   <v-container>
     <v-row v-if="curRole !== 'participant'">
       <v-col cols="12">
+        <v-btn outlined @click="requestEditing">Ctrl + Q = Request Editing Log</v-btn>
+        <v-btn outlined @click="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)">Fn + F9 = 🎤 Microphone</v-btn>
+        <v-btn outlined @click="speechLoading? emitTalkEvent(false) : emitTalkEvent(true)">Esc = 🔊 Speaker</v-btn>
+      </v-col>
+      <v-col cols="12">
         {{Object.keys(projectInfo).slice(2, 12)}} <br/>
         {{Object.values(projectInfo).slice(2, 12)}}
       </v-col>
@@ -63,9 +68,10 @@
     <div class="editor" v-if="editor"
          @keyup.120="isTesting? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
          @keyup.esc="speechLoading? emitTalkEvent(false) : emitTalkEvent(true)"
+         @keyup.ctrl.81="requestEditing"
     >
       <menu-bar v-show="curRole!== 'participant'" class="editor__header" :editor="editor"/>
-      <editor-content class="editor__content" :editor="editor"/>
+      <editor-content style="height: 500px" class="editor__content" :editor="editor"/>
       <div v-show="curRole !== 'participant'" class="editor__footer">
         <div :class="`editor__status editor__status--${status}`">
           <template v-if="status === 'connected'">
@@ -234,6 +240,14 @@ export default {
         '#94FADB',
         '#B9F18D',
       ])
+    },
+    requestEditing() {
+      this.storeBehaviorLog({
+        projectId: this.projectInfo.projectId,
+        type: "REQUEST",
+        status: true,
+        timestamp: this.dayjs().valueOf(),
+      })
     },
     // speech recognition
     startSpeechRecognition() {
@@ -449,7 +463,7 @@ export default {
       this.editor = new Editor({
         onUpdate: () => {
           const {textContent} = this.editor.state.doc
-          if (this.curRole !== 'participant' && textContent && textContent.length !== this.lastContent.length) {
+          if (this.curRole !== 'participant' && textContent.length > 0 && !this.isSpeaking && textContent.length !== this.lastContent.length) {
             this.storeTextData({
               type: 'EDIT',
               lastContent: this.lastContent,
@@ -504,7 +518,7 @@ export default {
 .editor {
   display: flex;
   flex-direction: column;
-  max-height: 400px;
+  max-height: 1200px;
   color: #0d0d0d;
   background-color: white;
   border: 3px solid #0d0d0d;
