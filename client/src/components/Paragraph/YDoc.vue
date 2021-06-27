@@ -1,112 +1,110 @@
 <template>
   <v-container>
-    <v-row v-if="curRole !== 'participant'">
-      <v-col cols="12">
-        <v-btn outlined @click="requestEditing"
-          >Ctrl + Q = Request Editing Log</v-btn
-        >
-        <v-btn
-          outlined
-          @click="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
-          >Fn + F9 = 🎤 Microphone</v-btn
-        >
-        <v-btn
-          outlined
-          @click="speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)"
-          >Esc = 🔊 Speaker</v-btn
-        >
-      </v-col>
-      <v-col cols="12">
-        {{ Object.keys(projectInfo).slice(2, 12) }} <br />
-        {{ Object.values(projectInfo).slice(2, 12) }}
-      </v-col>
-      <v-col cols="3">
-        <v-btn
-          @click="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
-          text
-          :color="!isTesting ? 'grey' : isSpeaking ? 'red' : 'red darken-3'"
-          class="mt-4"
-        >
-          <v-icon>{{
-            isTesting ? "mdi-microphone-off" : "mdi-microphone"
-          }}</v-icon>
-          {{ isTesting ? "speaking..." : "closed" }}
-        </v-btn>
-      </v-col>
-      <v-spacer />
+    <v-row>
       <v-col>
-        <v-switch
-          v-model="autoHighlight"
-          inset
-          label="Auto HighLight"
-        ></v-switch>
+        <v-row v-if="curRole !== 'participant'">
+          <v-col cols="12">
+            <v-btn outlined @click="requestEditing"
+            >Ctrl + Q = Request Editing Log</v-btn
+            >
+            <v-btn
+                outlined
+                @click="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
+            >Fn + F9 = 🎤 Microphone</v-btn
+            >
+            <v-btn
+                outlined
+                @click="speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)"
+            >Esc = 🔊 Speaker</v-btn
+            >
+          </v-col>
+          <v-col cols="12">
+            {{ Object.keys(projectInfo).slice(2, 12) }} <br />
+            {{ Object.values(projectInfo).slice(2, 12) }}
+          </v-col>
+          <v-col>
+            <v-switch
+                v-model="autoHighlight"
+                inset
+                label="Auto HighLight"
+            ></v-switch>
+          </v-col>
+          <v-col>
+            <v-switch
+                v-model="autoPunctuation"
+                inset
+                label="Auto Punctuation"
+            ></v-switch>
+          </v-col>
+          <v-col cols="3">
+            <v-btn
+                @click="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
+                text
+                :color="!isTesting ? 'grey' : isSpeaking ? 'red' : 'red darken-3'"
+                class="mt-4"
+            >
+              <v-icon>{{
+                  isTesting ? "mdi-microphone-off" : "mdi-microphone"
+                }}</v-icon>
+              {{ isTesting ? "speaking..." : "closed" }}
+            </v-btn>
+          </v-col>
+          <v-col>
+            <v-switch
+                v-model="usingNativeRecognition"
+                inset
+                :disabled="isTesting || isSpeaking"
+                :label="usingNativeRecognition ? 'Using Google?' : 'Using Native?'"
+            ></v-switch>
+          </v-col>
+        </v-row>
+        <v-row v-else>
+          <v-col class="mt-3" cols="3" v-if="speechLoading">
+            Rewound
+            <transition name="fade" class="pl-2">
+              <v-progress-circular indeterminate color="purple" small />
+            </transition>
+          </v-col>
+        </v-row>
       </v-col>
       <v-col>
-        <v-switch
-          v-model="autoPunctuation"
-          inset
-          label="Auto Punctuation"
-        ></v-switch>
-      </v-col>
-      <v-col>
-        <v-switch
-          v-model="usingNativeRecognition"
-          inset
-          :disabled="isTesting || isSpeaking"
-          :label="usingNativeRecognition ? 'Using Google?' : 'Using Native?'"
-        ></v-switch>
+        <div
+            class="editor"
+            v-if="editor"
+            @keyup.120="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
+            @keyup.esc="speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)"
+            @keyup.ctrl.81="requestEditing"
+            @click="getCoord"
+        >
+          <menu-bar
+              v-show="curRole !== 'participant'"
+              class="editor__header"
+              :editor="editor"
+          />
+          <editor-content
+              style=""
+              class="editor__content"
+              :editor="editor"
+          />
+          <div v-show="curRole !== 'participant'" class="editor__footer">
+            <div :class="`editor__status editor__status--${status}`">
+              <template v-if="status === 'connected'">
+                {{ users.length }} user{{ users.length === 1 ? "" : "s" }} online in
+                {{ projectInfo.projectName }}
+              </template>
+              <template v-else>
+                offline
+              </template>
+            </div>
+            <div class="editor__name">
+              <button>
+                {{ currentUser.name }}
+              </button>
+            </div>
+          </div>
+        </div>
       </v-col>
     </v-row>
-    <v-row v-else>
-      <v-col class="mt-3" cols="3" v-if="speechLoading">
-        Rewound
-        <transition name="fade" class="pl-2">
-          <v-progress-circular indeterminate color="purple" small />
-        </transition>
-      </v-col>
-      <!--      <v-col :cols="speechLoading? 9:12">-->
-      <!--        &lt;!&ndash;        <v-text-field v-model="runTimeContent"/>&ndash;&gt;-->
-      <!--        <v-textarea-->
-      <!--            counter-->
-      <!--            label="Run Time Content"-->
-      <!--            :value="runTimeContent"-->
-      <!--        ></v-textarea>-->
-      <!--      </v-col>-->
-    </v-row>
-    <div
-      class="editor"
-      v-if="editor"
-      @keyup.120="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
-      @keyup.esc="speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)"
-      @keyup.ctrl.81="requestEditing"
-    >
-      <menu-bar
-        v-show="curRole !== 'participant'"
-        class="editor__header"
-        :editor="editor"
-      />
-      <editor-content
-        style="height: 500px"
-        class="editor__content"
-        :editor="editor"
-      />
-      <div v-show="curRole !== 'participant'" class="editor__footer">
-        <div :class="`editor__status editor__status--${status}`">
-          <template v-if="status === 'connected'">
-            {{ users.length }} user{{ users.length === 1 ? "" : "s" }} online in
-            {{ projectInfo.projectName }}
-          </template>
-          <template v-else>
-            offline
-          </template>
-        </div>
-        <div class="editor__name">
-          <button>
-            {{ currentUser.name }}
-          </button>
-        </div>
-      </div>
-    </div>
   </v-container>
 </template>
 
@@ -178,6 +176,8 @@ export default {
         projectName: "",
         projectId: "",
       },
+
+      editPos: {},
 
       socket: null,
 
@@ -274,7 +274,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions("text", ["storeTextData", "storeBehaviorLog"]),
+    ...mapActions("text", ["storeTextData", "storeBehaviorLog", "storeAnchorLog"]),
     getRandomColor() {
       return getRandomElement([
         "#958DF1",
@@ -285,6 +285,14 @@ export default {
         "#94FADB",
         "#B9F18D",
       ]);
+    },
+    getCoord(e) {
+      this.editPos.clientX = e.clientX
+      this.editPos.clientY = e.clientY
+      this.editPos.projectId = this.projectInfo.projectId
+      this.editPos.timestamp = this.dayjs().valueOf()
+
+      this.storeAnchorLog(this.editPos).then(() => console.log('pos', this.editPos.clientX, this.editPos.clientY))
     },
     requestEditing() {
       this.storeBehaviorLog({
@@ -523,6 +531,10 @@ export default {
       );
 
       this.editor = new Editor({
+        onSelectionUpdate: (e) => {
+          this.editPos.innerHTML = e.editor.view.dom.innerHTML
+          this.editPos.anchor = this.editor.state.selection.anchor
+        },
         onUpdate: () => {
           const { textContent } = this.editor.state.doc;
           if (
@@ -584,7 +596,8 @@ export default {
 .editor {
   display: flex;
   flex-direction: column;
-  max-height: 1200px;
+  height: 1200px;
+  width: 700px;
   color: #0d0d0d;
   background-color: white;
   border: 3px solid #0d0d0d;
@@ -603,6 +616,7 @@ export default {
 
 .editor__content {
   padding: 1.25rem 1rem;
+  font-family: monospace;
   flex: 1 1 auto;
   overflow-x: hidden;
   overflow-y: auto;

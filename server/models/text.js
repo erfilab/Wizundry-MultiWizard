@@ -60,4 +60,17 @@ Text.createBehav = ({ projectId, type, status, timestamp }, result) => {
     });
 }
 
+
+Text.createAnchor = ({ projectId, clientX, clientY, innerHTML, anchor, timestamp }, result) => {
+    sql.query("INSERT INTO anchor_log SET ?", { projectId, clientX, clientY, innerHTML, anchor, timestamp }, (err, res) => {
+        if (err) {
+            console.error(err)
+            result(err, null);
+            return;
+        }
+
+        result(null, { projectId, clientX, clientY, innerHTML, anchor, timestamp });
+    });
+}
+
 module.exports = Text;

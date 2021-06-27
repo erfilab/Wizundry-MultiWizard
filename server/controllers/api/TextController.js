@@ -28,6 +28,16 @@ exports.createBehavior = (req, res) => {
     })
 }
 
+exports.createAnchor = (req, res) => {
+    if (!req.body) res.status(400).send({ message: "Content can not be empty!" });
+
+    let { projectId, clientX, clientY, innerHTML, anchor, timestamp } = req.body;
+    Text.createAnchor({ projectId, clientX, clientY, innerHTML, anchor, timestamp }, async (err, data) => {
+        if (err) res.status(500).send({message: err.message || "Some error occurred while create the Anchor"});
+        else res.status(201).json({data: data});
+    })
+}
+
 exports.listAllBehaviors = (req, res) => {
     const { query_time } = req.params;
     Text.getAllBehaviors({query_time}, (err, data) => {

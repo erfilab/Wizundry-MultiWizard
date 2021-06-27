@@ -5,6 +5,7 @@ export default {
     state: {
         textLists: [],
         behaviorLogs: [],
+        anchorLogs: [],
     },
     getters: {
         textLists: state => {
@@ -12,6 +13,7 @@ export default {
             return state.textLists
         },
         behaviorLogs: state => state.behaviorLogs,
+        anchorLogs: state => state.anchorLogs,
     },
     mutations: {
         setTextLists(state, textLists) {
@@ -25,6 +27,9 @@ export default {
         },
         appendBehaviorLogs(state, behavior) {
             state.behaviorLogs.push(behavior);
+        },
+        appendAnchorLogs(state, anchor) {
+            state.anchorLogs.push(anchor);
         }
     },
     actions: {
@@ -35,6 +40,9 @@ export default {
         },
         async storeBehaviorLog({commit}, params) {
             await text.storeBehaviorLog(params).then(res => commit('appendBehaviorLogs', res))
+        },
+        async storeAnchorLog({commit}, params) {
+            await text.storeAnchorLog(params).then(res => commit('appendAnchorLogs', res))
         },
         async listAllTexts({commit}, date) {
             await text.listAllTexts(date).then(res => {

@@ -7,6 +7,9 @@ export default {
     async storeBehaviorLog(params) {
         return await axios.post('/text/behavior', params).then(res => res.data).catch(console.error);
     },
+    async storeAnchorLog(params) {
+        return await axios.post('/text/anchor', params).then(res => res.data).catch(console.error);
+    },
     async listAllTexts(date) {
         return await axios.get(`/text/index${date}`).then(res => res.data).catch(console.error);
     },
