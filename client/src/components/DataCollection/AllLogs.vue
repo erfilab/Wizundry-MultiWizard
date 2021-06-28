@@ -63,7 +63,7 @@
         </template>
       </v-data-table>
 
-<!--      Chart-->
+      <!--      Chart-->
       <div id="chart" v-show="showChart">
         <apexchart type="bar" height="350" :options="chartOptions" :series="series"></apexchart>
       </div>

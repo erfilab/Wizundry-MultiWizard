@@ -48,6 +48,18 @@ Text.getAllBehaviors = ({query_time}, result) => {
         });
 };
 
+Text.getAllAnchors = ({query_time}, result) => {
+    sql.query(`SELECT * FROM anchor_log WHERE anchor_log.timestamp >= ${query_time} AND anchor_log.timestamp < ${parseInt(query_time)+86400000}`,
+        (err, res) => {
+            if (err) {
+                console.error(err)
+                result(null, err);
+                return;
+            }
+            result(null, res);
+        });
+};
+
 Text.createBehav = ({ projectId, type, status, timestamp }, result) => {
     sql.query("INSERT INTO behavior_log SET ?", { projectId, type, status, timestamp }, (err, res) => {
         if (err) {

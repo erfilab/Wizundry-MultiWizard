@@ -30,7 +30,10 @@ export default {
         },
         appendAnchorLogs(state, anchor) {
             state.anchorLogs.push(anchor);
-        }
+        },
+        setAnchorLogs(state, anchors) {
+            state.anchorLogs = anchors;
+        },
     },
     actions: {
         async storeTextData({commit}, params) {
@@ -51,6 +54,9 @@ export default {
         },
         async listAllBehaviors({commit}, date) {
             await text.listAllBehaviors(date).then(res => commit('setBehaviorLogs', res))
-        }
+        },
+        async listAllAnchors({commit}, date) {
+            await text.listAllAnchors(date).then(res => commit('setAnchorLogs', res))
+        },
     }
 };

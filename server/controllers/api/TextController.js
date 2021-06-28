@@ -45,3 +45,11 @@ exports.listAllBehaviors = (req, res) => {
         else res.status(200).json({data: data});
     })
 }
+
+exports.listAllAnchors = (req, res) => {
+    const { query_time } = req.params;
+    Text.getAllAnchors({query_time}, (err, data) => {
+        if (err) res.status(500).send({ message: err.message || "Some error occurred while retrieving anchors." });
+        else res.status(200).json({data: data});
+    })
+}

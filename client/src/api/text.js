@@ -15,5 +15,8 @@ export default {
     },
     async listAllBehaviors(date) {
         return await axios.get(`/text/behaviors${date}`).then(res => res.data).catch(console.error);
+    },
+    async listAllAnchors(date) {
+        return await axios.get(`/text/anchors${date}`).then(res => res.data).catch(console.error);
     }
 }

@@ -4,6 +4,7 @@ const TextController = require('../controllers/api/TextController');
 TextRoute.post('/behavior', TextController.createBehavior)
 TextRoute.post('/anchor', TextController.createAnchor)
 TextRoute.get('/behaviors:query_time', TextController.listAllBehaviors)
+TextRoute.get('/anchors:query_time', TextController.listAllAnchors)
 TextRoute.post('/create', TextController.create)
 TextRoute.get('/index:query_time', TextController.listAllTexts)
 

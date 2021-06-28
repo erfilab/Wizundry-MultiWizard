@@ -75,6 +75,7 @@ import TextDiff from "@/components/DataCollection/TextDiff";
 import CreateUser from '@/components/DataCollection/CreateUser';
 import ProjectUserRecord from "@/components/DataCollection/ProjectUserRecord";
 import AllBehaviorLogs from "@/components/DataCollection/AllBehaviorLogs";
+import AllAnchorLogs from "@/components/DataCollection/AllAnchorLogs";
 
 import {mapGetters} from 'vuex';
 export default {
@@ -85,6 +86,7 @@ export default {
     CreateUser,
     ProjectUserRecord,
     AllBehaviorLogs,
+    AllAnchorLogs,
   },
   watch: {
     date(newVal) {
@@ -123,6 +125,10 @@ export default {
         {
           title: 'All Behavior Logs',
           content: 'AllBehaviorLogs'
+        },
+        {
+          title: 'All Anchor Logs',
+          content: 'AllAnchorLogs'
         },
         {
           title: 'Text Diff',
