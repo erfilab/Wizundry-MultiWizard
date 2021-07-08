@@ -33,6 +33,7 @@ let recognizeStream = null;
 const encoding = 'LINEAR16';
 const sampleRateHertz = 16000;
 const languageCode = 'en-US';
+let sender_uid = '';
 
 const request = {
     config: {
@@ -64,8 +65,9 @@ namespaces.on('connection', socket => {
             namespaces.in(room).emit('WEB_RECORDING', e.status)
         })
 
-        socket.on('startGoogleCloudStream', () => {
-            startRecognitionStream(room);
+        socket.on('startGoogleCloudStream', uid => {
+            if (uid) sender_uid = uid
+            startRecognitionStream(room, sender_uid);
         });
 
         socket.on('endGoogleCloudStream', () => {
@@ -92,7 +94,7 @@ namespaces.on('connection', socket => {
     })
 })
 
-function startRecognitionStream(room) {
+function startRecognitionStream(room, uid) {
     console.log("SSR", room, request.enableAutomaticPunctuation)
     recognizeStream = speechClient
         .streamingRecognize(request)
@@ -105,11 +107,11 @@ function startRecognitionStream(room) {
                     : '\n\nReached transcription time limit, press Ctrl+C\n'
             );
             // console.log("DATA", data)
-            namespaces.in(room).emit("SPEECH_DATA", data);
+            namespaces.in(room).emit("SPEECH_DATA", {data: data, uid: uid});
 
             if (data.results[0] && data.results[0].isFinal) {
                 stopRecognitionStream();
-                startRecognitionStream(room);
+                startRecognitionStream(room, sender_uid);
                 console.log('Restarted Stream on Serverside');
             }
         });

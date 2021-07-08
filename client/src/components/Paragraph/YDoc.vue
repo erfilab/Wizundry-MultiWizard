@@ -244,7 +244,7 @@ export default {
             (text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
         );
       const { size } = this.editor.view.state.doc.content;
-      this.editor.commands.insertContent(` ${text} `, size - 1);
+      this.editor.commands.insertContent(`${text} `, size - 1);
       const insertTrans = this.editor.state.tr.insertText(``, size - 1);
       this.editor.view.dispatch(insertTrans);
     },
@@ -350,7 +350,7 @@ export default {
     },
     initRecording() {
       this.isTesting = this.isSpeaking = true;
-      this.socket.emit("startGoogleCloudStream", "");
+      this.socket.emit("startGoogleCloudStream", this.currentUser.uid);
       this.audioContext = window.AudioContext || window.webkitAudioContext;
       this.context = new this.audioContext({
         latencyHint: "interactive",
@@ -485,9 +485,9 @@ export default {
             });
           }
         })
-        .on("SPEECH_DATA", async (data) => {
-          if (data && this.curRole === "participant" && this.isTesting) {
-            // console.log("SPEECH DATA:\n", data.results[0].alternatives[0]);
+        .on("SPEECH_DATA", async (param) => {
+          let { data, uid } = param;
+          if (data && this.curRole === "participant" && this.isTesting && this.currentUser.uid === uid) {
             this.runTimeContent = data.results[0].alternatives[0].transcript;
 
             const dataFinal = data.results[0].isFinal;
@@ -617,6 +617,7 @@ export default {
 .editor__content {
   padding: 1.25rem 1rem;
   font-family: monospace;
+  font-size: 23px;
   flex: 1 1 auto;
   overflow-x: hidden;
   overflow-y: auto;
