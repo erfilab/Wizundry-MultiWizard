@@ -79,7 +79,10 @@ namespaces.on('connection', socket => {
                 recognizeStream.write(data);
             }
         });
-
+        socket.on('HIGHLIGHT', e => {
+            console.log("Highlight Event", e)
+            namespaces.in(room).emit('AUTO_HIGHLIGHT', {status: e})
+        });
         socket.on('SPEAKER', (e) => {
             console.log("Speaker Event", e)
             namespaces.in(room).emit('WEB_SPEAKER', {

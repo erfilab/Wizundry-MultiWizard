@@ -182,7 +182,7 @@ export default {
       socket: null,
 
       //function bar
-      autoHighlight: true,
+      autoHighlight: false,
       autoPunctuation: true,
       usingNativeRecognition: false,
 
@@ -231,6 +231,9 @@ export default {
     },
   },
   watch: {
+    autoHighlight(newVal) {
+      this.socket.emit("HIGHLIGHT", newVal);
+    },
     newContent(text) {
       // this.editor.commands.keyboardShortcut('c-z')
       this.editor
@@ -238,6 +241,7 @@ export default {
         .focus()
         .undo()
         .run();
+      console.log(this.autoHighlight)
       if (text && this.autoHighlight)
         this.keywords.map(
           (kw) =>
@@ -443,6 +447,10 @@ export default {
           ? "https://ryanyen2.me/"
           : "http://localhost:3000/";
       this.socket = io(HOST + this.projectInfo.projectName)
+        .on('AUTO_HIGHLIGHT', e => {
+          if (this.curRole === "participant")
+            this.autoHighlight = e.status
+        })
         .on("WEB_RECORDING", async (e) => {
           console.log("WEB RECORDING STATUS: ", e);
           if (e && this.curRole === "participant" && this.isTesting === false) {
