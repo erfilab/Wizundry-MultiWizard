@@ -1,100 +1,65 @@
 <template>
   <v-container>
     <v-row>
-      <v-col>
-        <v-row v-if="curRole !== 'participant'">
-          <v-col cols="12">
-            <v-btn outlined @click="requestEditing"
-            >Ctrl + Q = Request Editing Log</v-btn
-            >
-            <v-btn
-                outlined
-                @click="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
-            >Fn + F9 = 🎤 Microphone</v-btn
-            >
-            <v-btn
-                outlined
-                @click="speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)"
-            >Esc = 🔊 Speaker</v-btn
-            >
-          </v-col>
-          <v-col cols="12">
-            {{ Object.keys(projectInfo).slice(2, 12) }} <br />
-            {{ Object.values(projectInfo).slice(2, 12) }}
-          </v-col>
-          <v-col>
-            <v-switch
-                v-model="autoHighlight"
-                inset
-                label="Auto HighLight"
-            ></v-switch>
-          </v-col>
-          <v-col>
-            <v-switch
-                v-model="autoPunctuation"
-                inset
-                label="Auto Punctuation"
-            ></v-switch>
-          </v-col>
-          <v-col cols="3">
-            <v-btn
-                @click="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
-                text
-                :color="!isTesting ? 'grey' : isSpeaking ? 'red' : 'red darken-3'"
+      <v-col cols="4">
+        <v-col cols="12">
+          <v-card>
+            <CommandBoxes @startSpeak="emitSpeakEvent" />
+          </v-card>
+        </v-col>
+        <v-col class="mt-3" cols="12">
+          <v-row>
+            <v-col cols="3">
+              <v-btn
+                @click="
+                  isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
+                "
+                fab
+                :color="
+                  !isTesting ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
+                "
                 class="mt-4"
-            >
-              <v-icon>{{
-                  isTesting ? "mdi-microphone-off" : "mdi-microphone"
-                }}</v-icon>
-              {{ isTesting ? "speaking..." : "closed" }}
-            </v-btn>
-          </v-col>
-          <v-col>
-            <v-switch
-                v-model="usingNativeRecognition"
-                inset
-                :disabled="isTesting || isSpeaking"
-                :label="usingNativeRecognition ? 'Using Google?' : 'Using Native?'"
-            ></v-switch>
-          </v-col>
-        </v-row>
-        <v-row v-else>
-          <v-col class="mt-3" cols="3" v-if="speechLoading">
-            Rewound
-            <transition name="fade" class="pl-2">
-              <v-progress-circular indeterminate color="purple" small />
-            </transition>
-          </v-col>
-        </v-row>
+              >
+                <v-icon
+                  >{{ isTesting ? "mdi-microphone-off" : "mdi-microphone" }}
+                </v-icon>
+              </v-btn>
+            </v-col>
+            <v-col class="pt-5">
+              <span> {{ isTesting ? "speaking..." : "closed" }} </span>
+              <v-progress-linear
+                :color="
+                  !isTesting ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
+                "
+                :indeterminate="isTesting"
+              />
+            </v-col>
+          </v-row>
+        </v-col>
       </v-col>
-      <v-col>
+      <v-col cols="8">
         <div
-            class="editor"
-            v-if="editor"
-            @keyup.120="isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
-            @keyup.esc="speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)"
-            @keyup.ctrl.81="requestEditing"
-            @click="getCoord"
+          class="editor"
+          v-if="editor"
+          @keyup.120="
+            isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
+          "
+          @keyup.esc="
+            speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)
+          "
         >
-          <menu-bar
-              v-show="curRole !== 'participant'"
-              class="editor__header"
-              :editor="editor"
-          />
-          <editor-content
-              style=""
-              class="editor__content"
-              :editor="editor"
-          />
-          <div v-show="curRole !== 'participant'" class="editor__footer">
+          <menu-bar class="editor__header" :editor="editor" />
+          <editor-content style="" class="editor__content" :editor="editor" />
+          <div class="editor__footer">
             <div :class="`editor__status editor__status--${status}`">
               <template v-if="status === 'connected'">
-                {{ users.length }} user{{ users.length === 1 ? "" : "s" }} online in
-                {{ projectInfo.projectName }}
+                {{ users.length }} user{{
+                  users.length === 1 ? "" : "s"
+                }}
+                online in
+                {{ this.dayjs().format("YYYY-MM-DD") }}
               </template>
-              <template v-else>
-                offline
-              </template>
+              <template v-else> offline </template>
             </div>
             <div class="editor__name">
               <button>
@@ -112,7 +77,7 @@
 import { Editor, EditorContent } from "@tiptap/vue-2";
 import StarterKit from "@tiptap/starter-kit";
 import Collaboration from "@tiptap/extension-collaboration";
-// import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
+import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
@@ -121,10 +86,11 @@ import CharacterCount from "@tiptap/extension-character-count";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { IndexeddbPersistence } from "y-indexeddb";
-import MenuBar from "./MenuBar.vue";
 import { SmilieReplacer } from "@/plugins/smileReplacer.ts";
+import CommandBoxes from "@/components/MultiWizard/CommandBoxes";
 
 import io from "socket.io-client";
+import MenuBar from "../Paragraph/MenuBar";
 
 const BUFFER_SIZE = 2048;
 const MEDIA_ACCESS_CONSTRAINTS = { audio: true, video: false };
@@ -136,6 +102,7 @@ const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
   let result = new Int16Array(Math.round(buffer.length / sampleRateRatio));
   let offsetResult = 0,
     offsetBuffer = 0;
+
   while (offsetResult < result.length) {
     let nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
     let accum = 0,
@@ -160,6 +127,7 @@ const getRandomElement = (list) =>
 export default {
   components: {
     EditorContent,
+    CommandBoxes,
     MenuBar,
   },
   data() {
@@ -172,22 +140,9 @@ export default {
       users: [],
       status: "connecting",
 
-      projectInfo: {
-        projectName: "",
-        projectId: "",
-      },
-
-      editPos: {},
-
       socket: null,
 
-      //function bar
-      autoHighlight: false,
-      autoPunctuation: true,
-      usingNativeRecognition: false,
-
       //web speech
-      recognition: null,
       isTesting: false,
       isSpeaking: false,
 
@@ -205,23 +160,6 @@ export default {
 
       runTimeContent: "",
       newContent: "",
-      lastContent: "",
-
-      //text preprocess
-      keywords: [
-        "However",
-        "But",
-        "but",
-        "and",
-        "And",
-        "because",
-        "Because",
-        "Therefore",
-        "whenever",
-        "whereas",
-        "Thus",
-        "yet",
-      ],
     };
   },
   computed: {
@@ -231,32 +169,19 @@ export default {
     },
   },
   watch: {
-    autoHighlight(newVal) {
-      this.socket.emit("HIGHLIGHT", newVal);
-    },
-    newContent(text) {
-      // this.editor.commands.keyboardShortcut('c-z')
-      this.editor
-        .chain()
-        .focus()
-        .undo()
-        .run();
-      console.log(this.autoHighlight)
-      if (text && this.autoHighlight)
-        this.keywords.map(
-          (kw) =>
-            (text = text.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
-        );
-      const { size } = this.editor.view.state.doc.content;
-      this.editor.commands.insertContent(`${text} `, size - 1);
-      const insertTrans = this.editor.state.tr.insertText(``, size - 1);
-      this.editor.view.dispatch(insertTrans);
-    },
     getCurrentUser(newVal) {
       if (newVal) {
         console.log("Current USER >> ", newVal);
         this.initProject();
       }
+    },
+    newContent(text) {
+      this.editor.chain().focus().undo().run();
+
+      const { size } = this.editor.view.state.doc.content;
+      this.editor.commands.insertContent(`${text} `, size - 1);
+      const insertTrans = this.editor.state.tr.insertText(``, size - 1);
+      this.editor.view.dispatch(insertTrans);
     },
     runTimeContent(newVal, oldVal) {
       const { size } = this.editor.view.state.doc.content;
@@ -264,21 +189,17 @@ export default {
       if (newVal && !oldVal) {
         this.editor.commands.insertContent(`${newVal}`, size - 1);
       } else if (newVal && oldVal) {
-        if (size > 1)
-          this.editor
-            .chain()
-            .focus()
-            .undo()
-            .run();
-        // if (this.autoHighlight) this.keywords.map(kw => newVal = newVal.replace(new RegExp(kw, "g"), ` <mark>${kw}</mark>`))
+        if (size > 1) this.editor.chain().focus().undo().run();
         this.editor.commands.insertContent(` ${newVal} `, size - 1);
-      } else if (!newVal && oldVal) {
-        // this.editor.commands.keyboardShortcut('c-z')
       }
     },
   },
   methods: {
-    ...mapActions("text", ["storeTextData", "storeBehaviorLog", "storeAnchorLog"]),
+    ...mapActions("text", [
+      "storeTextData",
+      "storeBehaviorLog",
+      "storeAnchorLog",
+    ]),
     getRandomColor() {
       return getRandomElement([
         "#958DF1",
@@ -290,75 +211,24 @@ export default {
         "#B9F18D",
       ]);
     },
-    getCoord(e) {
-      this.editPos.clientX = e.clientX
-      this.editPos.clientY = e.clientY
-      this.editPos.projectId = this.projectInfo.projectId
-      this.editPos.timestamp = this.dayjs().valueOf()
-
-      this.storeAnchorLog(this.editPos).then(() => console.log('pos', this.editPos.clientX, this.editPos.clientY))
+    //speaker
+    emitSpeakEvent(text) {
+      console.log("emitSpeakEvent >> ", text);
+      this.socket.emit("SPEAK", { content: text });
     },
-    requestEditing() {
-      this.storeBehaviorLog({
-        projectId: this.projectInfo.projectId,
-        type: "REQUEST",
-        status: true,
-        timestamp: this.dayjs().valueOf(),
-      });
-    },
-    // speech recognition
-    startSpeechRecognition() {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-      this.recognition = new SpeechRecognition();
-      this.recognition.interimResults = true;
-      this.recognition.lang = "en-US";
-      this.isTesting = true;
-
-      this.listenForSpeechEvents();
-      this.recognition.onspeechstart = () => {
-        this.isSpeaking = true;
-      };
-
-      this.recognition.onspeechend = () => {
-        this.isSpeaking = false;
-      };
-      this.recognition.onresult = (event) => {
-        this.runTimeContent = Array.from(event.results)
-          .map((result) => result[0])
-          .map((result) => result.transcript)
-          .join("");
-      };
-
-      this.recognition.onend = () => {
-        if (this.runTimeContent !== "") {
-          let temp_rtc = this.runTimeContent;
-          this.runTimeContent = "";
-          this.newContent = temp_rtc;
-        }
-        this.recognition.stop();
-        if (this.isTesting) this.recognition.start();
-      };
-      this.recognition.start();
-    },
-    endSpeechRecognition() {
-      this.isTesting = false;
-      this.recognition.stop();
-    },
+    //microphone
     emitSpeakerEvent(e) {
       this.isTesting = e;
       this.socket.emit("MICROPHONE", {
         status: e,
-        punctuation: this.autoPunctuation,
+        punctuation: true,
       });
     },
     initRecording() {
       this.isTesting = this.isSpeaking = true;
       this.socket.emit("startGoogleCloudStream", this.currentUser.uid);
       this.audioContext = window.AudioContext || window.webkitAudioContext;
-      this.context = new this.audioContext({
-        latencyHint: "interactive",
-      });
+      this.context = new this.audioContext({ latencyHint: "interactive" });
       this.processor = this.context.createScriptProcessor(BUFFER_SIZE, 1, 1);
       this.processor.connect(this.context.destination);
       this.context.resume();
@@ -395,14 +265,6 @@ export default {
       let left16 = downSampleBuffer(left, 44100, 16000);
       this.socket.emit("BINARY_DATA", left16);
     },
-    emitTalkEvent(e) {
-      this.speechLoading = e;
-      this.socket.emit("SPEAKER", {
-        status: e,
-        start: this.editor.state.selection.anchor,
-      });
-      this.emitSpeakerEvent(false);
-    },
     listenForSpeechEvents() {
       this.audioSpeech.onstart = () => {
         this.speechLoading = true;
@@ -412,32 +274,13 @@ export default {
         this.speechLoading = false;
       };
     },
-    speakBack(from) {
-      const { size } = this.editor.view.state.doc.content;
-      this.selectedText = this.editor.state.doc.textBetween(from, size, " ");
-      this.audioSpeech.text = this.selectedText;
+    speakBack(text) {
+      this.audioSpeech.text = text;
       this.audioSpeech.lang = "en-US";
 
       this.synth.speak(this.audioSpeech);
     },
     initProject() {
-      if (this.$route.params.projectInfo) {
-        const { projectInfo } = this.$route.params;
-        this.projectInfo = {
-          projectName: projectInfo.project_name,
-          projectId: projectInfo.id,
-          ...projectInfo,
-        };
-        if (this.curRole !== "participant") {
-          this.storeBehaviorLog({
-            projectId: this.projectInfo.projectId,
-            type: "PROJ",
-            status: true,
-            timestamp: this.dayjs().valueOf(),
-          });
-        }
-      }
-
       this.currentUser = this.getCurrentUser;
       this.currentUser.color = this.getRandomColor();
 
@@ -446,81 +289,48 @@ export default {
         process.env.NODE_ENV === "production"
           ? "https://ryanyen2.tech/"
           : "http://localhost:3000/";
-      this.socket = io(HOST + this.projectInfo.projectName)
-        .on('AUTO_HIGHLIGHT', e => {
-          if (this.curRole === "participant")
-            this.autoHighlight = e.status
-        })
+      this.socket = io(HOST + this.dayjs().format("YYYY-MM-DD"))
         .on("WEB_RECORDING", async (e) => {
           console.log("WEB RECORDING STATUS: ", e);
           if (e && this.curRole === "participant" && this.isTesting === false) {
-            if (this.usingNativeRecognition) this.startSpeechRecognition();
-            else this.initRecording();
+            this.initRecording();
           } else if (
             !e &&
             this.curRole === "participant" &&
             this.isTesting === true
           ) {
-            if (this.usingNativeRecognition) this.endSpeechRecognition();
-            else this.endRecording();
-          }
-          if (this.curRole !== "participant" && this.isTesting) {
-            await this.storeBehaviorLog({
-              projectId: this.projectInfo.projectId,
-              type: "RECORD",
-              status: e,
-              timestamp: this.dayjs().valueOf(),
-            });
+            this.endRecording();
           }
         })
-        .on("WEB_SPEAKER", async (status) => {
-          console.log("Speaker STATUS: ", status);
+        .on("START_SPEAKER", async (data) => {
+          console.log("START SPEAKER: ", data);
           if (
-            status.status &&
-            this.curRole === "participant" &&
-            this.speechLoading === false
-          ) {
-            this.speakBack(status.start);
-          } else if (!status.status && this.curRole === "participant") {
-            this.synth.cancel();
-          }
-          if (this.curRole !== "participant") {
-            await this.storeBehaviorLog({
-              projectId: this.projectInfo.projectId,
-              type: "SPEAKER",
-              status: status.status,
-              timestamp: this.dayjs().valueOf(),
-            });
-          }
+            data &&
+            this.curRole === "participant"
+          ) this.speakBack(data.content);
+          else if (this.curRole === "participant") this.synth.cancel();
         })
         .on("SPEECH_DATA", async (param) => {
           let { data, uid } = param;
-          if (data && this.curRole === "participant" && this.isTesting && this.currentUser.uid === uid) {
+          if (
+            data &&
+            this.curRole === "participant" &&
+            this.isTesting &&
+            this.currentUser.uid === uid
+          ) {
             this.runTimeContent = data.results[0].alternatives[0].transcript;
 
             const dataFinal = data.results[0].isFinal;
-            const { textContent } = this.editor.state.doc;
 
             if (dataFinal && this.runTimeContent) {
               let temp_cont = this.runTimeContent;
               this.runTimeContent = "";
               this.newContent = temp_cont;
-
-              await this.storeTextData({
-                type: "SPEECH",
-                lastContent: textContent,
-                newContent: this.newContent,
-                projectId: this.projectInfo.projectId,
-                projectName: this.projectInfo.projectName,
-                username: this.currentUser.name,
-                userRole: this.curRole,
-                timestamp: this.dayjs().valueOf(),
-              });
             }
           }
         });
 
-      this.socket.emit("joinRoom", this.projectInfo.projectName);
+      this.socket.emit("joinRoom", "default");
 
       let YJS_HOST =
         process.env.NODE_ENV === "production"
@@ -528,43 +338,17 @@ export default {
           : "ws://localhost:3001";
       this.provider = new WebsocketProvider(
         YJS_HOST,
-        this.projectInfo.projectName,
+        this.dayjs().format("YYYY-MM-DD"),
         ydoc
       );
       this.provider.on("status", (event) => (this.status = event.status));
       window.ydoc = ydoc;
       this.indexdb = new IndexeddbPersistence(
-        this.projectInfo.projectName,
+        this.dayjs().format("YYYY-MM-DD"),
         ydoc
       );
 
       this.editor = new Editor({
-        onSelectionUpdate: (e) => {
-          this.editPos.innerHTML = e.editor.view.dom.innerHTML
-          this.editPos.anchor = this.editor.state.selection.anchor
-        },
-        onUpdate: () => {
-          const { textContent } = this.editor.state.doc;
-          if (
-            this.curRole !== "participant" &&
-            textContent.length > 0 &&
-            !this.isTesting &&
-            textContent.length !== this.lastContent.length &&
-            this.runTimeContent === ''
-          ) {
-            this.storeTextData({
-              type: "EDIT",
-              lastContent: this.lastContent,
-              newContent: textContent,
-              projectId: this.projectInfo.projectId,
-              projectName: this.projectInfo.projectName,
-              username: this.currentUser.name,
-              userRole: this.curRole,
-              timestamp: this.dayjs().valueOf(),
-            });
-          }
-          this.lastContent = textContent;
-        },
         extensions: [
           StarterKit.configure({
             history: false,
@@ -576,19 +360,19 @@ export default {
           Collaboration.configure({
             document: ydoc,
           }),
-          // CollaborationCursor.configure({
-          //   provider: this.provider,
-          //   user: this.currentUser,
-          //   onUpdate: users => {
-          //     this.users = users
-          //   },
-          // }),
+          CollaborationCursor.configure({
+            provider: this.provider,
+            user: this.currentUser.uid,
+            onUpdate: (users) => {
+              this.users = users;
+            },
+          }),
           CharacterCount.configure({
             limit: 10000,
           }),
         ],
       });
-      // this.editor.chain().focus().user(this.currentUser).run()
+      this.editor.chain().focus().user(this.currentUser).run();
       localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
     },
   },
@@ -604,7 +388,7 @@ export default {
 .editor {
   display: flex;
   flex-direction: column;
-  height: 1200px;
+  min-height: 550px;
   width: 700px;
   color: #0d0d0d;
   background-color: white;
@@ -625,7 +409,7 @@ export default {
 .editor__content {
   padding: 1.25rem 1rem;
   font-family: monospace;
-  font-size: 23px;
+  font-size: 18px;
   flex: 1 1 auto;
   overflow-x: hidden;
   overflow-y: auto;

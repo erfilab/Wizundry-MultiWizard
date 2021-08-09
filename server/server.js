@@ -59,9 +59,17 @@ namespaces.on('connection', socket => {
         socket.join(room);
         console.log(`connect ${namespaceDir} - ${room}`)
 
+
+        // multi-wizard speaker event
+        socket.on('SPEAK', async (data) => {
+            console.log(`SPEAKER_EVENT ${data.content}`)
+            namespaces.in(room).emit("START_SPEAKER", {content: data.content});
+        });
+
+
         //mic event
         socket.on('MICROPHONE', e => {
-            if (e.status) request.enableAutomaticPunctuation = e.punctuation
+            // if (e.status) request.enableAutomaticPunctuation = e.punctuation
             namespaces.in(room).emit('WEB_RECORDING', e.status)
         })
 

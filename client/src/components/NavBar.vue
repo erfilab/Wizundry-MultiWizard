@@ -54,6 +54,10 @@
           </v-list-item>
 
           <v-list-item>
+            <v-list-item-title @click="$router.push({name: 'multi-thread'})">Multi-thread</v-list-item-title>
+          </v-list-item>
+
+          <v-list-item>
             <v-list-item-title @click="$router.push({name: 'admin'})">Admin Panel</v-list-item-title>
           </v-list-item>
         </v-list-item-group>

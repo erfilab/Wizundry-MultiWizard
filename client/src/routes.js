@@ -6,6 +6,8 @@ import TextArea from "@/components/Paragraph/YDoc";
 import AdminPanel from "@/components/DataCollection/AdminPanel";
 import Login from "@/components/LoginForm";
 import Lobby from "@/components/Lobby";
+import MultiThreadDoc from "@/components/MultiWizard/MultiThreadDoc";
+
 import { auth } from "./services/firebase";
 
 import store from "./store/index";
@@ -34,6 +36,12 @@ const routes = [
     path: "/text",
     component: TextArea,
     name: "text",
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/multithread",
+    component: MultiThreadDoc,
+    name: "multi-thread",
     meta: { requiresAuth: true },
   },
   {

@@ -127,7 +127,7 @@ export default {
     this.currentUser = this.getCurrentUser
     // let HOST = 'http://localhost:3000/'
     // if (process.env.NODE_ENV === 'production')
-    //   HOST = 'https://ryanyen2.me/'
+    //   HOST = 'https://ryanyen2.tech/'
     //
     // this.socket = io(HOST + this.room)
     //   .on("message", e => {
