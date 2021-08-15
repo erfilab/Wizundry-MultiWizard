@@ -119,10 +119,7 @@ const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
   return result.buffer;
 };
 
-import { mapGetters, mapActions } from "vuex";
-
-const getRandomElement = (list) =>
-  list[Math.floor(Math.random() * list.length)];
+import { mapGetters } from "vuex";
 
 export default {
   components: {
@@ -195,13 +192,8 @@ export default {
     },
   },
   methods: {
-    ...mapActions("text", [
-      "storeTextData",
-      "storeBehaviorLog",
-      "storeAnchorLog",
-    ]),
     getRandomColor() {
-      return getRandomElement([
+      const list = [
         "#958DF1",
         "#F98181",
         "#FBBC88",
@@ -209,7 +201,8 @@ export default {
         "#70CFF8",
         "#94FADB",
         "#B9F18D",
-      ]);
+      ]
+      return list[Math.floor(Math.random() * list.length)]
     },
     //speaker
     emitSpeakEvent(text) {

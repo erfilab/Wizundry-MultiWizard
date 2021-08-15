@@ -7,6 +7,7 @@ import AdminPanel from "@/components/DataCollection/AdminPanel";
 import Login from "@/components/LoginForm";
 import Lobby from "@/components/Lobby";
 import MultiThreadDoc from "@/components/MultiWizard/MultiThreadDoc";
+import Conversation from "./components/MultiWizard2/Conversation";
 
 import { auth } from "./services/firebase";
 
@@ -42,6 +43,12 @@ const routes = [
     path: "/multithread",
     component: MultiThreadDoc,
     name: "multi-thread",
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/conversation",
+    component: Conversation,
+    name: "conversation",
     meta: { requiresAuth: true },
   },
   {

@@ -58,6 +58,10 @@
           </v-list-item>
 
           <v-list-item>
+            <v-list-item-title @click="$router.push({name: 'conversation'})">Multi-conversation</v-list-item-title>
+          </v-list-item>
+
+          <v-list-item>
             <v-list-item-title @click="$router.push({name: 'admin'})">Admin Panel</v-list-item-title>
           </v-list-item>
         </v-list-item-group>
