@@ -4,10 +4,10 @@
       <v-col id="chat" cols="6">
         <!-- timeline -->
         <v-card
-            id="chatbox"
-            elevation="0"
-            class="overflow-y-auto overflow-x-hidden"
-            max-height="800px"
+          id="chatbox"
+          elevation="0"
+          class="overflow-y-auto overflow-x-hidden"
+          max-height="800px"
         >
           <v-row>
             <v-col>
@@ -36,7 +36,7 @@
               </v-alert>
               <v-alert
                   elevation="2"
-                  color="#E5E4DF"
+                  color="#757575"
                   rounded
                   v-if="timeLine.align === 'r' && timeLine.sent"
                   min-height="55px"
@@ -44,20 +44,11 @@
               >
                 {{ timeLine.content }}
               </v-alert>
-              <v-textarea
-                  solo
-                  backgroundColor="#E5E4DF"
-                  counter
-                  v-if="timeLine.align === 'r' && !timeLine.sent"
-                  :id="'content_' + timeLine.id"
-                  :value=timeLine.content
-              >
-              </v-textarea>
               <TextEditor
                   :id="'text_' + timeLine.id"
                   v-if="timeLine.align === 'r' && !timeLine.sent"
                   :currentUser="currentUser"
-                  @sent="sendText"
+                  @sent="play"
               />
             </v-timeline-item>
           </v-timeline>
@@ -65,25 +56,25 @@
         <br><br>
         <h3 class="text-center">User (for test)</h3>
         <v-textarea
-            label="Message"
-            v-model="message"
-            outlined
-            no-resize
-            counter
-            class="overflow-y-auto overflow-x-hidden pt-1"
-            height="350px"
+          label="Message"
+          v-model="message"
+          outlined
+          no-resize
+          counter
+          class="overflow-y-auto overflow-x-hidden pt-1"
+          height="100px"
         >
         </v-textarea>
         <v-btn
-            class="ml-4 mr-2"
-            elevation="2"
-            color="#CDE589"
-            @click="sendUserMsg()"
+          class="float-right ml-4 mr-2"
+          elevation="2"
+          color="#7CB342"
+          @click="sendUserMsg()"
         >
           Send
         </v-btn>
       </v-col>
-      <v-col col="6">
+      <v-col col="6" v-if="this.curRole === 'participant'">
         <!-- Direction -->
         <div>
           <v-row>
@@ -128,30 +119,30 @@
               <v-spacer></v-spacer>
               <v-col>
                 <v-btn
-                    class="fab mx-2"
-                    icon
-                    outlined
-                    dark
-                    x-samll
-                    color="#000000"
-                    @click="addReply"
+                  class="fab mx-2"
+                  icon
+                  outlined
+                  dark
+                  x-samll
+                  color="#FFFFFF"
+                  @click="addReply"
                 >
                   <v-icon dark> mdi-plus</v-icon>
                 </v-btn>
               </v-col>
             </v-row>
             <v-card
-                id="replybox"
-                outlined
-                class="overflow-y-auto overflow-x-hidden mt-2"
-                height="280px"
+              id="replybox"
+              outlined
+              class="overflow-y-auto overflow-x-hidden mt-2"
+              height="460px"
             >
               <v-alert
                   v-for="reply in allReplies"
                   :key="reply.id"
                   elevation="2"
                   class="ma-4"
-                  color="#CDE589"
+                  color="#7CB342"
                   rounded
                   @dblclick="sendReply"
               >
@@ -160,43 +151,43 @@
             </v-card>
             <br>
             <!-- Points -->
-            <v-row>
+            <!-- <v-row>
               <v-col cols="8">
                 <h3 class="text-center mt-1">Points</h3>
               </v-col>
               <v-spacer></v-spacer>
               <v-col>
                 <v-btn
-                    class="fab mx-2"
-                    icon
-                    outlined
-                    dark
-                    x-samll
-                    color="#000000"
-                    @click="addPoint"
+                  class="fab mx-2"
+                  icon
+                  outlined
+                  dark
+                  x-samll
+                  color="#FFFFFF"
+                  @click="addPoint"
                 >
                   <v-icon dark> mdi-plus</v-icon>
                 </v-btn>
               </v-col>
             </v-row>
             <v-card
-                id="pointbox"
-                outlined
-                class="overflow-y-auto overflow-x-hidden mt-2"
-                height="280px"
+              id="pointbox"
+              outlined
+              class="overflow-y-auto overflow-x-hidden mt-2"
+              height="210px"
             >
               <v-alert
                   v-for="point in allPoints"
                   :key="point.id"
                   elevation="2"
                   class="ma-4"
-                  color="#E5E4DF"
+                  color="#757575"
                   rounded
                   @dblclick="sendPoint"
               >
                 {{ point.content }}
               </v-alert>
-            </v-card>
+            </v-card> -->
             <!-- mic bar -->
             <v-row>
               <v-col cols="3">
@@ -230,13 +221,14 @@
           <v-col id="others" cols="6">
             <h3 class="text-center mt-1">Logger</h3>
             <v-card
-                outlined
-                class="overflow-y-auto overflow-x-hidden mt-3"
-                height="280px"
+              id="loggerbox"
+              outlined
+              class="overflow-y-auto overflow-x-hidden mt-3"
+              height="250px"
             >
               <div
-                  v-for="wizardLog in allLogs"
-                  :key="wizardLog.id"
+                v-for="wizardLog in allLogs"
+                :key="wizardLog.id"
               >
                 {{ wizardLog.content }}
               </div>
@@ -244,29 +236,29 @@
             <br>
             <h3 class="text-center mt-1">WhiteBoard</h3>
             <v-textarea
-                label="Notes"
-                v-model="logger_message"
-                outlined
-                no-resize
-                counter
-                class="overflow-y-auto overflow-x-hidden pt-3"
-                height="280px"
+              label="Notes"
+              v-model="logger_message"
+              outlined
+              no-resize
+              counter
+              class="overflow-y-auto overflow-x-hidden pt-3"
+              height="210px"
             >
             </v-textarea>
             <v-btn
-                class="ml-2 mr-4"
-                elevation="2"
-                color="#CDE589"
-            >
-              Save
-            </v-btn>
-            <v-btn
-                class="ml-4 mr-2"
-                elevation="2"
-                color="#CDE589"
-                @click="sendLogMsg()"
+              class="float-right ml-2 mr-4"
+              elevation="2"
+              color="#7CB342"
+              @click="sendLogMsg()"
             >
               Send
+            </v-btn>
+            <v-btn
+              class="float-right ml-2 mr-4"
+              elevation="2"
+              color="#7CB342"
+            >
+              Save
             </v-btn>
           </v-col>
         </v-row>
@@ -395,7 +387,6 @@ export default {
     initProject() {
       this.currentUser = this.getCurrentUser;
       this.currentUser.color = this.getRandomColor();
-
       let HOST =
           process.env.NODE_ENV === "production"
               ? "https://ryanyen2.tech/"
@@ -438,6 +429,14 @@ export default {
     // microphone event
     emitSpeakerEvent(e) {
       this.isSpeaking = e;
+      let action = " opened ";
+      if (!e) {
+        action = " closed "
+      }
+      let newLog = {
+        content: this.currentUser + action + "the microphone",
+      };
+      this.allLogs.push(newLog);
       this.socket.emit("MICROPHONE", {
         status: e,
         punctuation: true,
@@ -499,6 +498,10 @@ export default {
       const container = this.$el.querySelector("#pointbox");
       container.scrollTop = container.scrollHeight;
     },
+    scrollToLoggerBoxBottom() {
+      const container = this.$el.querySelector("#loggerbox");
+      container.scrollTop = container.scrollHeight;
+    },
     addReply() {
       let word = prompt("Add a new quick reply:");
       if (word) {
@@ -519,19 +522,16 @@ export default {
     },
     sendReply(event) {
       let el = (event.target || event.srcElement)
-      let last = this.allTimeLines[this.allTimeLines.length - 1];
-      this.updateInput(last.id);
-      if (
-          this.allTimeLines.length &&
-          last.align === "r" &&
-          last.content === ""
-      ) {
-        this.allTimeLines.pop();
-      }
       let index = this.allTimeLines.length ? this.allTimeLines.length - 1 : 0;
-      while (index > 0 && !this.allTimeLines[index].sent) {
+      if (index == 0) {
         this.allTimeLines[index].id += 1;
-        index -= 1;
+        index = -1;
+      }
+      else {
+        while (index > 0 && !this.allTimeLines[index].sent) {
+          this.allTimeLines[index].id += 1;
+          index -= 1;
+        }
       }
       let newTimeLine = {
         id: this.allTimeLines.length
@@ -542,22 +542,24 @@ export default {
         sent: true
       };
       this.allTimeLines.splice(index + 1, 0, newTimeLine);
+      let newLog = {
+        content: this.currentUser + " sent a quick reply: \"" + el.textContent + "\"",
+      };
+      this.allLogs.push(newLog);
+      this.scrollToLoggerBoxBottom();
     },
     sendPoint(event) {
       let el = (event.target || event.srcElement)
-      let last = this.allTimeLines[this.allTimeLines.length - 1];
-      this.updateInput(last.id);
-      if (
-          this.allTimeLines.length &&
-          last.align === "r" &&
-          last.content === ""
-      ) {
-        this.allTimeLines.pop();
-      }
       let index = this.allTimeLines.length ? this.allTimeLines.length - 1 : 0;
-      while (index > 0 && !this.allTimeLines[index].sent) {
+      if (index == 0) {
         this.allTimeLines[index].id += 1;
-        index -= 1;
+        index = -1;
+      }
+      else {
+        while (index > 0 && !this.allTimeLines[index].sent) {
+          this.allTimeLines[index].id += 1;
+          index -= 1;
+        }
       }
       let newTimeLine = {
         id: this.allTimeLines.length
@@ -569,6 +571,11 @@ export default {
       };
       this.allTimeLines.splice(index + 1, 0, newTimeLine);
       this.deletePoint(el.textContent);
+      let newLog = {
+        content: this.currentUser + " sent a point: \"" + el.textContent + "\"",
+      };
+      this.allLogs.push(newLog);
+      this.scrollToLoggerBoxBottom();
     },
     deletePoint(msg) {
       for (let i = 0; i < this.allPoints.length; i++) {
@@ -578,34 +585,33 @@ export default {
         }
       }
     },
-    updateInput(id) {
+    updateInput(id, text) {
       if (!this.allTimeLines[id].sent) {
-        this.allTimeLines[id].content = document.getElementById(`content_${this.allTimeLines[this.allTimeLines.length - 1].id}`).value;
+        this.allTimeLines[id].content = text;
       }
     },
     sendLogMsg() {
       if (this.logger_message !== "") {
         let newLog = {
-          content: this.logger_message,
+          content: this.currentUser + ": " + this.logger_message,
         };
         this.allLogs.push(newLog);
+        this.scrollToLoggerBoxBottom();
         this.logger_message = "";
       }
     },
     sendUserMsg() {
       if (this.message !== "") {
-        this.updateInput(this.allTimeLines.length - 1);
-        if (
-            this.allTimeLines.length &&
-            this.allTimeLines[this.allTimeLines.length - 1].align === "r" &&
-            this.allTimeLines[this.allTimeLines.length - 1].content === ""
-        ) {
-          this.allTimeLines.pop();
-        }
         let index = this.allTimeLines.length ? this.allTimeLines.length - 1 : 0;
-        while (index > 0 && !this.allTimeLines[index].sent) {
+        if (index == 0) {
           this.allTimeLines[index].id += 1;
-          index -= 1;
+          index = -1;
+        }
+        else {
+          while (index > 0 && !this.allTimeLines[index].sent) {
+            this.allTimeLines[index].id += 1;
+            index -= 1;
+          }
         }
         let newTimeLine = {
           id: this.allTimeLines.length
@@ -619,17 +625,22 @@ export default {
         this.message = "";
       }
     },
-    play() {
-      let last = this.allTimeLines[this.allTimeLines.length - 1];
-      if (last.align === "r" && !last.sent) {
-        this.updateInput(last.id);
-        last.sent = true;
+    play(newText) {
+      if (newText !== "") {
+        let last = this.allTimeLines[this.allTimeLines.length - 1];
+        if (last.align === "r" && !last.sent) {
+          this.updateInput(last.id, newText);
+          last.sent = true;
+          // TODO: clear the input content
+
+          let newLog = {
+            content: this.currentUser + " sent a message",
+          };
+          this.allLogs.push(newLog);
+          this.scrollToLoggerBoxBottom();
+        }
       }
     },
-    sendText(newText) {
-      console.log('New Text From Wizard: ', newText)
-      //TODO add new text to the timeline
-    }
   },
   created() {
     if (this.allTimeLines.length === 0) {
