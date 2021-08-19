@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height">
+  <v-container class="fill-height" v-if="this.curRole !== 'participant'">
     <v-row>
       <v-col id="chat" cols="6">
         <!-- timeline -->
@@ -7,6 +7,7 @@
           id="chatbox"
           elevation="0"
           class="overflow-y-auto overflow-x-hidden"
+          min-height="200px"
           max-height="800px"
         >
           <v-row>
@@ -38,21 +39,72 @@
                   elevation="2"
                   color="#757575"
                   rounded
-                  v-if="timeLine.align === 'r' && timeLine.sent"
+                  v-if="timeLine.align === 'r'"
                   min-height="55px"
                   :id="'content_' + timeLine.id"
+                  @dblclick="recall(timeLine)"
               >
                 {{ timeLine.content }}
               </v-alert>
-              <TextEditor
-                  :id="'text_' + timeLine.id"
-                  v-if="timeLine.align === 'r' && !timeLine.sent"
-                  :currentUser="currentUser"
-                  @sent="play"
-              />
             </v-timeline-item>
           </v-timeline>
         </v-card>
+        <v-row>
+          <!-- parter input -->
+          <v-col cols="6">
+            <h3 class="text-center">Parter's Input Box</h3>
+            <v-card
+              id="left_input_box"
+              class="mt-3"
+              color="#FFFFFF"
+              rounded
+              outlined
+              min-height="82px"
+            >
+              <v-card-text class="black--text"> {{left_input}} </v-card-text>
+            </v-card>
+          </v-col>
+          <!-- my input -->
+          <v-col cols="6">
+            <h3 class="text-center">Input Box</h3>
+            <v-textarea
+              id="right_input_box"
+              class="pt-3"
+              style="width: 100%"
+              rows="3"
+              light
+              solo
+              auto-grow
+            />
+            <v-btn
+              class="float-right mt-n4 mr-4"
+              elevation="2"
+              color="#7CB342"
+              @click="sendMsg()"
+            >
+              Send
+            </v-btn>
+            <h3 class="text-center mt-10">Privacy Input Box</h3>
+            <v-textarea
+              id="temp_input_box"
+              class="pt-3"
+              style="width: 100%"
+              rows="3"
+              light
+              solo
+              auto-grow
+            />
+            <v-btn
+              class="float-right mt-n4 mr-4"
+              elevation="2"
+              color="#7CB342"
+              @click="sendTempMsg()"
+            >
+              Send
+            </v-btn>
+          </v-col>
+        </v-row>
+        <!-- test input area -->
         <br><br>
         <h3 class="text-center">User (for test)</h3>
         <v-textarea
@@ -60,13 +112,12 @@
           v-model="message"
           outlined
           no-resize
-          counter
           class="overflow-y-auto overflow-x-hidden pt-1"
           height="100px"
         >
         </v-textarea>
         <v-btn
-          class="float-right ml-4 mr-2"
+          class="float-right mt-n4 ml-4 mr-2"
           elevation="2"
           color="#7CB342"
           @click="sendUserMsg()"
@@ -74,7 +125,7 @@
           Send
         </v-btn>
       </v-col>
-      <v-col col="6" v-if="this.curRole === 'participant'">
+      <v-col col="6">
         <!-- Direction -->
         <div>
           <v-row>
@@ -91,20 +142,36 @@
             <div class="ml-4 font-italic font-weight-bold">you should make a devision with your partner</div>
           </v-row>
           <v-row>
-            <v-icon class="ml-4" color="#5DBAB9">mdi-account</v-icon>
-            <div>a) decide the final output content and press PLAY</div>
+            <v-icon
+              class="ml-4 mt-2"
+              color="#5DBAB9"
+              style="height:30px"
+            >
+              mdi-account
+            </v-icon>
+            <v-textarea
+            class="mt-2 mr-6 mb-n4"
+            rows="1"
+            outlined
+            auto-grow
+            value="1. decide the final output content"
+          />
           </v-row>
           <v-row>
-            <v-icon class="ml-4" color="#5DBAB9">mdi-account</v-icon>
-            <div>b) XXX</div>
-          </v-row>
-          <v-row>
-            <v-icon class="ml-4" color="#CC6E6E">mdi-account</v-icon>
-            <div>c) take the charge of the microphone (open/close)</div>
-          </v-row>
-          <v-row>
-            <v-icon class="ml-4" color="#CC6E6E">mdi-account</v-icon>
-            <div>d) XXX</div>
+            <v-icon
+              class="ml-4"
+              color="#CC6E6E"
+              style="height:30px"
+            >
+              mdi-account
+            </v-icon>
+            <v-textarea
+              class="mr-6"
+              rows="1"
+              outlined
+              auto-grow
+              value="1. take the charge of the microphone (open/close)"
+            />
           </v-row>
         </div>
         <!-- contain four boxes -->
@@ -137,17 +204,18 @@
               class="overflow-y-auto overflow-x-hidden mt-2"
               height="460px"
             >
-              <v-alert
-                  v-for="reply in allReplies"
-                  :key="reply.id"
-                  elevation="2"
-                  class="ma-4"
-                  color="#7CB342"
-                  rounded
-                  @dblclick="sendReply"
-              >
-                {{ reply.content }}
-              </v-alert>
+              <v-textarea
+                v-for="reply in allReplies"
+                :key="reply.id"
+                solo
+                class="ml-4 mr-4 mt-4 mb-n8"
+                backgroundColor="#7CB342"
+                rows="1"
+                auto-grow
+                :value = reply.content
+                @dblclick="sendReply"
+                clearable
+              />
             </v-card>
             <br>
             <!-- Points -->
@@ -240,13 +308,12 @@
               v-model="logger_message"
               outlined
               no-resize
-              counter
               class="overflow-y-auto overflow-x-hidden pt-3"
               height="210px"
             >
             </v-textarea>
             <v-btn
-              class="float-right ml-2 mr-4"
+              class="float-right mt-n4 ml-2 mr-4"
               elevation="2"
               color="#7CB342"
               @click="sendLogMsg()"
@@ -254,7 +321,7 @@
               Send
             </v-btn>
             <v-btn
-              class="float-right ml-2 mr-4"
+              class="float-right mt-n4 ml-2 mr-4"
               elevation="2"
               color="#7CB342"
             >
@@ -270,7 +337,6 @@
 <script>
 import {mapGetters} from "vuex";
 import io from "socket.io-client";
-import TextEditor from "./TextEditor";
 
 const BUFFER_SIZE = 2048;
 const MEDIA_ACCESS_CONSTRAINTS = {audio: true, video: false};
@@ -301,13 +367,12 @@ const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
 
 export default {
   name: "Conversation",
-  components: {
-    TextEditor
-  },
+  components: {},
   data() {
     return {
       message: "",
       logger_message: "",
+      left_input: "",
       allTimeLines: [],
       allReplies: [],
       allPoints: [],
@@ -344,16 +409,6 @@ export default {
   watch: {
     allTimeLines: {
       handler() {
-        if (this.allTimeLines[this.allTimeLines.length - 1].sent) {
-          this.allTimeLines.push({
-            id: this.allTimeLines.length
-                ? this.allTimeLines[this.allTimeLines.length - 1].id + 1
-                : 0,
-            content: "",
-            align: "r",
-            sent: false
-          });
-        }
         this.scrollToChatBoxBottom();
       },
       deep: true,
@@ -503,13 +558,10 @@ export default {
       container.scrollTop = container.scrollHeight;
     },
     addReply() {
-      let word = prompt("Add a new quick reply:");
-      if (word) {
-        this.allReplies.push({
-          content: word,
-        });
-        this.scrollToReplyBoxBottom();
-      }
+      this.allReplies.push({
+        content: "",
+      });
+      this.scrollToReplyBoxBottom();
     },
     addPoint() {
       let word = prompt("Add a new point:");
@@ -521,55 +573,35 @@ export default {
       }
     },
     sendReply(event) {
-      let el = (event.target || event.srcElement)
-      let index = this.allTimeLines.length ? this.allTimeLines.length - 1 : 0;
-      if (index == 0) {
-        this.allTimeLines[index].id += 1;
-        index = -1;
-      }
-      else {
-        while (index > 0 && !this.allTimeLines[index].sent) {
-          this.allTimeLines[index].id += 1;
-          index -= 1;
-        }
-      }
+      let el = (event.target || event.srcElement);
       let newTimeLine = {
         id: this.allTimeLines.length
-            ? index + 1
+            ? this.allTimeLines.length
             : 0,
-        content: el.textContent,
+        content: el.value,
         align: "r",
-        sent: true
+        playing: false,
+        played: false
       };
-      this.allTimeLines.splice(index + 1, 0, newTimeLine);
+      this.allTimeLines.push(newTimeLine);
       let newLog = {
-        content: this.currentUser + " sent a quick reply: \"" + el.textContent + "\"",
+        content: this.currentUser + " sent a quick reply: \"" + el.value + "\"",
       };
       this.allLogs.push(newLog);
       this.scrollToLoggerBoxBottom();
     },
     sendPoint(event) {
-      let el = (event.target || event.srcElement)
-      let index = this.allTimeLines.length ? this.allTimeLines.length - 1 : 0;
-      if (index == 0) {
-        this.allTimeLines[index].id += 1;
-        index = -1;
-      }
-      else {
-        while (index > 0 && !this.allTimeLines[index].sent) {
-          this.allTimeLines[index].id += 1;
-          index -= 1;
-        }
-      }
+      let el = (event.target || event.srcElement);
       let newTimeLine = {
         id: this.allTimeLines.length
-            ? index + 1
+            ? this.allTimeLines.length
             : 0,
         content: el.textContent,
         align: "r",
-        sent: true
+        playing: false,
+        played: false
       };
-      this.allTimeLines.splice(index + 1, 0, newTimeLine);
+      this.allTimeLines.push(newTimeLine);
       this.deletePoint(el.textContent);
       let newLog = {
         content: this.currentUser + " sent a point: \"" + el.textContent + "\"",
@@ -585,11 +617,6 @@ export default {
         }
       }
     },
-    updateInput(id, text) {
-      if (!this.allTimeLines[id].sent) {
-        this.allTimeLines[id].content = text;
-      }
-    },
     sendLogMsg() {
       if (this.logger_message !== "") {
         let newLog = {
@@ -602,69 +629,88 @@ export default {
     },
     sendUserMsg() {
       if (this.message !== "") {
-        let index = this.allTimeLines.length ? this.allTimeLines.length - 1 : 0;
-        if (index == 0) {
-          this.allTimeLines[index].id += 1;
-          index = -1;
-        }
-        else {
-          while (index > 0 && !this.allTimeLines[index].sent) {
-            this.allTimeLines[index].id += 1;
-            index -= 1;
-          }
-        }
         let newTimeLine = {
           id: this.allTimeLines.length
-              ? index + 1
+              ? this.allTimeLines.length
               : 0,
           content: this.message,
           align: "l",
-          sent: true
+          playing: false,
+          played: false
         };
-        this.allTimeLines.splice(index + 1, 0, newTimeLine);
+        this.allTimeLines.push(newTimeLine);
         this.message = "";
       }
     },
-    play(newText) {
-      if (newText !== "") {
-        let last = this.allTimeLines[this.allTimeLines.length - 1];
-        if (last.align === "r" && !last.sent) {
-          this.updateInput(last.id, newText);
-          last.sent = true;
-          // TODO: clear the input content
-
-          let newLog = {
-            content: this.currentUser + " sent a message",
-          };
-          this.allLogs.push(newLog);
-          this.scrollToLoggerBoxBottom();
+    sendMsg() {
+      let element = this.$el.querySelector("#right_input_box");
+      if (element.value !== "") {
+        var newTimeLine = {
+        id: this.allTimeLines.length
+            ? this.allTimeLines.length
+            : 0,
+        content: element.value,
+        align: "r",
+        playing: false,
+        played: false
+        }
+        this.allTimeLines.push(newTimeLine);
+        element.value = "";
+        let newLog = {
+          content: this.currentUser + " sent a message",
+        };
+        this.allLogs.push(newLog);
+        this.scrollToLoggerBoxBottom();
+      }
+    },
+    sendTempMsg() {
+      let element = this.$el.querySelector("#temp_input_box");
+      if (element.value !== "") {
+        var newTimeLine = {
+        id: this.allTimeLines.length
+            ? this.allTimeLines.length
+            : 0,
+        content: element.value,
+        align: "r",
+        playing: false,
+        played: false
+        }
+        this.allTimeLines.push(newTimeLine);
+        element.value = "";
+        let newLog = {
+          content: this.currentUser + " sent a message",
+        };
+        this.allLogs.push(newLog);
+        this.scrollToLoggerBoxBottom();
+      }
+    },
+    recall(timeLine) {
+      if (!timeLine.played && !timeLine.playing) {
+        let element = this.$el.querySelector("#temp_input_box");
+        element.value = timeLine.content;
+        this.allTimeLines.splice(timeLine.id, 1);
+        for (let i = 0; i < this.allTimeLines.length; i++) {
+          this.allTimeLines[i].id = i;
         }
       }
     },
   },
   created() {
-    if (this.allTimeLines.length === 0) {
-      this.allTimeLines.push({
-        id: this.allTimeLines.length
-            ? this.allTimeLines[this.allTimeLines.length - 1].id + 1
-            : 0,
-        content: "",
-        align: "r",
-        sent: false
-      });
-    }
     this.allReplies.push({
       content: "Okay, I got it.",
     });
     this.allReplies.push({
       content: "Sorry, please speak again.",
     });
-    this.allPoints.push({
-      content: "Point 1",
+    this.allReplies.push({
+      content: "",
     });
-    this.allPoints.push({
-      content: "Point 2",
-    });
+    // this.allPoints.push({
+    //   content: "Point 1",
+    // });
+    // this.allPoints.push({
+    //   content: "Point 2",
+    // });
   },
   mounted() {
 
