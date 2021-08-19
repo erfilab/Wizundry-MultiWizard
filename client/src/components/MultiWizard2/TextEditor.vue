@@ -2,15 +2,15 @@
   <div>
     <div class="editor">
       <editor-content
-          class="editor__content"
-          :editor="editor"
+        class="editor__content"
+        :editor="editor"
       />
     </div>
     <v-btn
-        class="float-right mr-4"
-        elevation="2"
-        color="#CDE589"
-        @click="send()"
+      class="float-right mt-2 mr-2"
+      elevation="2"
+      color="#7CB342"
+      @click="send()"
     >
       Send
     </v-btn>
