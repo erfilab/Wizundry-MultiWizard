@@ -8,4 +8,4 @@ UserRoute.get('/:uid', UserController.loginUser)
 UserRoute.post('/upgrade', UserController.upgradeUser)
 UserRoute.post('/create', UserController.create)
 
-module.exports = UserRoute
+module.exports = UserRoute;

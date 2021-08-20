@@ -398,12 +398,17 @@ export default {
 
       runTimeContent: "",
       newContent: "",
+
+      // commands
+      commandFromOthers: [],
+
     };
   },
   computed: {
     ...mapGetters("user", ["getCurrentUser"]),
     curRole() {
       return this.currentUser.role;
+      // participant
     },
   },
   watch: {
@@ -440,62 +445,87 @@ export default {
       return list[Math.floor(Math.random() * list.length)]
     },
     initProject() {
-      this.currentUser = this.getCurrentUser;
-      this.currentUser.color = this.getRandomColor();
-      let HOST =
-          process.env.NODE_ENV === "production"
-              ? "https://ryanyen2.tech/"
-              : "http://localhost:3000/";
-      this.socket = io(HOST + new Date().toISOString().slice(0, 10))
-          .on("WEB_RECORDING", async (e) => {
-            console.log("WEB RECORDING STATUS: ", e);
-            if (e && this.curRole === "participant" && this.isSpeaking === false) {
-              this.initRecording();
-            } else if (
-                !e &&
-                this.curRole === "participant" &&
-                this.isSpeaking === true
-            ) {
-              this.endRecording();
-            }
-          })
-          .on("SPEECH_DATA", async (param) => {
-            let {data, uid} = param;
-            if (
-                data &&
-                this.curRole === "participant" &&
-                this.isSpeaking &&
-                this.currentUser.uid === uid
-            ) {
-              this.runTimeContent = data.results[0].alternatives[0].transcript;
+        this.currentUser = this.getCurrentUser;
+        this.currentUser.color = this.getRandomColor();
+        let HOST =
+            process.env.NODE_ENV === "production"
+                ? "https://ryanyen2.tech/"
+                : "http://localhost:3000/";
+        this.socket = io(HOST + new Date().toISOString().slice(0, 10))
+            .on("WEB_RECORDING", async (e) => {
+                console.log("WEB RECORDING STATUS: ", e);
+                if (e && this.curRole === "participant" && this.isSpeaking === false) {
+                this.initRecording();
+                } else if (
+                    !e &&
+                    this.curRole === "participant" &&
+                    this.isSpeaking === true
+                ) {
+                this.endRecording();
+                }
+            })
+            .on("SPEECH_DATA", async (param) => {
+                let {data, uid} = param;
+                if (
+                    data &&
+                    this.curRole === "participant" &&
+                    this.isSpeaking &&
+                    this.currentUser.uid === uid
+                ) {
+                this.runTimeContent = data.results[0].alternatives[0].transcript;
 
-              const dataFinal = data.results[0].isFinal;
+                const dataFinal = data.results[0].isFinal;
 
-              if (dataFinal && this.runTimeContent) {
-                let temp_cont = this.runTimeContent;
-                this.runTimeContent = "";
-                this.newContent = temp_cont;
-                console.log('New Content from User: ', this.newContent)
-              }
-            }
-          });
-      this.socket.emit("joinRoom", "default");
+                if (dataFinal && this.runTimeContent) {
+                    let temp_cont = this.runTimeContent;
+                    this.runTimeContent = "";
+                    this.newContent = temp_cont;
+                    
+                    console.log('New Content from User: ', this.newContent)
+                }
+                }
+            })
+            .on("MESSAGE", async (data) => {
+                if (data.content) {
+                    const receivedTime = this.dayjs().format('MM-DD HH:mm:ss')
+                    switch (data.align) {
+                        case 'r':
+                            console.log(`Wizard Message ${ data.content } , from ${data.uid} `)
+                            this.allTimeLines.push({ ...data})
+                            this.allLogs.push({ content: `Wizard ${data.uid} sent a message at ${receivedTime}`})
+                            break;
+                        case 'rq':
+                            console.log(`Wizard Quick Reply ${ data.content } , from ${data.uid} `)
+                            this.allTimeLines.push({ ...data, align: 'r'})
+                            this.allLogs.push({ content: `Wizard ${data.uid} sent a quick reply at ${receivedTime}`})
+                            break;
+                        case 'l':
+                            console.log(`Participant Message ${ data.content } , from ${data.uid} `)
+                            this.allTimeLines.push({ ...data})
+                            this.allLogs.push({ content: `Participant sent a message at ${receivedTime}`})
+                            break;
+                        case 'n':
+                            console.log(`Logger logs ${ data.content } , from ${data.uid} `)
+                            this.allLogs.push({ content: `Wizard ${data.uid} sent a log at ${receivedTime}\ncontent: ${data.content}`})
+                            break;
+                        default:
+                            console.log(`Unknown Message ${ data.content } , from ${data.uid} `)
+                            this.allLogs.push({ content: `Unknown Message at ${this.dayjs().format('MM-DD HH:mm:ss')}`})
+                            break;
+                    }       
+                }
+            })
+        this.socket.emit("joinRoom", "default");
     },
     // microphone event
     emitSpeakerEvent(e) {
-      this.isSpeaking = e;
-      let action = " opened ";
-      if (!e) {
-        action = " closed "
-      }
-      let newLog = {
-        content: this.currentUser + action + "the microphone",
-      };
-      this.allLogs.push(newLog);
-      this.socket.emit("MICROPHONE", {
-        status: e,
-        punctuation: true,
-      });
+        this.isSpeaking = e;
+
+        this.allLogs.push({ content: `Wizard ${this.currentUser.uid} ${e? 'opened':'closed'} the microphone at ${this.dayjs().format('MM-DD HH:mm:ss')}`})
+        this.socket.emit("MICROPHONE", {
+            status: e,
+            punctuation: true,
+        });
     },
     // speech recognition function
     initRecording() {
@@ -573,22 +603,19 @@ export default {
       }
     },
     sendReply(event) {
-      let el = (event.target || event.srcElement);
-      let newTimeLine = {
-        id: this.allTimeLines.length
-            ? this.allTimeLines.length
-            : 0,
-        content: el.value,
-        align: "r",
-        playing: false,
-        played: false
-      };
-      this.allTimeLines.push(newTimeLine);
-      let newLog = {
-        content: this.currentUser + " sent a quick reply: \"" + el.value + "\"",
-      };
-      this.allLogs.push(newLog);
-      this.scrollToLoggerBoxBottom();
+        let el = (event.target || event.srcElement);
+        if (el.value) {
+            this.socket.emit("sendMessage", {
+                uid: this.currentUser.uid,
+                content: el.value,
+                align: "rq",
+                id: this.allTimeLines.length? this.allTimeLines.length: 0,
+                playing: false,
+                played: false
+            });
+            el.value = "";
+            this.scrollToLoggerBoxBottom();
+        }
     },
     sendPoint(event) {
       let el = (event.target || event.srcElement);
@@ -618,71 +645,62 @@ export default {
       }
     },
     sendLogMsg() {
-      if (this.logger_message !== "") {
-        let newLog = {
-          content: this.currentUser + ": " + this.logger_message,
-        };
-        this.allLogs.push(newLog);
+        if (this.logger_message) {
+            this.socket.emit("sendMessage", {
+                content: this.logger_message,
+                uid: this.currentUser.uid,
+                align: "n"
+        });
         this.scrollToLoggerBoxBottom();
         this.logger_message = "";
       }
     },
     sendUserMsg() {
-      if (this.message !== "") {
-        let newTimeLine = {
-          id: this.allTimeLines.length
-              ? this.allTimeLines.length
-              : 0,
+      if (this.message) {
+        this.socket.emit("sendMessage", {
+          id: this.allTimeLines.length? this.allTimeLines.length: 0,
           content: this.message,
+          uid: this.currentUser.uid,
           align: "l",
           playing: false,
           played: false
-        };
-        this.allTimeLines.push(newTimeLine);
+        });
+        
         this.message = "";
       }
     },
     sendMsg() {
-      let element = this.$el.querySelector("#right_input_box");
-      if (element.value !== "") {
-        var newTimeLine = {
-        id: this.allTimeLines.length
-            ? this.allTimeLines.length
-            : 0,
-        content: element.value,
-        align: "r",
-        playing: false,
-        played: false
+        let element = this.$el.querySelector("#right_input_box");
+        if (element.value) {
+            this.socket.emit("sendMessage", {
+                uid: this.currentUser.uid,
+                content: element.value,
+                align: "r",
+                id: this.allTimeLines.length? this.allTimeLines.length: 0,
+                playing: false,
+                played: false
+            });
+            element.value = "";
+            this.scrollToLoggerBoxBottom();
         }
-        this.allTimeLines.push(newTimeLine);
-        element.value = "";
-        let newLog = {
-          content: this.currentUser + " sent a message",
-        };
-        this.allLogs.push(newLog);
-        this.scrollToLoggerBoxBottom();
-      }
     },
     sendTempMsg() {
-      let element = this.$el.querySelector("#temp_input_box");
-      if (element.value !== "") {
-        var newTimeLine = {
-        id: this.allTimeLines.length
-            ? this.allTimeLines.length
-            : 0,
-        content: element.value,
-        align: "r",
-        playing: false,
-        played: false
+        let element = this.$el.querySelector("#temp_input_box");
+        if (element.value !== "") {
+            this.allTimeLines.push({
+                uid: this.currentUser.uid,
+                id: this.allTimeLines.length
+                    ? this.allTimeLines.length
+                    : 0,
+                content: element.value,
+                align: "r",
+                playing: false,
+                played: false
+            });
+            element.value = "";
+            this.allLogs.push({ content: `Sent a temporary message at ${this.dayjs().format('MM-DD HH:mm:ss')}`})
+            this.scrollToLoggerBoxBottom();
         }
-        this.allTimeLines.push(newTimeLine);
-        element.value = "";
-        let newLog = {
-          content: this.currentUser + " sent a message",
-        };
-        this.allLogs.push(newLog);
-        this.scrollToLoggerBoxBottom();
-      }
     },
     recall(timeLine) {
       if (!timeLine.played && !timeLine.playing) {
