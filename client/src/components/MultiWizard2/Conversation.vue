@@ -1,4 +1,5 @@
 <template>
+  <!-- wizard UI -->
   <v-container class="fill-height" v-if="this.curRole !== 'participant'">
     <v-row>
       <v-col id="chat" cols="6">
@@ -330,6 +331,107 @@
           </v-col>
         </v-row>
       </v-col>
+    </v-row>
+  </v-container>
+  <!-- participant UI -->
+  <v-container class="fill-height" v-else>
+    <!-- timeline -->
+    <v-row>
+      <v-spacer/>
+      <v-col id="chat" cols="8">
+        <v-card
+          id="chatbox"
+          elevation="0"
+          class="overflow-y-auto overflow-x-hidden"
+          min-height="200px"
+          max-height="800px"
+        >
+          <v-row>
+            <v-col>
+              <h3 class="text-center">User</h3>
+            </v-col>
+            <v-col>
+              <h3 class="text-center">Wizard</h3>
+            </v-col>
+          </v-row>
+          <v-timeline class="ma-4">
+            <v-timeline-item
+                v-for="timeLine in allTimeLines"
+                :key="timeLine.id"
+                class="text-left"
+                hide-dot
+                :left="timeLine.align === 'l'"
+                :right="timeLine.align === 'r'"
+            >
+              <v-alert
+                  elevation="2"
+                  outlined
+                  rounded
+                  v-if="timeLine.align === 'l'"
+              >
+                {{ timeLine.content }}
+              </v-alert>
+              <v-alert
+                  elevation="2"
+                  color="#757575"
+                  rounded
+                  v-if="timeLine.align === 'r'"
+                  min-height="55px"
+                  :id="'content_' + timeLine.id"
+              >
+                {{ timeLine.content }}
+              </v-alert>
+            </v-timeline-item>
+          </v-timeline>
+        </v-card>
+      </v-col>
+      <v-spacer/>
+    </v-row>
+    <!-- mic bar -->
+    <v-row>
+      <v-spacer/>
+      <v-col cols="1">
+        <v-btn
+            @click="
+            isSpeaking ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
+          "
+            fab
+            :color="
+            !isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
+          "
+            class="mt-4"
+        >
+          <v-icon
+          >{{ isSpeaking ? "mdi-microphone-off" : "mdi-microphone" }}
+          </v-icon>
+        </v-btn>
+      </v-col>
+      <v-col col="1" class="pt-5 mt-2">
+        <span> {{ isSpeaking ? "speaking..." : "closed" }} </span>
+        <v-progress-linear
+            style="width:70%"
+            :color="
+            !isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
+          "
+            :indeterminate="isSpeaking"
+        />
+      </v-col>
+      <v-spacer/>
+    </v-row>
+    <!-- Direction -->
+    <v-row>
+      <v-spacer/>
+      <v-col cols="6">
+        <v-row>
+          <h2 class="ml-4 mt-6">Direction</h2>
+        </v-row>
+        <v-row>
+          <div class="ml-4 mt-2">
+            XXX
+          </div>
+        </v-row>
+      </v-col>
+      <v-spacer/>
     </v-row>
   </v-container>
 </template>
