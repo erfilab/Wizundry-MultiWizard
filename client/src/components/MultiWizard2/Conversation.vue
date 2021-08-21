@@ -1,6 +1,6 @@
 <template>
   <!-- wizard UI -->
-  <v-container class="fill-height" v-if="this.curRole !== 'participant'">
+  <v-container class="fill-height" v-if="this.curRole === 'participant'">
     <v-row>
       <v-col id="chat" cols="6">
         <!-- timeline -->
@@ -429,6 +429,37 @@
           <div class="ml-4 mt-2">
             XXX
           </div>
+        </v-row>
+      </v-col>
+      <v-spacer/>
+    </v-row>
+    <!-- test input area -->
+    <v-row>
+      <v-spacer/>
+      <v-col cols="6">
+        <v-row>
+          <h3 class="text-center ml-4 mt-6">User (for test)</h3>
+        </v-row>
+        <v-row>
+          <v-textarea
+            label="Message"
+            v-model="message"
+            outlined
+            no-resize
+            class="overflow-y-auto overflow-x-hidden ml-4 pt-1"
+            height="100px"
+          >
+          </v-textarea>
+        </v-row>
+        <v-row>
+          <v-btn
+            class="float-right mt-n4 ml-6 mr-2"
+            elevation="2"
+            color="#7CB342"
+            @click="sendUserMsg()"
+          >
+            Send
+          </v-btn>
         </v-row>
       </v-col>
       <v-spacer/>
