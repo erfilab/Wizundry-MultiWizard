@@ -41,6 +41,11 @@ export default {
     timeLineItem: Object,
     timeLineContent: String,
   },
+  watch: {
+    currentUser(newUser)  {
+      if (newUser) this.initEditor();
+    }
+  },
   data() {
     return {
       provider: null,
@@ -53,53 +58,57 @@ export default {
   methods: {
     send() {
       this.$emit('sent', this.editor.state.doc.textContent)
-    }
+    },
+    initEditor() {
+      console.log('currentUser', this.currentUser)
+      const ydoc = new Y.Doc();
+
+      let YJS_HOST =
+          process.env.NODE_ENV === "production"
+              ? "wss://ryanyen2.tech/yjs/"
+              : "ws://localhost:3001";
+      this.provider = new WebsocketProvider(
+          YJS_HOST,
+          new Date().toISOString().slice(0, 10),
+          ydoc
+      );
+      this.provider.on("status", (event) => (this.status = event.status));
+      window.ydoc = ydoc;
+      this.indexdb = new IndexeddbPersistence(
+          new Date().toISOString().slice(0, 10),
+          ydoc
+      );
+
+      this.editor = new Editor({
+        extensions: [
+          StarterKit.configure({
+            history: false,
+          }),
+          Highlight,
+          TaskList,
+          TaskItem,
+          Collaboration.configure({
+            document: ydoc,
+          }),
+          CollaborationCursor.configure({
+            provider: this.provider,
+            user: this.currentUser.name,
+            onUpdate: (users) => {
+              this.users = users;
+            },
+          }),
+          CharacterCount.configure({
+            limit: 10000,
+          }),
+        ],
+      });
+      this.editor.chain().focus().user(this.currentUser).run();
+      localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
+    },
   },
   mounted() {
-    console.log('currentUser', this.currentUser)
-    const ydoc = new Y.Doc();
-
-    let YJS_HOST =
-        process.env.NODE_ENV === "production"
-            ? "wss://ryanyen2.tech/yjs/"
-            : "ws://localhost:3001";
-    this.provider = new WebsocketProvider(
-        YJS_HOST,
-        new Date().toISOString().slice(0, 10),
-        ydoc
-    );
-    this.provider.on("status", (event) => (this.status = event.status));
-    window.ydoc = ydoc;
-    this.indexdb = new IndexeddbPersistence(
-        new Date().toISOString().slice(0, 10),
-        ydoc
-    );
-
-    this.editor = new Editor({
-      extensions: [
-        StarterKit.configure({
-          history: false,
-        }),
-        Highlight,
-        TaskList,
-        TaskItem,
-        Collaboration.configure({
-          document: ydoc,
-        }),
-        CollaborationCursor.configure({
-          provider: this.provider,
-          user: this.currentUser.uid,
-          onUpdate: (users) => {
-            this.users = users;
-          },
-        }),
-        CharacterCount.configure({
-          limit: 10000,
-        }),
-      ],
-    });
-    this.editor.chain().focus().user(this.currentUser).run();
-    localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
+    console.log('mounted', this.currentUser)
+    if(this.currentUser) this.initEditor();
   }
 }
 </script>

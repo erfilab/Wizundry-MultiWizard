@@ -62,13 +62,13 @@
               outlined
               min-height="82px"
             >
-              <v-card-text class="black--text"> {{left_input}} </v-card-text>
+              <v-card-text class="black--text"> {{ left_input }} </v-card-text>
             </v-card>
           </v-col>
           <!-- my input -->
           <v-col cols="6">
             <h3 class="text-center">Input Box</h3>
-            <v-textarea
+            <!-- <v-textarea
               id="right_input_box"
               class="pt-3"
               style="width: 100%"
@@ -76,6 +76,10 @@
               light
               solo
               auto-grow
+            /> -->
+            <text-editor
+              v-if="currentUser.uid"
+              :currentUser="currentUser"
             />
             <v-btn
               class="float-right mt-n4 mr-4"
@@ -106,8 +110,7 @@
           </v-col>
         </v-row>
         <!-- test input area -->
-        <br><br>
-        <h3 class="text-center">User (for test)</h3>
+        <h3 class="text-center mt-5">User (for test)</h3>
         <v-textarea
           label="Message"
           v-model="message"
@@ -127,54 +130,7 @@
         </v-btn>
       </v-col>
       <v-col col="6">
-        <!-- Direction -->
-        <div>
-          <v-row>
-            <h2 class="ml-4 mt-2">Direction</h2>
-          </v-row>
-          <v-row>
-            <div class="ml-4 mt-2">In this scenario, you need to respond user’s questions.
-              Fortunately, Speech recognition tool is available while microphone
-              is opening. It will avoid the problem of your forgetting. There some tasks
-              for you and your partner:
-            </div>
-          </v-row>
-          <v-row>
-            <div class="ml-4 font-italic font-weight-bold">you should make a devision with your partner</div>
-          </v-row>
-          <v-row>
-            <v-icon
-              class="ml-4 mt-2"
-              color="#5DBAB9"
-              style="height:30px"
-            >
-              mdi-account
-            </v-icon>
-            <v-textarea
-              class="mt-2 mr-6 mb-n4"
-              rows="1"
-              outlined
-              auto-grow
-              value="1. decide the final output content"
-            />
-          </v-row>
-          <v-row>
-            <v-icon
-              class="ml-4"
-              color="#CC6E6E"
-              style="height:30px"
-            >
-              mdi-account
-            </v-icon>
-            <v-textarea
-              class="mr-6"
-              rows="1"
-              outlined
-              auto-grow
-              value="1. take the charge of the microphone (open/close)"
-            />
-          </v-row>
-        </div>
+        <tips-dialog v-model="showTipsDialog" />
         <!-- contain four boxes -->
         <v-row>
           <!-- left -->
@@ -213,12 +169,12 @@
                 backgroundColor="#7CB342"
                 rows="1"
                 auto-grow
-                :value = reply.content
+                :value="reply.content"
                 @dblclick="sendReply"
                 clearable
               />
             </v-card>
-            <br>
+            <br />
             <!-- Points -->
             <!-- <v-row>
               <v-col cols="8">
@@ -261,27 +217,29 @@
             <v-row>
               <v-col cols="3">
                 <v-btn
-                    @click="
-                    isSpeaking ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
+                  @click="
+                    isSpeaking
+                      ? emitSpeakerEvent(false)
+                      : emitSpeakerEvent(true)
                   "
-                    fab
-                    :color="
+                  fab
+                  :color="
                     !isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
                   "
-                    class="mt-4"
+                  class="mt-4"
                 >
                   <v-icon
-                  >{{ isSpeaking ? "mdi-microphone-off" : "mdi-microphone" }}
+                    >{{ isSpeaking ? "mdi-microphone-off" : "mdi-microphone" }}
                   </v-icon>
                 </v-btn>
               </v-col>
               <v-col class="pt-5 mt-2">
                 <span> {{ isSpeaking ? "speaking..." : "closed" }} </span>
                 <v-progress-linear
-                    :color="
+                  :color="
                     !isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
                   "
-                    :indeterminate="isSpeaking"
+                  :indeterminate="isSpeaking"
                 />
               </v-col>
             </v-row>
@@ -295,14 +253,11 @@
               class="overflow-y-auto overflow-x-hidden mt-3"
               height="250px"
             >
-              <div
-                v-for="wizardLog in allLogs"
-                :key="wizardLog.id"
-              >
+              <div v-for="wizardLog in allLogs" :key="wizardLog.id">
                 {{ wizardLog.content }}
               </div>
             </v-card>
-            <br>
+            <br />
             <h3 class="text-center mt-1">WhiteBoard</h3>
             <v-textarea
               label="Notes"
@@ -468,11 +423,11 @@
 </template>
 
 <script>
-import {mapGetters} from "vuex";
+import { mapGetters } from "vuex";
 import io from "socket.io-client";
 
 const BUFFER_SIZE = 2048;
-const MEDIA_ACCESS_CONSTRAINTS = {audio: true, video: false};
+const MEDIA_ACCESS_CONSTRAINTS = { audio: true, video: false };
 const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
   if (outSampleRate === sampleRate) return buffer;
   if (outSampleRate > sampleRate)
@@ -480,12 +435,12 @@ const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
   const sampleRateRatio = sampleRate / outSampleRate;
   let result = new Int16Array(Math.round(buffer.length / sampleRateRatio));
   let offsetResult = 0,
-      offsetBuffer = 0;
+    offsetBuffer = 0;
 
   while (offsetResult < result.length) {
     let nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
     let accum = 0,
-        count = 0;
+      count = 0;
     for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
       accum += buffer[i];
       count++;
@@ -498,9 +453,15 @@ const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
   return result.buffer;
 };
 
+import TipsDialog from "./TipsDialog.vue";
+import TextEditor from "./TextEditor.vue";
+
 export default {
   name: "Conversation",
-  components: {},
+  components: {
+    TipsDialog,
+    TextEditor
+  },
   data() {
     return {
       message: "",
@@ -512,7 +473,7 @@ export default {
       allLogs: [],
 
       currentUser: {},
-
+      showTipsDialog: true,
 
       socket: null,
 
@@ -534,7 +495,6 @@ export default {
 
       // commands
       commandFromOthers: [],
-
     };
   },
   computed: {
@@ -558,10 +518,10 @@ export default {
       }
     },
     newContent(text) {
-      this.message = text
+      this.message = text;
     },
     runTimeContent(newVal, oldVal) {
-      console.log('Run time Content', newVal, oldVal)
+      console.log("Run time Content", newVal, oldVal);
     },
   },
   methods: {
@@ -574,91 +534,119 @@ export default {
         "#70CFF8",
         "#94FADB",
         "#B9F18D",
-      ]
-      return list[Math.floor(Math.random() * list.length)]
+      ];
+      return list[Math.floor(Math.random() * list.length)];
     },
     initProject() {
-        this.currentUser = this.getCurrentUser;
-        this.currentUser.color = this.getRandomColor();
-        let HOST =
-            process.env.NODE_ENV === "production"
-                ? "https://ryanyen2.tech/"
-                : "http://localhost:3000/";
-        this.socket = io(HOST + new Date().toISOString().slice(0, 10))
-            .on("WEB_RECORDING", async (e) => {
-                console.log("WEB RECORDING STATUS: ", e);
-                if (e && this.curRole === "participant" && this.isSpeaking === false) {
-                this.initRecording();
-                } else if (
-                    !e &&
-                    this.curRole === "participant" &&
-                    this.isSpeaking === true
-                ) {
-                this.endRecording();
-                }
-            })
-            .on("SPEECH_DATA", async (param) => {
-                let {data, uid} = param;
-                if (
-                    data &&
-                    this.curRole === "participant" &&
-                    this.isSpeaking &&
-                    this.currentUser.uid === uid
-                ) {
-                this.runTimeContent = data.results[0].alternatives[0].transcript;
+      this.currentUser = this.getCurrentUser;
+      this.currentUser.color = this.getRandomColor();
+      let HOST =
+        process.env.NODE_ENV === "production"
+          ? "https://ryanyen2.tech/"
+          : "http://localhost:3000/";
+      this.socket = io(HOST + new Date().toISOString().slice(0, 10))
+        .on("WEB_RECORDING", async (e) => {
+          console.log("WEB RECORDING STATUS: ", e);
+          if (
+            e &&
+            this.curRole === "participant" &&
+            this.isSpeaking === false
+          ) {
+            this.initRecording();
+          } else if (
+            !e &&
+            this.curRole === "participant" &&
+            this.isSpeaking === true
+          ) {
+            this.endRecording();
+          }
+        })
+        .on("SPEECH_DATA", async (param) => {
+          let { data, uid } = param;
+          if (
+            data &&
+            this.curRole === "participant" &&
+            this.isSpeaking &&
+            this.currentUser.uid === uid
+          ) {
+            this.runTimeContent = data.results[0].alternatives[0].transcript;
 
-                const dataFinal = data.results[0].isFinal;
+            const dataFinal = data.results[0].isFinal;
 
-                if (dataFinal && this.runTimeContent) {
-                    let temp_cont = this.runTimeContent;
-                    this.runTimeContent = "";
-                    this.newContent = temp_cont;
-                    
-                    console.log('New Content from User: ', this.newContent)
-                }
-                }
-            })
-            .on("MESSAGE", async (data) => {
-                if (data.content) {
-                    const receivedTime = this.dayjs().format('MM-DD HH:mm:ss')
-                    switch (data.align) {
-                        case 'r':
-                            console.log(`Wizard Message ${ data.content } , from ${data.uid} `)
-                            this.allTimeLines.push({ ...data})
-                            this.allLogs.push({ content: `Wizard ${data.uid} sent a message at ${receivedTime}`})
-                            break;
-                        case 'rq':
-                            console.log(`Wizard Quick Reply ${ data.content } , from ${data.uid} `)
-                            this.allTimeLines.push({ ...data, align: 'r'})
-                            this.allLogs.push({ content: `Wizard ${data.uid} sent a quick reply at ${receivedTime}`})
-                            break;
-                        case 'l':
-                            console.log(`Participant Message ${ data.content } , from ${data.uid} `)
-                            this.allTimeLines.push({ ...data})
-                            this.allLogs.push({ content: `Participant sent a message at ${receivedTime}`})
-                            break;
-                        case 'n':
-                            console.log(`Logger logs ${ data.content } , from ${data.uid} `)
-                            this.allLogs.push({ content: `Wizard ${data.uid} sent a log at ${receivedTime}\ncontent: ${data.content}`})
-                            break;
-                        default:
-                            console.log(`Unknown Message ${ data.content } , from ${data.uid} `)
-                            this.allLogs.push({ content: `Unknown Message at ${this.dayjs().format('MM-DD HH:mm:ss')}`})
-                            break;
-                    }       
-                }
-            })
-        this.socket.emit("joinRoom", "default");
+            if (dataFinal && this.runTimeContent) {
+              let temp_cont = this.runTimeContent;
+              this.runTimeContent = "";
+              this.newContent = temp_cont;
+
+              console.log("New Content from User: ", this.newContent);
+            }
+          }
+        })
+        .on("MESSAGE", async (data) => {
+          if (data.content) {
+            const receivedTime = this.dayjs().format("MM-DD HH:mm:ss");
+            switch (data.align) {
+              case "r":
+                console.log(
+                  `Wizard Message ${data.content} , from ${data.uid} `
+                );
+                this.allTimeLines.push({ ...data });
+                this.allLogs.push({
+                  content: `Wizard ${data.uid} sent a message at ${receivedTime}`,
+                });
+                break;
+              case "rq":
+                console.log(
+                  `Wizard Quick Reply ${data.content} , from ${data.uid} `
+                );
+                this.allTimeLines.push({ ...data, align: "r" });
+                this.allLogs.push({
+                  content: `Wizard ${data.uid} sent a quick reply at ${receivedTime}`,
+                });
+                break;
+              case "l":
+                console.log(
+                  `Participant Message ${data.content} , from ${data.uid} `
+                );
+                this.allTimeLines.push({ ...data });
+                this.allLogs.push({
+                  content: `Participant sent a message at ${receivedTime}`,
+                });
+                break;
+              case "n":
+                console.log(`Logger logs ${data.content} , from ${data.uid} `);
+                this.allLogs.push({
+                  content: `Wizard ${data.uid} sent a log at ${receivedTime}\ncontent: ${data.content}`,
+                });
+                break;
+              default:
+                console.log(
+                  `Unknown Message ${data.content} , from ${data.uid} `
+                );
+                this.allLogs.push({
+                  content: `Unknown Message at ${this.dayjs().format(
+                    "MM-DD HH:mm:ss"
+                  )}`,
+                });
+                break;
+            }
+          }
+        });
+      this.socket.emit("joinRoom", "default");
     },
     // microphone event
     emitSpeakerEvent(e) {
-        this.isSpeaking = e;
+      this.isSpeaking = e;
 
-        this.allLogs.push({ content: `Wizard ${this.currentUser.uid} ${e? 'opened':'closed'} the microphone at ${this.dayjs().format('MM-DD HH:mm:ss')}`})
-        this.socket.emit("MICROPHONE", {
-            status: e,
-            punctuation: true,
-        });
+      this.allLogs.push({
+        content: `Wizard ${this.currentUser.uid} ${
+          e ? "opened" : "closed"
+        } the microphone at ${this.dayjs().format("MM-DD HH:mm:ss")}`,
+      });
+      this.socket.emit("MICROPHONE", {
+        status: e,
+        punctuation: true,
+      });
     },
     // speech recognition function
     initRecording() {
@@ -668,8 +656,7 @@ export default {
       this.context = new this.audioContext({ latencyHint: "interactive" });
       this.processor = this.context.createScriptProcessor(BUFFER_SIZE, 1, 1);
       this.processor.connect(this.context.destination);
-      if (this.context.state !== 'running')
-        this.context.resume();
+      if (this.context.state !== "running") this.context.resume();
 
       const handleSuccess = (stream) => {
         this.globalStream = stream;
@@ -679,8 +666,8 @@ export default {
         this.processor.onaudioprocess = (e) => this.microphoneProcess(e);
       };
       navigator.mediaDevices
-          .getUserMedia(MEDIA_ACCESS_CONSTRAINTS)
-          .then(handleSuccess);
+        .getUserMedia(MEDIA_ACCESS_CONSTRAINTS)
+        .then(handleSuccess);
     },
     endRecording() {
       this.isSpeaking = false;
@@ -736,35 +723,33 @@ export default {
       }
     },
     sendReply(event) {
-        let el = (event.target || event.srcElement);
-        if (el.value) {
-            this.socket.emit("sendMessage", {
-              uid: this.currentUser.uid,
-              content: el.value,
-              align: "rq",
-              id: this.allTimeLines.length? this.allTimeLines.length: 0,
-              playing: false,
-              played: false
-            });
-            el.value = "";
-            this.scrollToLoggerBoxBottom();
-        }
+      let el = event.target || event.srcElement;
+      if (el && el.value) {
+        this.socket.emit("sendMessage", {
+          uid: this.currentUser.uid,
+          content: el.value,
+          align: "rq",
+          id: this.allTimeLines.length ? this.allTimeLines.length : 0,
+          playing: false,
+          played: false,
+        });
+        el.value = "";
+        this.scrollToLoggerBoxBottom();
+      }
     },
     sendPoint(event) {
-      let el = (event.target || event.srcElement);
+      let el = event.target || event.srcElement;
       let newTimeLine = {
-        id: this.allTimeLines.length
-            ? this.allTimeLines.length
-            : 0,
+        id: this.allTimeLines.length ? this.allTimeLines.length : 0,
         content: el.textContent,
         align: "r",
         playing: false,
-        played: false
+        played: false,
       };
       this.allTimeLines.push(newTimeLine);
       this.deletePoint(el.textContent);
       let newLog = {
-        content: this.currentUser + " sent a point: \"" + el.textContent + "\"",
+        content: this.currentUser + ' sent a point: "' + el.textContent + '"',
       };
       this.allLogs.push(newLog);
       this.scrollToLoggerBoxBottom();
@@ -778,11 +763,11 @@ export default {
       }
     },
     sendLogMsg() {
-        if (this.logger_message) {
-            this.socket.emit("sendMessage", {
-              content: this.logger_message,
-              uid: this.currentUser.uid,
-              align: "n"
+      if (this.logger_message) {
+        this.socket.emit("sendMessage", {
+          content: this.logger_message,
+          uid: this.currentUser.uid,
+          align: "n",
         });
         this.scrollToLoggerBoxBottom();
         this.logger_message = "";
@@ -791,51 +776,51 @@ export default {
     sendUserMsg() {
       if (this.message) {
         this.socket.emit("sendMessage", {
-          id: this.allTimeLines.length? this.allTimeLines.length: 0,
+          id: this.allTimeLines.length ? this.allTimeLines.length : 0,
           content: this.message,
           uid: this.currentUser.uid,
           align: "l",
           playing: false,
-          played: false
+          played: false,
         });
-        
+
         this.message = "";
       }
     },
     sendMsg() {
-        let element = this.$el.querySelector("#right_input_box");
-        if (element.value) {
-            this.socket.emit("sendMessage", {
-              uid: this.currentUser.uid,
-              id: this.allTimeLines.length
-                  ? this.allTimeLines.length
-                  : 0,
-              content: element.value,
-              align: "r",
-              playing: false,
-              played: false
-            });
-            element.value = "";
-            this.scrollToLoggerBoxBottom();
-        }
+      let element = this.$el.querySelector("#right_input_box");
+      if (element && element.value) {
+        this.socket.emit("sendMessage", {
+          uid: this.currentUser.uid,
+          content: element.value,
+          align: "r",
+          id: this.allTimeLines.length ? this.allTimeLines.length : 0,
+          playing: false,
+          played: false,
+        });
+        element.value = "";
+        this.scrollToLoggerBoxBottom();
+      }
     },
     sendTempMsg() {
-        let element = this.$el.querySelector("#temp_input_box");
-        if (element.value !== "") {
-            this.allTimeLines.push({
-              uid: this.currentUser.uid,
-              id: this.allTimeLines.length
-                  ? this.allTimeLines.length
-                  : 0,
-              content: element.value,
-              align: "r",
-              playing: false,
-              played: false
-            });
-            element.value = "";
-            this.allLogs.push({ content: `Sent a temporary message at ${this.dayjs().format('MM-DD HH:mm:ss')}`})
-            this.scrollToLoggerBoxBottom();
-        }
+      let element = this.$el.querySelector("#temp_input_box");
+      if (element && element.value) {
+        this.allTimeLines.push({
+          uid: this.currentUser.uid,
+          id: this.allTimeLines.length ? this.allTimeLines.length : 0,
+          content: element.value,
+          align: "r",
+          playing: false,
+          played: false,
+        });
+        element.value = "";
+        this.allLogs.push({
+          content: `Sent a temporary message at ${this.dayjs().format(
+            "MM-DD HH:mm:ss"
+          )}`,
+        });
+        this.scrollToLoggerBoxBottom();
+      }
     },
     recall(timeLine) {
       if (!timeLine.played && !timeLine.playing) {
@@ -865,9 +850,7 @@ export default {
     //   content: "Point 2",
     // });
   },
-  mounted() {
-
-  },
+  mounted() {},
 };
 </script>
 
@@ -876,4 +859,3 @@ export default {
   width: 100px;
 }
 </style>
-
