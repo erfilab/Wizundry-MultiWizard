@@ -107,6 +107,11 @@ namespaces.on('connection', socket => {
             console.log('sendMessage', e)
             namespaces.in(room).emit('MESSAGE', e)
         })
+
+        socket.on('playMessage', e => {
+            console.log('playMessage', e)
+            namespaces.in(room).emit('PLAY_MESSAGE', e)
+        })
     })
 })
 

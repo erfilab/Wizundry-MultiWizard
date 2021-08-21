@@ -26,7 +26,7 @@
               class="text-left"
               hide-dot
               :left="timeLine.align === 'l'"
-              :right="timeLine.align === 'r'"
+              :right="timeLine.align.charAt(0) === 'r'"
             >
               <v-alert
                 elevation="2"
@@ -37,58 +37,48 @@
                 {{ timeLine.content }}
               </v-alert>
               <v-alert
+                :class="`alert__playing--${timeLine.playing? 'yes':'no'}`"
                 elevation="2"
                 color="#757575"
                 rounded
-                v-if="timeLine.align === 'r'"
+                v-if="timeLine.align.charAt(0) === 'r'"
                 min-height="55px"
                 :id="'content_' + timeLine.id"
                 @dblclick="recall(timeLine)"
               >
                 {{ timeLine.content }}
+                <div>
+                  <div :class="`alert__status alert__status--${timeLine.align.charAt(1)}`">
+                  </div>
+                </div>
               </v-alert>
             </v-timeline-item>
           </v-timeline>
         </v-card>
         <v-row>
-          <!-- parter input -->
           <v-col cols="6">
-            <h3 class="text-center">Parter's Input Box</h3>
-            <v-card
-              id="left_input_box"
-              class="mt-3"
-              color="#FFFFFF"
-              rounded
-              outlined
-              min-height="82px"
-            >
-              <v-card-text class="black--text"> {{ left_input }} </v-card-text>
-            </v-card>
-          </v-col>
-          <!-- my input -->
-          <v-col cols="6">
-            <h3 class="text-center">Input Box</h3>
-            <!-- <v-textarea
-              id="right_input_box"
-              class="pt-3"
-              style="width: 100%"
-              rows="3"
-              light
-              solo
-              auto-grow
-            /> -->
+            <h3 class="text-center">Wizard1 Input Box</h3>
             <text-editor
+              id="left_input_box"
+              style="width: 100%"
+              class="pt-3"
+              @wizardSendMsg="sendMsg"
+              :role="1"
               v-if="currentUser.uid"
               :currentUser="currentUser"
             />
-            <v-btn
-              class="float-right mt-n4 mr-4"
-              elevation="2"
-              color="#7CB342"
-              @click="sendMsg()"
-            >
-              Send
-            </v-btn>
+          </v-col>
+          <v-col cols="6">
+            <h3 class="text-center">Wizard2 Input Box</h3>
+            <text-editor
+              id="right_input_box"
+              style="width: 100%"
+              class="pt-3"
+              :role="2"
+              @wizardSendMsg="sendMsg"
+              v-if="currentUser.uid"
+              :currentUser="currentUser"
+            />
             <h3 class="text-center mt-10">Privacy Input Box</h3>
             <v-textarea
               id="temp_input_box"
@@ -292,7 +282,7 @@
   <v-container class="fill-height" v-else>
     <!-- timeline -->
     <v-row>
-      <v-spacer/>
+      <v-spacer />
       <v-col id="chat" cols="8">
         <v-card
           id="chatbox"
@@ -316,7 +306,7 @@
               class="text-left"
               hide-dot
               :left="timeLine.align === 'l'"
-              :right="timeLine.align === 'r'"
+              :right="timeLine.align.charAt(0) === 'r'"
             >
               <v-alert
                 elevation="2"
@@ -330,52 +320,50 @@
                 elevation="2"
                 color="#757575"
                 rounded
-                v-if="timeLine.align === 'r'"
+                v-if="timeLine.align.charAt(0) === 'r'"
                 min-height="55px"
                 :id="'content_' + timeLine.id"
               >
                 {{ timeLine.content }}
+                <div>
+                  <div :class="`alert__status alert__status--${timeLine.align.charAt(1)}`">
+                  </div>
+                </div>
               </v-alert>
             </v-timeline-item>
           </v-timeline>
         </v-card>
       </v-col>
-      <v-spacer/>
+      <v-spacer />
     </v-row>
     <!-- mic bar -->
     <v-row>
-      <v-spacer/>
+      <v-spacer />
       <v-col cols="1">
         <v-btn
-            @click="
-            isSpeaking ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
-          "
-            fab
-            :color="
-            !isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
-          "
-            class="mt-4"
+          @click="isSpeaking ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
+          fab
+          :color="!isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'"
+          class="mt-4"
         >
           <v-icon
-          >{{ isSpeaking ? "mdi-microphone-off" : "mdi-microphone" }}
+            >{{ isSpeaking ? "mdi-microphone-off" : "mdi-microphone" }}
           </v-icon>
         </v-btn>
       </v-col>
       <v-col col="1" class="pt-5 mt-2">
         <span> {{ isSpeaking ? "speaking..." : "closed" }} </span>
         <v-progress-linear
-            style="width:70%"
-            :color="
-            !isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
-          "
-            :indeterminate="isSpeaking"
+          style="width:70%"
+          :color="!isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'"
+          :indeterminate="isSpeaking"
         />
       </v-col>
-      <v-spacer/>
+      <v-spacer />
     </v-row>
     <!-- Direction -->
     <v-row>
-      <v-spacer/>
+      <v-spacer />
       <v-col cols="6">
         <v-row>
           <h2 class="ml-4 mt-6">Direction</h2>
@@ -386,11 +374,11 @@
           </div>
         </v-row>
       </v-col>
-      <v-spacer/>
+      <v-spacer />
     </v-row>
     <!-- test input area -->
     <v-row>
-      <v-spacer/>
+      <v-spacer />
       <v-col cols="6">
         <v-row>
           <h3 class="text-center ml-4 mt-6">User (for test)</h3>
@@ -417,7 +405,7 @@
           </v-btn>
         </v-row>
       </v-col>
-      <v-spacer/>
+      <v-spacer />
     </v-row>
   </v-container>
 </template>
@@ -460,7 +448,7 @@ export default {
   name: "Conversation",
   components: {
     TipsDialog,
-    TextEditor
+    TextEditor,
   },
   data() {
     return {
@@ -477,6 +465,11 @@ export default {
 
       socket: null,
 
+      // web speech
+      speechLoading: false,
+      synth: window.speechSynthesis,
+      audioSpeech: new window.SpeechSynthesisUtterance(),
+
       //web recording
       isSpeaking: false,
       audioContext: null,
@@ -484,11 +477,6 @@ export default {
       processor: null,
       globalStream: null,
       audioInput: null,
-
-      speechLoading: false,
-      selectedText: "",
-      synth: window.speechSynthesis,
-      audioSpeech: new window.SpeechSynthesisUtterance(),
 
       runTimeContent: "",
       newContent: "",
@@ -540,6 +528,7 @@ export default {
     initProject() {
       this.currentUser = this.getCurrentUser;
       this.currentUser.color = this.getRandomColor();
+      this.listenForSpeechEvents();
       let HOST =
         process.env.NODE_ENV === "production"
           ? "https://ryanyen2.tech/"
@@ -582,11 +571,26 @@ export default {
             }
           }
         })
+        .on("PLAY_MESSAGE", async (param) => {
+          let { id, content } = param;
+          if (content) {
+            await this.allTimeLines.map(async (timeItem) => {
+              if (timeItem.id === id && !timeItem.played) {
+                console.log("PLAY MESSAGE: ", timeItem);
+                timeItem.playing = true;
+                await this.speakBack(content)
+                timeItem.playing = false;
+                timeItem.played = true;
+              }
+            });
+          }
+        })
         .on("MESSAGE", async (data) => {
           if (data.content) {
             const receivedTime = this.dayjs().format("MM-DD HH:mm:ss");
             switch (data.align) {
-              case "r":
+              case "r1":
+              case "r2":
                 console.log(
                   `Wizard Message ${data.content} , from ${data.uid} `
                 );
@@ -630,9 +634,25 @@ export default {
                 });
                 break;
             }
+            await this.playAll();
           }
         });
       this.socket.emit("joinRoom", "default");
+    },
+    // speaker event
+    listenForSpeechEvents() {
+      this.audioSpeech.onstart = () => {
+        this.speechLoading = true;
+      };
+
+      this.audioSpeech.onend = () => {
+        this.speechLoading = false;
+      };
+    },
+    speakBack(content) {
+      this.audioSpeech.text = content;
+      this.audioSpeech.lang = "en-US";
+      this.synth.speak(this.audioSpeech);
     },
     // microphone event
     emitSpeakerEvent(e) {
@@ -787,20 +807,31 @@ export default {
         this.message = "";
       }
     },
-    sendMsg() {
-      let element = this.$el.querySelector("#right_input_box");
-      if (element && element.value) {
+    async sendMsg(param) {
+      // let element = this.$el.querySelector("#right_input_box");
+      const { role, content } = param;
+      if (content) {
         this.socket.emit("sendMessage", {
           uid: this.currentUser.uid,
-          content: element.value,
-          align: "r",
+          content: content,
+          align: `r${role}`,
           id: this.allTimeLines.length ? this.allTimeLines.length : 0,
           playing: false,
           played: false,
         });
-        element.value = "";
         this.scrollToLoggerBoxBottom();
       }
+    },
+    async playAll() {
+      await this.allTimeLines.map(async (timeLine) => {
+        if (!timeLine.played && !this.speechLoading) {
+          await this.socket.emit("playMessage", {
+            id: timeLine.id,
+            uid: timeLine.uid,
+            content: timeLine.content,
+          });
+        }
+      });
     },
     sendTempMsg() {
       let element = this.$el.querySelector("#temp_input_box");
@@ -855,7 +886,51 @@ export default {
 </script>
 
 <style scoped>
+.alert__playing--yes::before {
+  background-color: #7cb342 !important;
+}
+
 #user_input {
   width: 100px;
+}
+
+.alert__footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  white-space: nowrap;
+  border-top: 1px solid #0d0d0d;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0d0d0d;
+  padding: 0.25rem 0.75rem;
+}
+
+.alert__status {
+  display: flex;
+  float: right;
+  align-items: center;
+  border-radius: 5px;
+}
+
+.alert__status::before {
+  content: " ";
+  flex: 0 0 auto;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: rgba(13, 13, 13, 0.5);
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+.alert__status--2::before {
+  background: #CC6E6E;
+}
+
+.alert__status--1::before {
+  background: #5DBAB9;
 }
 </style>

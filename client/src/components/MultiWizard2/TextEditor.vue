@@ -1,10 +1,10 @@
 <template>
   <div>
-    <div class="editor">
-      <editor-content
-        class="editor__content"
-        :editor="editor"
-      />
+    <div class="editor" @keydown.enter="handleEnter">
+      <editor-content class="editor__content" :editor="editor" />
+      <div class="editor__footer">
+        <div :class="`editor__status editor__status--${role}`"></div>
+      </div>
     </div>
     <v-btn
       class="float-right mt-2 mr-2"
@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import {Editor, EditorContent} from "@tiptap/vue-2";
+import { Editor, EditorContent } from "@tiptap/vue-2";
 import StarterKit from "@tiptap/starter-kit";
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
@@ -28,8 +28,8 @@ import Highlight from "@tiptap/extension-highlight";
 import CharacterCount from "@tiptap/extension-character-count";
 
 import * as Y from "yjs";
-import {WebsocketProvider} from "y-websocket";
-import {IndexeddbPersistence} from "y-indexeddb";
+import { WebsocketProvider } from "y-websocket";
+import { IndexeddbPersistence } from "y-indexeddb";
 
 export default {
   name: "TextEditor",
@@ -37,14 +37,21 @@ export default {
     EditorContent,
   },
   props: {
-    currentUser: Object,
-    timeLineItem: Object,
-    timeLineContent: String,
+    currentUser: {
+      type: Object,
+      required: true,
+      default: null,
+    },
+    role: {
+      type: Number,
+      default: 1,
+      required: true,
+    },
   },
   watch: {
-    currentUser(newUser)  {
+    currentUser(newUser) {
       if (newUser) this.initEditor();
-    }
+    },
   },
   data() {
     return {
@@ -53,30 +60,40 @@ export default {
       editor: null,
       users: [],
       status: "connecting",
-    }
+    };
   },
   methods: {
+    handleEnter(e) {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        this.send();
+      }
+    },
     send() {
-      this.$emit('sent', this.editor.state.doc.textContent)
+      this.$emit("wizardSendMsg", {
+        role: this.role,
+        content: this.editor.state.doc.textContent,
+      });
+      this.editor.commands.clearContent();
     },
     initEditor() {
-      console.log('currentUser', this.currentUser)
+      console.log("currentUser", this.currentUser);
       const ydoc = new Y.Doc();
 
       let YJS_HOST =
-          process.env.NODE_ENV === "production"
-              ? "wss://ryanyen2.tech/yjs/"
-              : "ws://localhost:3001";
+        process.env.NODE_ENV === "production"
+          ? "wss://ryanyen2.tech/yjs/"
+          : "ws://localhost:3001";
       this.provider = new WebsocketProvider(
-          YJS_HOST,
-          new Date().toISOString().slice(0, 10),
-          ydoc
+        YJS_HOST,
+        `multi-conversation-${this.role}`,
+        ydoc
       );
       this.provider.on("status", (event) => (this.status = event.status));
       window.ydoc = ydoc;
       this.indexdb = new IndexeddbPersistence(
-          new Date().toISOString().slice(0, 10),
-          ydoc
+        new Date().toISOString().slice(0, 10),
+        ydoc
       );
 
       this.editor = new Editor({
@@ -102,19 +119,22 @@ export default {
           }),
         ],
       });
-      this.editor.chain().focus().user(this.currentUser).run();
+      this.editor
+        .chain()
+        .focus()
+        .user(this.currentUser)
+        .run();
       localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
     },
   },
   mounted() {
-    console.log('mounted', this.currentUser)
-    if(this.currentUser) this.initEditor();
-  }
-}
+    console.log("mounted", this.currentUser);
+    if (this.currentUser) this.initEditor();
+  },
+};
 </script>
 
 <style scoped>
-
 .editor {
   display: flex;
   flex-direction: column;
@@ -122,8 +142,8 @@ export default {
   /*width: 100px;*/
   color: #0d0d0d;
   background-color: white;
-  border: 3px solid #0d0d0d;
-  border-radius: 0.75rem;
+  /* border: 3px solid #0d0d0d; */
+  border-radius: 0.25rem;
   /* Some information about the status */
 }
 
@@ -132,14 +152,16 @@ export default {
   align-items: center;
   flex: 0 0 auto;
   flex-wrap: wrap;
-  padding: 0.25rem;
+  /* padding: 0.25rem; */
   border-bottom: 3px solid #0d0d0d;
 }
 
 .editor__content {
-  padding: 1.25rem 1rem;
+  padding: 5px;
   font-family: monospace;
   font-size: 18px;
+  height: 100%;
+  width: 100%;
   flex: 1 1 auto;
   overflow-x: hidden;
   overflow-y: auto;
@@ -153,7 +175,7 @@ export default {
   justify-content: space-between;
   flex-wrap: wrap;
   white-space: nowrap;
-  border-top: 3px solid #0d0d0d;
+  border-top: 1px solid #0d0d0d;
   font-size: 12px;
   font-weight: 600;
   color: #0d0d0d;
@@ -162,6 +184,7 @@ export default {
 
 .editor__status {
   display: flex;
+  float: right;
   align-items: center;
   border-radius: 5px;
 }
@@ -183,6 +206,14 @@ export default {
 
 .editor__status--connected::before {
   background: #b9f18d;
+}
+
+.editor__status--2::before {
+  background: #cc6e6e;
+}
+
+.editor__status--1::before {
+  background: #5dbab9;
 }
 
 .editor__name button {
