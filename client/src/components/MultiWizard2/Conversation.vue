@@ -1,4 +1,5 @@
 <template>
+  <!-- wizard UI -->
   <v-container class="fill-height" v-if="this.curRole !== 'participant'">
     <v-row>
       <v-col id="chat" cols="6">
@@ -20,29 +21,29 @@
           </v-row>
           <v-timeline class="ma-4">
             <v-timeline-item
-                v-for="timeLine in allTimeLines"
-                :key="timeLine.id"
-                class="text-left"
-                hide-dot
-                :left="timeLine.align === 'l'"
-                :right="timeLine.align === 'r'"
+              v-for="timeLine in allTimeLines"
+              :key="timeLine.id"
+              class="text-left"
+              hide-dot
+              :left="timeLine.align === 'l'"
+              :right="timeLine.align === 'r'"
             >
               <v-alert
-                  elevation="2"
-                  outlined
-                  rounded
-                  v-if="timeLine.align === 'l'"
+                elevation="2"
+                outlined
+                rounded
+                v-if="timeLine.align === 'l'"
               >
                 {{ timeLine.content }}
               </v-alert>
               <v-alert
-                  elevation="2"
-                  color="#757575"
-                  rounded
-                  v-if="timeLine.align === 'r'"
-                  min-height="55px"
-                  :id="'content_' + timeLine.id"
-                  @dblclick="recall(timeLine)"
+                elevation="2"
+                color="#757575"
+                rounded
+                v-if="timeLine.align === 'r'"
+                min-height="55px"
+                :id="'content_' + timeLine.id"
+                @dblclick="recall(timeLine)"
               >
                 {{ timeLine.content }}
               </v-alert>
@@ -150,12 +151,12 @@
               mdi-account
             </v-icon>
             <v-textarea
-            class="mt-2 mr-6 mb-n4"
-            rows="1"
-            outlined
-            auto-grow
-            value="1. decide the final output content"
-          />
+              class="mt-2 mr-6 mb-n4"
+              rows="1"
+              outlined
+              auto-grow
+              value="1. decide the final output content"
+            />
           </v-row>
           <v-row>
             <v-icon
@@ -245,13 +246,13 @@
               height="210px"
             >
               <v-alert
-                  v-for="point in allPoints"
-                  :key="point.id"
-                  elevation="2"
-                  class="ma-4"
-                  color="#757575"
-                  rounded
-                  @dblclick="sendPoint"
+                v-for="point in allPoints"
+                :key="point.id"
+                elevation="2"
+                class="ma-4"
+                color="#757575"
+                rounded
+                @dblclick="sendPoint"
               >
                 {{ point.content }}
               </v-alert>
@@ -330,6 +331,138 @@
           </v-col>
         </v-row>
       </v-col>
+    </v-row>
+  </v-container>
+  <!-- participant UI -->
+  <v-container class="fill-height" v-else>
+    <!-- timeline -->
+    <v-row>
+      <v-spacer/>
+      <v-col id="chat" cols="8">
+        <v-card
+          id="chatbox"
+          elevation="0"
+          class="overflow-y-auto overflow-x-hidden"
+          min-height="200px"
+          max-height="800px"
+        >
+          <v-row>
+            <v-col>
+              <h3 class="text-center">User</h3>
+            </v-col>
+            <v-col>
+              <h3 class="text-center">Wizard</h3>
+            </v-col>
+          </v-row>
+          <v-timeline class="ma-4">
+            <v-timeline-item
+              v-for="timeLine in allTimeLines"
+              :key="timeLine.id"
+              class="text-left"
+              hide-dot
+              :left="timeLine.align === 'l'"
+              :right="timeLine.align === 'r'"
+            >
+              <v-alert
+                elevation="2"
+                outlined
+                rounded
+                v-if="timeLine.align === 'l'"
+              >
+                {{ timeLine.content }}
+              </v-alert>
+              <v-alert
+                elevation="2"
+                color="#757575"
+                rounded
+                v-if="timeLine.align === 'r'"
+                min-height="55px"
+                :id="'content_' + timeLine.id"
+              >
+                {{ timeLine.content }}
+              </v-alert>
+            </v-timeline-item>
+          </v-timeline>
+        </v-card>
+      </v-col>
+      <v-spacer/>
+    </v-row>
+    <!-- mic bar -->
+    <v-row>
+      <v-spacer/>
+      <v-col cols="1">
+        <v-btn
+            @click="
+            isSpeaking ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
+          "
+            fab
+            :color="
+            !isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
+          "
+            class="mt-4"
+        >
+          <v-icon
+          >{{ isSpeaking ? "mdi-microphone-off" : "mdi-microphone" }}
+          </v-icon>
+        </v-btn>
+      </v-col>
+      <v-col col="1" class="pt-5 mt-2">
+        <span> {{ isSpeaking ? "speaking..." : "closed" }} </span>
+        <v-progress-linear
+            style="width:70%"
+            :color="
+            !isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
+          "
+            :indeterminate="isSpeaking"
+        />
+      </v-col>
+      <v-spacer/>
+    </v-row>
+    <!-- Direction -->
+    <v-row>
+      <v-spacer/>
+      <v-col cols="6">
+        <v-row>
+          <h2 class="ml-4 mt-6">Direction</h2>
+        </v-row>
+        <v-row>
+          <div class="ml-4 mt-2">
+            XXX
+          </div>
+        </v-row>
+      </v-col>
+      <v-spacer/>
+    </v-row>
+    <!-- test input area -->
+    <v-row>
+      <v-spacer/>
+      <v-col cols="6">
+        <v-row>
+          <h3 class="text-center ml-4 mt-6">User (for test)</h3>
+        </v-row>
+        <v-row>
+          <v-textarea
+            label="Message"
+            v-model="message"
+            outlined
+            no-resize
+            class="overflow-y-auto overflow-x-hidden ml-4 pt-1"
+            height="100px"
+          >
+          </v-textarea>
+        </v-row>
+        <v-row>
+          <v-btn
+            class="float-right mt-n4 ml-6 mr-2"
+            elevation="2"
+            color="#7CB342"
+            @click="sendUserMsg()"
+          >
+            Send
+          </v-btn>
+        </v-row>
+      </v-col>
+      <v-spacer/>
     </v-row>
   </v-container>
 </template>
@@ -606,12 +739,12 @@ export default {
         let el = (event.target || event.srcElement);
         if (el.value) {
             this.socket.emit("sendMessage", {
-                uid: this.currentUser.uid,
-                content: el.value,
-                align: "rq",
-                id: this.allTimeLines.length? this.allTimeLines.length: 0,
-                playing: false,
-                played: false
+              uid: this.currentUser.uid,
+              content: el.value,
+              align: "rq",
+              id: this.allTimeLines.length? this.allTimeLines.length: 0,
+              playing: false,
+              played: false
             });
             el.value = "";
             this.scrollToLoggerBoxBottom();
@@ -647,9 +780,9 @@ export default {
     sendLogMsg() {
         if (this.logger_message) {
             this.socket.emit("sendMessage", {
-                content: this.logger_message,
-                uid: this.currentUser.uid,
-                align: "n"
+              content: this.logger_message,
+              uid: this.currentUser.uid,
+              align: "n"
         });
         this.scrollToLoggerBoxBottom();
         this.logger_message = "";
@@ -673,12 +806,14 @@ export default {
         let element = this.$el.querySelector("#right_input_box");
         if (element.value) {
             this.socket.emit("sendMessage", {
-                uid: this.currentUser.uid,
-                content: element.value,
-                align: "r",
-                id: this.allTimeLines.length? this.allTimeLines.length: 0,
-                playing: false,
-                played: false
+              uid: this.currentUser.uid,
+              id: this.allTimeLines.length
+                  ? this.allTimeLines.length
+                  : 0,
+              content: element.value,
+              align: "r",
+              playing: false,
+              played: false
             });
             element.value = "";
             this.scrollToLoggerBoxBottom();
@@ -688,14 +823,14 @@ export default {
         let element = this.$el.querySelector("#temp_input_box");
         if (element.value !== "") {
             this.allTimeLines.push({
-                uid: this.currentUser.uid,
-                id: this.allTimeLines.length
-                    ? this.allTimeLines.length
-                    : 0,
-                content: element.value,
-                align: "r",
-                playing: false,
-                played: false
+              uid: this.currentUser.uid,
+              id: this.allTimeLines.length
+                  ? this.allTimeLines.length
+                  : 0,
+              content: element.value,
+              align: "r",
+              playing: false,
+              played: false
             });
             element.value = "";
             this.allLogs.push({ content: `Sent a temporary message at ${this.dayjs().format('MM-DD HH:mm:ss')}`})
