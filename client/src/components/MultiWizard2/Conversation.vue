@@ -21,29 +21,29 @@
           </v-row>
           <v-timeline class="ma-4">
             <v-timeline-item
-                v-for="timeLine in allTimeLines"
-                :key="timeLine.id"
-                class="text-left"
-                hide-dot
-                :left="timeLine.align === 'l'"
-                :right="timeLine.align === 'r'"
+              v-for="timeLine in allTimeLines"
+              :key="timeLine.id"
+              class="text-left"
+              hide-dot
+              :left="timeLine.align === 'l'"
+              :right="timeLine.align === 'r'"
             >
               <v-alert
-                  elevation="2"
-                  outlined
-                  rounded
-                  v-if="timeLine.align === 'l'"
+                elevation="2"
+                outlined
+                rounded
+                v-if="timeLine.align === 'l'"
               >
                 {{ timeLine.content }}
               </v-alert>
               <v-alert
-                  elevation="2"
-                  color="#757575"
-                  rounded
-                  v-if="timeLine.align === 'r'"
-                  min-height="55px"
-                  :id="'content_' + timeLine.id"
-                  @dblclick="recall(timeLine)"
+                elevation="2"
+                color="#757575"
+                rounded
+                v-if="timeLine.align === 'r'"
+                min-height="55px"
+                :id="'content_' + timeLine.id"
+                @dblclick="recall(timeLine)"
               >
                 {{ timeLine.content }}
               </v-alert>
@@ -151,12 +151,12 @@
               mdi-account
             </v-icon>
             <v-textarea
-            class="mt-2 mr-6 mb-n4"
-            rows="1"
-            outlined
-            auto-grow
-            value="1. decide the final output content"
-          />
+              class="mt-2 mr-6 mb-n4"
+              rows="1"
+              outlined
+              auto-grow
+              value="1. decide the final output content"
+            />
           </v-row>
           <v-row>
             <v-icon
@@ -246,13 +246,13 @@
               height="210px"
             >
               <v-alert
-                  v-for="point in allPoints"
-                  :key="point.id"
-                  elevation="2"
-                  class="ma-4"
-                  color="#757575"
-                  rounded
-                  @dblclick="sendPoint"
+                v-for="point in allPoints"
+                :key="point.id"
+                elevation="2"
+                class="ma-4"
+                color="#757575"
+                rounded
+                @dblclick="sendPoint"
               >
                 {{ point.content }}
               </v-alert>
@@ -356,28 +356,28 @@
           </v-row>
           <v-timeline class="ma-4">
             <v-timeline-item
-                v-for="timeLine in allTimeLines"
-                :key="timeLine.id"
-                class="text-left"
-                hide-dot
-                :left="timeLine.align === 'l'"
-                :right="timeLine.align === 'r'"
+              v-for="timeLine in allTimeLines"
+              :key="timeLine.id"
+              class="text-left"
+              hide-dot
+              :left="timeLine.align === 'l'"
+              :right="timeLine.align === 'r'"
             >
               <v-alert
-                  elevation="2"
-                  outlined
-                  rounded
-                  v-if="timeLine.align === 'l'"
+                elevation="2"
+                outlined
+                rounded
+                v-if="timeLine.align === 'l'"
               >
                 {{ timeLine.content }}
               </v-alert>
               <v-alert
-                  elevation="2"
-                  color="#757575"
-                  rounded
-                  v-if="timeLine.align === 'r'"
-                  min-height="55px"
-                  :id="'content_' + timeLine.id"
+                elevation="2"
+                color="#757575"
+                rounded
+                v-if="timeLine.align === 'r'"
+                min-height="55px"
+                :id="'content_' + timeLine.id"
               >
                 {{ timeLine.content }}
               </v-alert>
@@ -748,13 +748,13 @@ export default {
       let element = this.$el.querySelector("#right_input_box");
       if (element.value !== "") {
         var newTimeLine = {
-        id: this.allTimeLines.length
-            ? this.allTimeLines.length
-            : 0,
-        content: element.value,
-        align: "r",
-        playing: false,
-        played: false
+          id: this.allTimeLines.length
+              ? this.allTimeLines.length
+              : 0,
+          content: element.value,
+          align: "r",
+          playing: false,
+          played: false
         }
         this.allTimeLines.push(newTimeLine);
         element.value = "";
@@ -769,13 +769,13 @@ export default {
       let element = this.$el.querySelector("#temp_input_box");
       if (element.value !== "") {
         var newTimeLine = {
-        id: this.allTimeLines.length
-            ? this.allTimeLines.length
-            : 0,
-        content: element.value,
-        align: "r",
-        playing: false,
-        played: false
+          id: this.allTimeLines.length
+              ? this.allTimeLines.length
+              : 0,
+          content: element.value,
+          align: "r",
+          playing: false,
+          played: false
         }
         this.allTimeLines.push(newTimeLine);
         element.value = "";
