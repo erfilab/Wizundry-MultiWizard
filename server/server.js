@@ -12,7 +12,10 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "../client/dist")))
-// app.use('*', express.static(path.join(__dirname, "../client/dist")));
+
+// serve vuejs stativ file ising vue's router
+app.use(express.static(path.join(__dirname, "../client/dist")));
+app.use('*', express.static(path.join(__dirname, "../client/dist")));
 
 const routes = require('./routes/index')
 app.use('/', routes)
@@ -20,7 +23,7 @@ app.use('/', routes)
 
 const HOST = process.env.HOST || "localhost";
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, HOST, () => {
     console.log(`listening on ${HOST}:${PORT}`);
 });
 const { Server } = require('socket.io');
@@ -62,14 +65,14 @@ namespaces.on('connection', socket => {
 
         // multi-wizard speaker event
         socket.on('SPEAK', async (data) => {
-            console.log(`SPEAKER_EVENT ${data.content}`)
-            namespaces.in(room).emit("START_SPEAKER", {content: data.content});
+            console.log(`SPEAKER_EVENT ${data.id}: ${data.content}`)
+            if (data.content) namespaces.in(room).emit("START_SPEAKER", {...data});
+            else namespaces.in(room).emit("END_SPEAKER", '');
         });
 
 
         //mic event
         socket.on('MICROPHONE', e => {
-            // if (e.status) request.enableAutomaticPunctuation = e.punctuation
             namespaces.in(room).emit('WEB_RECORDING', e.status)
         })
 
@@ -116,7 +119,7 @@ namespaces.on('connection', socket => {
 })
 
 function startRecognitionStream(room, uid) {
-    console.log("SSR", room, request.enableAutomaticPunctuation)
+    console.log("SSR", room)
     recognizeStream = speechClient
         .streamingRecognize(request)
         .on('error', console.error)
