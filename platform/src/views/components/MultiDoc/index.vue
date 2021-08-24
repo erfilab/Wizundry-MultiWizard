@@ -56,9 +56,7 @@
             <v-col class="pt-5">
               <span> {{ speechLoading ? "speaking..." : "closed" }} </span>
               <v-progress-linear
-                :color="
-                  !speechLoading ? 'cyan' : 'cyan darken-3'
-                "
+                :color="!speechLoading ? 'cyan' : 'cyan darken-3'"
                 :indeterminate="speechLoading"
               />
             </v-col>
@@ -153,7 +151,14 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(["userInfo", "connectedUsers", "roles", "isUser", "isWizard"]),
+    ...mapGetters([
+      "userInfo",
+      "connectedUsers",
+      "roles",
+      "isUser",
+      "isWizard",
+      "isAdmin",
+    ]),
   },
   watch: {
     newContent(text) {
@@ -176,11 +181,28 @@ export default {
     },
   },
   methods: {
+    // take logs
+    createNewLog(log) {
+      if (this.isAdmin || log.type==='SPEECH_CONTENT') {
+        const params = {
+          username: this.userInfo.username,
+          timestamp: new Date().toISOString().slice(0, 19).replace("T", " "),
+          type: log.type || "",
+          status: log.status || false,
+          value: log.value || "",
+        };
+        this.$store.dispatch("CreateNewLog", params);
+      }
+    },
     //speaker
     emitSpeakEvent(item) {
       console.log("emitSpeakEvent >> ", item);
       this.emitSpeakerEvent(false);
-      this.socket.emit("SPEAK", { id: item.id, content: item.title, style: item.style });
+      this.socket.emit("SPEAK", {
+        id: item.id,
+        content: item.title,
+        style: item.style,
+      });
     },
     //microphone
     emitSpeakerEvent(e) {
@@ -235,7 +257,11 @@ export default {
 
       this.audioSpeech.onend = () => {
         this.speechLoading = false;
-        this.socket.emit("SPEAK", { id: this.itemTalking, content: "", style: this.itemStyle });
+        this.socket.emit("SPEAK", {
+          id: this.itemTalking,
+          content: "",
+          style: this.itemStyle,
+        });
       };
     },
     speakBack(text) {
@@ -262,6 +288,7 @@ export default {
     this.socket
       .on("WEB_RECORDING", async (e) => {
         console.log("WEB RECORDING STATUS: ", e);
+        this.createNewLog({ type: "WEB_RECORDING", status: e });
         if (e && this.isUser && !this.isTesting) this.initRecording();
         else if (!e && this.isUser && this.isTesting) this.endRecording();
         else if (e && this.isWizard) this.isTesting = this.isSpeaking = true;
@@ -269,20 +296,24 @@ export default {
       })
       .on("START_SPEAKER", async (data) => {
         console.log("START SPEAKER: ", data);
+        this.createNewLog({
+          type: "WEB_SPEAKER",
+          status: true,
+          value: data.content,
+        });
         if (data.content.length > 0 && this.isUser) {
           this.speakBack(data.content);
-        }
-        else if (this.isUser) {
+        } else if (this.isUser) {
           this.synth.cancel();
           this.speechLoading = false;
-        }
-        else if (data && this.isWizard) {
+        } else if (data && this.isWizard) {
           this.itemTalking = data.id;
           this.itemStyle = data.style;
           this.speechLoading = true;
         }
       })
       .on("END_SPEAKER", async () => {
+        this.createNewLog({ type: "WEB_SPEAKER", status: false });
         this.itemTalking = -1;
         this.itemStyle = 1;
         this.speechLoading = false;
@@ -302,6 +333,10 @@ export default {
             let temp_cont = this.runTimeContent;
             this.runTimeContent = "";
             this.newContent = temp_cont;
+            this.createNewLog({
+              type: "SPEECH_CONTENT",
+              value: this.newContent,
+            });
           }
         }
       });
@@ -318,7 +353,13 @@ export default {
       color: this.getRandomColor(),
     };
 
-    this.editor = await initEditor(this.isWizard, ydoc, this.provider, currentUser);
+    this.editor = await initEditor(
+      this.isWizard,
+      ydoc,
+      this.provider,
+      currentUser
+    );
+    
     this.editor.chain().focus().user(currentUser).run();
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
     this.listenForSpeechEvents();

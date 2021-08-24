@@ -45,6 +45,9 @@ export const initEditor = (collab, ydoc, yDocProvider, user) => {
                 TaskList,
                 History,
                 TaskItem,
+                Collaboration.configure({
+                    document: ydoc,
+                }),
                 CharacterCount.configure({
                     limit: 10000,
                 }),

@@ -4,6 +4,7 @@ import syncStorage from './plugins/syncStorage';
 import permission from './modules/permission';
 import settings from './modules/settings';
 import user from './modules/user';
+import log from './modules/log';
 
 Vue.use(Vuex);
 
@@ -12,6 +13,7 @@ export default new Vuex.Store({
     permission,
     settings,
     user,
+    log
   },
 
   plugins: [
