@@ -30,4 +30,4 @@ db/
 #firebase.js
 wizardofoz-cloud-speech-api.json
 wizardofoz-b2c61-firebase-adminsdk-ltw9w-910969f592.json
-.env.development
+*.env

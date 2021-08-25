@@ -1,13 +1,14 @@
 {
-  "name": "vue-vuetify-admin",
+  "name": "woz",
   "title": "Wizard of Oz",
-  "version": "0.3.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Admin template based on Vue and Vuetify",
   "author": "NelsonEAX <nelsoneax@gmail.com>",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
+    "build:prod": "vue-cli-service build --mode production",
+    "build:docker": "vue-cli-service build --mode docker",
     "lint": "vue-cli-service lint",
     "test:e2e": "vue-cli-service test:e2e",
     "test:unit": "vue-cli-service test:unit"

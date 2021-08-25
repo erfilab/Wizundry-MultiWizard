@@ -1,5 +1,4 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require('path');
 require('dotenv').config()
@@ -9,13 +8,68 @@ const app = express();
 // const server = require('http').createServer(app);
 
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "../client/dist")))
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// serve vuejs stativ file ising vue's router
-app.use(express.static(path.join(__dirname, "../client/dist")));
-app.use('*', express.static(path.join(__dirname, "../client/dist")));
+// app.use(express.static(path.join(__dirname, "./dist")));
+// app.use('*', express.static(path.join(__dirname, "./dist")));
+
+console.log(
+    'Path: ',
+    path.join(
+        __dirname,
+        `${process.env.NODE_ENV === 'development' ? '.' : '..'}/platform/dist`
+    )
+);
+
+app.use(
+    express.static(
+        path.join(
+            __dirname,
+            `${process.env.NODE_ENV === 'development' ? '.' : '..'}/platform/dist`
+        )
+    )
+);
+
+app.use(
+    '*',
+    express.static(
+        path.join(
+            __dirname,
+            `${process.env.NODE_ENV === 'development' ? '.' : '..'}/platform/dist`
+        )
+    )
+);
+
+const sql = require("./models/db.js");
+sql.query("CREATE TABLE IF NOT EXISTS `user_info` (\n" +
+    "\t`id` BIGINT(20) NOT NULL AUTO_INCREMENT,\n" +
+    "\t`uid` VARCHAR(64) NOT NULL DEFAULT '' COLLATE 'latin1_swedish_ci',\n" +
+    "\t`password` VARCHAR(64) NOT NULL DEFAULT '' COLLATE 'latin1_swedish_ci',\n" +
+    "\t`username` VARCHAR(64) NOT NULL COLLATE 'latin1_swedish_ci',\n" +
+    "\t`roles` VARCHAR(64) NOT NULL COLLATE 'latin1_swedish_ci',\n" +
+    "\t`token` VARCHAR(128) NULL COLLATE 'latin1_swedish_ci',\n" +
+    "\t`createdAt` BIGINT(20) NOT NULL,\n" +
+    "\tPRIMARY KEY (`id`) USING BTREE\n" +
+    ")\n" +
+    "ENGINE=InnoDB;", (err, res) => {
+    if(err) console.log('Error when creating user table ', err)
+    else console.log('User table created: ', res.info)
+})
+
+sql.query("CREATE TABLE IF NOT EXISTS `multi_doc_logs` (\n" +
+    "\t`id` BIGINT(20) NOT NULL AUTO_INCREMENT,\n" +
+    "\t`username` VARCHAR(64) NOT NULL COLLATE 'latin1_swedish_ci',\n" +
+    "\t`timestamp` TIMESTAMP NULL,\n" +
+    "\t`type` VARCHAR(32) NULL COLLATE 'latin1_swedish_ci',\n" +
+    "\t`value` TEXT NULL COLLATE 'latin1_swedish_ci',\n" +
+    "\t`status` TINYINT(2) NULL,\n" +
+    "\tPRIMARY KEY (`id`) USING BTREE\n" +
+    ")\n" +
+    "ENGINE=InnoDB;", (err, res) => {
+    if(err) console.log('Error when creating logs table ', err)
+    else console.log('Logs table created: ', res.info)
+})
 
 const routes = require('./routes/index')
 app.use('/', routes)
@@ -23,7 +77,7 @@ app.use('/', routes)
 
 const HOST = process.env.HOST || "localhost";
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, () => {
     console.log(`listening on ${HOST}:${PORT}`);
 });
 const { Server } = require('socket.io');

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: woz_db
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass1234
+      MYSQL_ROOT_PASSWORD: pass1234
+      MYSQL_DATABASE: woz
+    ports:
+      - "3307:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/backup/files/:/data_backup/data
+  ws:
+    container_name: woz_ws
+    build:
+      context: ./
+      dockerfile: ./config/Dockerfile
+    restart: on-failure
+    ports:
+      - "3001:3001"
+  app:
+    container_name: woz_app
+    build: .
+    env_file: ./dev.env
+    restart: on-failure
+    stdin_open: true
+    tty: true
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - ws
+    links:
+      - ws
+    volumes:
+      - ../platform/dist/:/app/platform/dist
+
+volumes:
+  db-data:
