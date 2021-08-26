@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require('path');
 
+if (!process.env.NODE_ENV) process.env.NODE_ENV = 'production';
 // env mode = [0, 1, 2]
 const env_modes = ['localhost', 'development', 'production']
 const configuration = [{
