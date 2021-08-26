@@ -131,6 +131,11 @@ namespaces.on('connection', socket => {
             else namespaces.in(room).emit("END_SPEAKER", '');
         });
 
+        socket.on('SPEAK_FROM', async (data) => {
+            console.log(`SPEAKER_EVENT ${data.status}\t Start from: ${data.anchor}`)
+            namespaces.in(room).emit("WEB_SPEAKER", {...data});
+        });
+        
 
         //mic event
         socket.on('MICROPHONE', e => {

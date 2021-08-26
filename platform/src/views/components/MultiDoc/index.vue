@@ -1,20 +1,10 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="4">
-        <v-col cols="12" v-if="isWizard">
-          <v-card>
-            <CommandBoxes
-              @startSpeak="emitSpeakEvent"
-              :talking.sync="speechLoading"
-              :itemTalking.sync="itemTalking"
-              :itemStyle="itemStyle"
-            />
-          </v-card>
-        </v-col>
-        <v-col class="mt-3" cols="12">
+      <v-col cols="6">
+        <v-col class="" cols="12">
           <v-row>
-            <v-col cols="3">
+            <v-col cols="2">
               <v-btn
                 @click="
                   isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
@@ -24,14 +14,13 @@
                 :color="
                   !isTesting ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
                 "
-                class="mt-4"
               >
                 <v-icon
-                  >{{ isTesting ? "mdi-microphone-off" : "mdi-microphone" }}
+                  >{{ isTesting ? "mdi-microphone" : "mdi-microphone-off" }}
                 </v-icon>
               </v-btn>
             </v-col>
-            <v-col class="pt-5">
+            <v-col cols="4" class="pt-5">
               <span> {{ isTesting ? "speaking..." : "closed" }} </span>
               <v-progress-linear
                 :color="
@@ -62,13 +51,26 @@
             </v-col>
           </v-row>
         </v-col>
+        <v-col cols="12" v-if="isWizard">
+          <div>
+            <CommandBoxes
+              @startSpeak="emitSpeakEvent"
+              :talking.sync="speechLoading"
+              :itemTalking.sync="itemTalking"
+              :itemStyle="itemStyle"
+            />
+          </div>
+        </v-col>
       </v-col>
-      <v-col cols="8">
+      <v-col cols="6">
         <div
           class="editor"
           v-if="editor"
           @keyup.120="
             isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
+          "
+          @keyup.esc="
+            speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)
           "
         >
           <menu-bar v-if="isWizard" class="editor__header" :editor="editor" />
@@ -183,7 +185,7 @@ export default {
   methods: {
     // take logs
     createNewLog(log) {
-      if (this.isAdmin || log.type==='SPEECH_CONTENT') {
+      if (this.isAdmin || log.type === "SPEECH_CONTENT") {
         const params = {
           username: this.userInfo.username,
           timestamp: new Date().toISOString().slice(0, 19).replace("T", " "),
@@ -202,6 +204,15 @@ export default {
         id: item.id,
         content: item.title,
         style: item.style,
+      });
+    },
+    // speaker from anchor point
+    emitTalkEvent(event) {
+      console.log("emitTalkEvent >> ", event);
+      if (event) this.emitSpeakerEvent(false);
+      this.socket.emit("SPEAK_FROM", {
+        status: event,
+        anchor: this.editor.state.selection.anchor,
       });
     },
     //microphone
@@ -294,6 +305,22 @@ export default {
         else if (e && this.isWizard) this.isTesting = this.isSpeaking = true;
         else if (!e && this.isWizard) this.isTesting = this.isSpeaking = false;
       })
+      .on("WEB_SPEAKER", async (param) => {
+        console.log("WEB SPEAKER From Anchor: ", param);
+        const { size } = this.editor.view.state.doc.content;
+        const selectedText = this.editor.state.doc.textBetween(param.anchor, size, " ");
+        this.createNewLog({
+          type: "SPEAKER_FROM_ANCHOR",
+          status: true,
+          value: selectedText,
+        });
+        if (param.status && this.isUser && !this.speechLoading)
+          this.speakBack(selectedText);
+        else if (!param.status && this.isUser) {
+          this.synth.cancel();
+          this.speechLoading = false;
+        }
+      })
       .on("START_SPEAKER", async (data) => {
         console.log("START SPEAKER: ", data);
         this.createNewLog({
@@ -313,6 +340,7 @@ export default {
         }
       })
       .on("END_SPEAKER", async () => {
+        this.emitSpeakerEvent(true);
         console.log("END SPEAKER");
         this.createNewLog({ type: "WEB_SPEAKER", status: false });
         this.itemTalking = -1;
@@ -360,8 +388,8 @@ export default {
       this.provider,
       currentUser
     );
-    
-    this.editor.chain().focus().user(currentUser).run();
+
+    if (this.isWizard) this.editor.chain().focus().user(currentUser).run();
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
     this.listenForSpeechEvents();
   },
@@ -377,7 +405,7 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 550px;
-  width: 700px;
+  width: 680px;
   color: #0d0d0d;
   background-color: white;
   border: 3px solid #0d0d0d;

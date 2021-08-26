@@ -10,6 +10,7 @@ exports.createMultiDocLog = async (req, res) => {
 };
 
 exports.listMultiDocLogs = (req, res) => {
+    console.log(1);
     const { query_time } = req.params;
     console.log('qsqs', query_time);
     Log.getAll({ query_time }, (err, data) => {

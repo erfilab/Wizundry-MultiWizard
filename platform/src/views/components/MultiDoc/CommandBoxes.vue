@@ -1,7 +1,35 @@
 <template>
   <v-container>
     <v-row dense>
-      <v-col v-for="(item, i) in items" :key="i" cols="12">
+      <v-col v-for="item in items" :key="item.id" cols="6">
+        <v-row>
+          <v-col cols=2>
+            <v-btn-toggle borderless dense style="flex-direction: column;">
+              <v-btn @click="speakerEvent(item)">
+                <v-icon>{{
+                  item.actionStatus ? "mdi-pause" : "mdi-play"
+                }}</v-icon>
+              </v-btn>
+              <v-btn @click="speakerEvent2(item)">
+                <v-icon>{{item.actionStatus ? "mdi-progress-close" : "mdi-repeat-once"}}</v-icon>
+              </v-btn>
+            </v-btn-toggle>
+          </v-col>
+          <v-col>
+            <v-card :color="item.color">
+              <div class="d-flex flex-no-wrap justify-space-between">
+                <div>
+                  <v-text-field
+                    class="mt-3 ml-3"
+                    v-model="item.title"
+                  ></v-text-field>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-col>
+      <v-col v-for="item in items2" :key="item.id" cols="6">
         <v-row>
           <v-col cols=2>
             <v-btn-toggle borderless dense style="flex-direction: column;">
@@ -55,44 +83,76 @@ export default {
     items: [
       {
         id: 0,
-        color: "#CDE589",
-        title: "Can You Repeat",
-        artist: "Foster the People",
+        color: "#f0f0f0",
+        title: "",
         actionStatus: false,
       },
       {
         id: 1,
-        color: "#CDE589",
-        title: "Sorry I don't understand",
-        artist: "Foster the People",
+        color: "#f0f0f0",
+        title: "",
         actionStatus: false,
       },
       {
         id: 2,
         color: "#CDE589",
         title: "Can You Speak Slowly",
-        artist: "this can be modified",
         actionStatus: false,
       },
       {
         id: 3,
         color: "#CDE589",
         title: "I got it.",
-        artist: "Ellie Goulding",
         actionStatus: false,
       },
       {
         id: 4,
         color: "#CDE589",
         title: "Yeah, it's true!",
-        artist: "Ellie Goulding",
         actionStatus: false,
       },
       {
         id: 5,
         color: "#CDE589",
         title: "No, I don't think so.",
-        artist: "Ellie Goulding",
+        actionStatus: false,
+      },
+    ],
+    items2: [
+      {
+        id: 6,
+        color: "#CDE589",
+        title: "Can You Repeat",
+        actionStatus: false,
+      },
+      {
+        id: 7,
+        color: "#CDE589",
+        title: "Sorry I don't understand",
+        actionStatus: false,
+      },
+      {
+        id: 8,
+        color: "#CDE589",
+        title: "Can You Speak Slowly",
+        actionStatus: false,
+      },
+      {
+        id: 9,
+        color: "#CDE589",
+        title: "I got it.",
+        actionStatus: false,
+      },
+      {
+        id: 10,
+        color: "#CDE589",
+        title: "Yeah, it's true!",
+        actionStatus: false,
+      },
+      {
+        id: 11,
+        color: "#CDE589",
+        title: "No, I don't think so.",
         actionStatus: false,
       },
     ],
