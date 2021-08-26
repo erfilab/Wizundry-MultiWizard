@@ -1,7 +1,8 @@
 import axios from 'axios';
 
+const HOST = process.env.NODE_ENV === "production" ? "https://ryanyen2.tech/" : "http://localhost:3000/";
 const service = axios.create({
-    baseURL: process.env.BASE_URL,
+    baseURL: HOST,
     timeout: 10000
 });
 

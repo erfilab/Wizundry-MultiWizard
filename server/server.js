@@ -1,26 +1,32 @@
 const express = require("express");
 const cors = require("cors");
 const path = require('path');
-require('dotenv').config()
 
+// env mode = [0, 1, 2]
+const env_modes = ['localhost', 'development', 'production']
+const configuration = [{
+    name: 'localhost',
+    env_file: './.env',
+    static_dir: '../platform/dist',
+}, {
+    name: 'development',
+    env_file: './dev.env',
+    static_dir: './platform/dist',
+}, {
+    name: 'production',
+    env_file: './prod.env',
+    static_dir: '../platform/dist',
+}];
+const env_mode = env_modes.indexOf(process.env.NODE_ENV);
+const cfg = configuration[env_mode];
+
+require('dotenv').config({ path: path.join(__dirname, cfg.env_file) });
 
 const app = express();
-// const server = require('http').createServer(app);
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// app.use(express.static(path.join(__dirname, "./dist")));
-// app.use('*', express.static(path.join(__dirname, "./dist")));
-
-console.log(
-    'Path: ',
-    path.join(
-        __dirname,
-        `${process.env.NODE_ENV === 'development' ? '.' : '..'}/platform/dist`
-    )
-);
 
 app.use(
     express.static(
@@ -78,7 +84,7 @@ app.use('/', routes)
 const HOST = process.env.HOST || "localhost";
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-    console.log(`listening on ${HOST}:${PORT}`);
+    console.log(`env: ${process.env.NODE_ENV}\nlistening on ${HOST}:${PORT}`);
 });
 const { Server } = require('socket.io');
 const io = new Server(server, { cors: { origin: '*' }});

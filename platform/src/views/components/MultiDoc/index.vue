@@ -313,6 +313,7 @@ export default {
         }
       })
       .on("END_SPEAKER", async () => {
+        console.log("END SPEAKER");
         this.createNewLog({ type: "WEB_SPEAKER", status: false });
         this.itemTalking = -1;
         this.itemStyle = 1;
