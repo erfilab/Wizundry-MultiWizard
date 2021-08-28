@@ -1,6 +1,10 @@
 <template>
   <v-row justify="center">
-    <v-dialog v-model="show" max-width="500px" persistent>
+    <v-dialog
+      v-model="show"
+      max-width="500px"
+      persistent
+    >
       <v-card>
         <v-card-title class="text-h5">
           Direction
@@ -20,7 +24,11 @@
             </div>
           </v-row>
           <v-row>
-            <v-icon class="ml-4 mt-2" color="#5DBAB9" style="height:30px">
+            <v-icon
+              class="ml-4 mt-2"
+              color="#5DBAB9"
+              style="height:30px"
+            >
               mdi-account
             </v-icon>
             <v-textarea
@@ -32,7 +40,11 @@
             />
           </v-row>
           <v-row>
-            <v-icon class="ml-4" color="#CC6E6E" style="height:30px">
+            <v-icon
+              class="ml-4"
+              color="#CC6E6E"
+              style="height:30px"
+            >
               mdi-account
             </v-icon>
             <v-textarea
@@ -45,8 +57,12 @@
           </v-row>
         </v-card-text>
         <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="green darken-1" text @click.stop="show = false">
+          <v-spacer />
+          <v-btn
+            color="green darken-1"
+            text
+            @click.stop="show = false"
+          >
             Confirm
           </v-btn>
         </v-card-actions>

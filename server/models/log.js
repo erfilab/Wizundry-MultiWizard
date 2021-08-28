@@ -16,16 +16,28 @@ Log.create = (param, result) => {
     });
 }
 
-Log.getAll = ({ query_time }, result) => {
-    sql.query(`SELECT * FROM multi_doc_logs WHERE multi_doc_logs.timestamp >= ${query_time} AND multi_doc_logs.timestamp < ${parseInt(query_time) + 86400000}`,
-        (err, res) => {
-            if (err) {
-                console.error(err)
-                result(null, err);
-                return;
-            }
-            result(null, res);
-        });
+Log.getAll = ({ start, end }, result) => {
+    let query = `SELECT * FROM multi_doc_logs`;
+    
+    if (start && end)
+        query += ` WHERE timestamp BETWEEN '${start}' AND '${end}'`;
+    else {
+        if (start)
+            query += ` WHERE timestamp >= '${start}'`;
+        else if (end)
+            query += ` WHERE timestamp <= '${end}'`;
+    }
+
+    console.log(query);
+
+    sql.query(query, (err, res) => {
+        if (err) {
+            console.error(err)
+            result(null, err);
+            return;
+        }
+        result(null, res);
+    });
 };
 
 Log.getAllBehaviors = ({ query_time }, result) => {

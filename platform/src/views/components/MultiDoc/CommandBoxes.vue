@@ -1,17 +1,27 @@
 <template>
   <v-container>
     <v-row dense>
-      <v-col v-for="item in items" :key="item.id" cols="6">
+      <v-col
+        v-for="item in items"
+        :key="item.id"
+        cols="6"
+      >
         <v-row>
-          <v-col cols=2>
-            <v-btn-toggle borderless dense style="flex-direction: column;">
+          <v-col cols="2">
+            <v-btn-toggle
+              borderless
+              dense
+              style="flex-direction: column;"
+            >
               <v-btn @click="speakerEvent(item)">
-                <v-icon>{{
-                  item.actionStatus ? "mdi-pause" : "mdi-play"
-                }}</v-icon>
+                <v-icon>
+                  {{
+                    item.actionStatus ? "mdi-pause" : "mdi-play"
+                  }}
+                </v-icon>
               </v-btn>
               <v-btn @click="speakerEvent2(item)">
-                <v-icon>{{item.actionStatus ? "mdi-progress-close" : "mdi-repeat-once"}}</v-icon>
+                <v-icon>{{ item.actionStatus ? "mdi-progress-close" : "mdi-repeat-once" }}</v-icon>
               </v-btn>
             </v-btn-toggle>
           </v-col>
@@ -20,26 +30,36 @@
               <div class="d-flex flex-no-wrap justify-space-between">
                 <div>
                   <v-text-field
-                    class="mt-3 ml-3"
                     v-model="item.title"
-                  ></v-text-field>
+                    class="mt-3 ml-3"
+                  />
                 </div>
               </div>
             </v-card>
           </v-col>
         </v-row>
       </v-col>
-      <v-col v-for="item in items2" :key="item.id" cols="6">
+      <v-col
+        v-for="item in items2"
+        :key="item.id"
+        cols="6"
+      >
         <v-row>
-          <v-col cols=2>
-            <v-btn-toggle borderless dense style="flex-direction: column;">
+          <v-col cols="2">
+            <v-btn-toggle
+              borderless
+              dense
+              style="flex-direction: column;"
+            >
               <v-btn @click="speakerEvent(item)">
-                <v-icon>{{
-                  item.actionStatus ? "mdi-pause" : "mdi-play"
-                }}</v-icon>
+                <v-icon>
+                  {{
+                    item.actionStatus ? "mdi-pause" : "mdi-play"
+                  }}
+                </v-icon>
               </v-btn>
               <v-btn @click="speakerEvent2(item)">
-                <v-icon>{{item.actionStatus ? "mdi-progress-close" : "mdi-repeat-once"}}</v-icon>
+                <v-icon>{{ item.actionStatus ? "mdi-progress-close" : "mdi-repeat-once" }}</v-icon>
               </v-btn>
             </v-btn-toggle>
           </v-col>
@@ -48,9 +68,9 @@
               <div class="d-flex flex-no-wrap justify-space-between">
                 <div>
                   <v-text-field
-                    class="mt-3 ml-3"
                     v-model="item.title"
-                  ></v-text-field>
+                    class="mt-3 ml-3"
+                  />
                 </div>
               </div>
             </v-card>

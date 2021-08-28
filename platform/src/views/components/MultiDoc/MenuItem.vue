@@ -1,9 +1,9 @@
 <template>
   <button
-      class="menu-item"
-      :class="{ 'is-active': isActive ? isActive(): null }"
-      @click="action"
-      :title="title"
+    class="menu-item"
+    :class="{'is-active': isActive ? isActive() : null}"
+    :title="title"
+    @click="action"
   >
     <svg class="remix">
       <use :xlink:href="require('remixicon/fonts/remixicon.symbol.svg') + `#ri-${icon}`" />

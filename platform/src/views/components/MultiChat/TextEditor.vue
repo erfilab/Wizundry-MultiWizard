@@ -1,16 +1,22 @@
 <template>
   <div>
-    <div class="editor" @keydown.enter="handleEnter">
-      <editor-content class="editor__content" :editor="editor" />
+    <div
+      class="editor"
+      @keydown.enter="handleEnter"
+    >
+      <editor-content
+        class="editor__content"
+        :editor="editor"
+      />
       <div class="editor__footer">
-        <div :class="`editor__status editor__status--${role}`"></div>
+        <div :class="`editor__status editor__status--${role}`" />
       </div>
     </div>
     <v-btn
       class="float-right mt-2 mr-2"
       elevation="2"
       color="#7CB342"
-      @click="send()"
+      @click="send"
     >
       Send
     </v-btn>
@@ -48,11 +54,6 @@ export default {
       required: true,
     },
   },
-  watch: {
-    currentUser(newUser) {
-      if (newUser) this.initEditor();
-    },
-  },
   data() {
     return {
       provider: null,
@@ -61,6 +62,15 @@ export default {
       users: [],
       status: "connecting",
     };
+  },
+  watch: {
+    currentUser(newUser) {
+      if (newUser) this.initEditor();
+    },
+  },
+  mounted() {
+    console.log("mounted", this.currentUser);
+    if (this.currentUser) this.initEditor();
   },
   methods: {
     handleEnter(e) {
@@ -126,10 +136,6 @@ export default {
         .run();
       localStorage.setItem("currentUser", JSON.stringify(this.currentUser));
     },
-  },
-  mounted() {
-    console.log("mounted", this.currentUser);
-    if (this.currentUser) this.initEditor();
   },
 };
 </script>

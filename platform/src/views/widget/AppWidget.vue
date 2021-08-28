@@ -6,7 +6,7 @@
       dense
       color="transparent"
     >
-      <v-toolbar-title class="headline">
+      <v-toolbar-title class="text-h5">
         {{ title }}
       </v-toolbar-title>
       <v-spacer />

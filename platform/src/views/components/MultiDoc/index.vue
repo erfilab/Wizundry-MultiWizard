@@ -2,25 +2,31 @@
   <v-container>
     <v-row>
       <v-col cols="6">
-        <v-col class="" cols="12">
+        <v-col
+          class=""
+          cols="12"
+        >
           <v-row>
             <v-col cols="2">
               <v-btn
-                @click="
-                  isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
-                "
                 :disabled="isUser"
                 fab
                 :color="
                   !isTesting ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
                 "
+                @click="
+                  isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
+                "
               >
-                <v-icon
-                  >{{ isTesting ? "mdi-microphone" : "mdi-microphone-off" }}
+                <v-icon>
+                  {{ isTesting ? "mdi-microphone" : "mdi-microphone-off" }}
                 </v-icon>
               </v-btn>
             </v-col>
-            <v-col cols="4" class="pt-5">
+            <v-col
+              cols="4"
+              class="pt-5"
+            >
               <span> {{ isTesting ? "speaking..." : "closed" }} </span>
               <v-progress-linear
                 :color="
@@ -37,8 +43,8 @@
                 :color="!speechLoading ? 'cyan' : 'cyan darken-3'"
                 class="mt-2"
               >
-                <v-icon
-                  >{{ speechLoading ? "mdi-volume-high" : "mdi-volume-off" }}
+                <v-icon>
+                  {{ speechLoading ? "mdi-volume-high" : "mdi-volume-off" }}
                 </v-icon>
               </v-btn>
             </v-col>
@@ -51,21 +57,24 @@
             </v-col>
           </v-row>
         </v-col>
-        <v-col cols="12" v-if="isWizard">
+        <v-col
+          v-if="isWizard"
+          cols="12"
+        >
           <div>
             <CommandBoxes
-              @startSpeak="emitSpeakEvent"
               :talking.sync="speechLoading"
-              :itemTalking.sync="itemTalking"
-              :itemStyle="itemStyle"
+              :item-talking.sync="itemTalking"
+              :item-style="itemStyle"
+              @startSpeak="emitSpeakEvent"
             />
           </div>
         </v-col>
       </v-col>
       <v-col cols="6">
         <div
-          class="editor"
           v-if="editor"
+          class="editor"
           @keyup.120="
             isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
           "
@@ -73,9 +82,20 @@
             speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)
           "
         >
-          <menu-bar v-if="isWizard" class="editor__header" :editor="editor" />
-          <editor-content style="" class="editor__content" :editor="editor" />
-          <div v-if="isWizard" class="editor__footer">
+          <menu-bar
+            v-if="isWizard"
+            class="editor__header"
+            :editor="editor"
+          />
+          <editor-content
+            style=""
+            class="editor__content"
+            :editor="editor"
+          />
+          <div
+            v-if="isWizard"
+            class="editor__footer"
+          >
             <div :class="`editor__status editor__status--${status}`">
               <template v-if="status === 'connected'">
                 {{ connectedUsers.length }} user{{
@@ -84,7 +104,9 @@
                 online in
                 {{ this.nowDay }}
               </template>
-              <template v-else> offline </template>
+              <template v-else>
+                offline
+              </template>
             </div>
             <div class="editor__name">
               <button>
@@ -181,6 +203,109 @@ export default {
         this.editor.commands.insertContent(` ${newVal} `, size - 1);
       }
     },
+  },
+  async mounted() {
+    this.socket = await initSocket(this.nowDay);
+    this.socket
+      .on("WEB_RECORDING", async (e) => {
+        console.log("WEB RECORDING STATUS: ", e);
+        this.createNewLog({ type: "WEB_RECORDING", status: e });
+        if (e && this.isUser && !this.isTesting) this.initRecording();
+        else if (!e && this.isUser && this.isTesting) this.endRecording();
+        else if (e && this.isWizard) this.isTesting = this.isSpeaking = true;
+        else if (!e && this.isWizard) this.isTesting = this.isSpeaking = false;
+      })
+      .on("WEB_SPEAKER", async (param) => {
+        console.log("WEB SPEAKER From Anchor: ", param);
+        const { size } = this.editor.view.state.doc.content;
+        const selectedText = this.editor.state.doc.textBetween(param.anchor, size, " ");
+        this.createNewLog({
+          type: "SPEAKER_FROM_ANCHOR",
+          status: true,
+          value: selectedText,
+        });
+        if (param.status && this.isUser && !this.speechLoading)
+          this.speakBack(selectedText);
+        else if (!param.status && this.isUser) {
+          this.synth.cancel();
+          this.speechLoading = false;
+        }
+      })
+      .on("START_SPEAKER", async (data) => {
+        console.log("START SPEAKER: ", data);
+        this.createNewLog({
+          type: "WEB_SPEAKER",
+          status: true,
+          value: data.content,
+        });
+        if (data.content.length > 0 && this.isUser) {
+          this.speakBack(data.content);
+        } else if (this.isUser) {
+          this.synth.cancel();
+          this.speechLoading = false;
+        } else if (data && this.isWizard) {
+          this.itemTalking = data.id;
+          this.itemStyle = data.style;
+          this.speechLoading = true;
+        }
+      })
+      .on("END_SPEAKER", async () => {
+        this.emitSpeakerEvent(true);
+        console.log("END SPEAKER");
+        this.createNewLog({ type: "WEB_SPEAKER", status: false });
+        this.itemTalking = -1;
+        this.itemStyle = 1;
+        this.speechLoading = false;
+      })
+      .on("SPEECH_DATA", async (param) => {
+        let { data, uid } = param;
+        if (
+          data &&
+          this.isUser &&
+          this.isTesting &&
+          this.userInfo.uid === uid
+        ) {
+          this.runTimeContent = data.results[0].alternatives[0].transcript;
+          const dataFinal = data.results[0].isFinal;
+
+          if (dataFinal && this.runTimeContent) {
+            let temp_cont = this.runTimeContent;
+            this.runTimeContent = "";
+            this.newContent = temp_cont;
+            this.createNewLog({
+              type: "SPEECH_CONTENT",
+              value: this.newContent,
+            });
+          }
+        }
+      });
+
+    this.socket.emit("joinRoom", "multiDoc");
+
+    const [indexdb, ydoc, yDocProvider] = await initYDoc(this.nowDay);
+    this.indexdb = indexdb;
+    this.provider = yDocProvider;
+    this.provider.on("status", (event) => (this.status = event.status));
+
+    const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {
+      name: this.userInfo.username,
+      color: this.getRandomColor(),
+    };
+
+    this.editor = await initEditor(
+      this.isWizard,
+      ydoc,
+      this.provider,
+      currentUser
+    );
+
+    if (this.isWizard) this.editor.chain().focus().user(currentUser).run();
+    localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    this.listenForSpeechEvents();
+  },
+  beforeDestroy() {
+    this.editor.destroy();
+    this.$store.commit("CLEAR_CONNECTED_USERS");
   },
   methods: {
     // take logs
@@ -293,109 +418,6 @@ export default {
       ];
       return list[Math.floor(Math.random() * list.length)];
     },
-  },
-  async mounted() {
-    this.socket = await initSocket(this.nowDay);
-    this.socket
-      .on("WEB_RECORDING", async (e) => {
-        console.log("WEB RECORDING STATUS: ", e);
-        this.createNewLog({ type: "WEB_RECORDING", status: e });
-        if (e && this.isUser && !this.isTesting) this.initRecording();
-        else if (!e && this.isUser && this.isTesting) this.endRecording();
-        else if (e && this.isWizard) this.isTesting = this.isSpeaking = true;
-        else if (!e && this.isWizard) this.isTesting = this.isSpeaking = false;
-      })
-      .on("WEB_SPEAKER", async (param) => {
-        console.log("WEB SPEAKER From Anchor: ", param);
-        const { size } = this.editor.view.state.doc.content;
-        const selectedText = this.editor.state.doc.textBetween(param.anchor, size, " ");
-        this.createNewLog({
-          type: "SPEAKER_FROM_ANCHOR",
-          status: true,
-          value: selectedText,
-        });
-        if (param.status && this.isUser && !this.speechLoading)
-          this.speakBack(selectedText);
-        else if (!param.status && this.isUser) {
-          this.synth.cancel();
-          this.speechLoading = false;
-        }
-      })
-      .on("START_SPEAKER", async (data) => {
-        console.log("START SPEAKER: ", data);
-        this.createNewLog({
-          type: "WEB_SPEAKER",
-          status: true,
-          value: data.content,
-        });
-        if (data.content.length > 0 && this.isUser) {
-          this.speakBack(data.content);
-        } else if (this.isUser) {
-          this.synth.cancel();
-          this.speechLoading = false;
-        } else if (data && this.isWizard) {
-          this.itemTalking = data.id;
-          this.itemStyle = data.style;
-          this.speechLoading = true;
-        }
-      })
-      .on("END_SPEAKER", async () => {
-        this.emitSpeakerEvent(true);
-        console.log("END SPEAKER");
-        this.createNewLog({ type: "WEB_SPEAKER", status: false });
-        this.itemTalking = -1;
-        this.itemStyle = 1;
-        this.speechLoading = false;
-      })
-      .on("SPEECH_DATA", async (param) => {
-        let { data, uid } = param;
-        if (
-          data &&
-          this.isUser &&
-          this.isTesting &&
-          this.userInfo.uid === uid
-        ) {
-          this.runTimeContent = data.results[0].alternatives[0].transcript;
-          const dataFinal = data.results[0].isFinal;
-
-          if (dataFinal && this.runTimeContent) {
-            let temp_cont = this.runTimeContent;
-            this.runTimeContent = "";
-            this.newContent = temp_cont;
-            this.createNewLog({
-              type: "SPEECH_CONTENT",
-              value: this.newContent,
-            });
-          }
-        }
-      });
-
-    this.socket.emit("joinRoom", "multiDoc");
-
-    const [indexdb, ydoc, yDocProvider] = await initYDoc(this.nowDay);
-    this.indexdb = indexdb;
-    this.provider = yDocProvider;
-    this.provider.on("status", (event) => (this.status = event.status));
-
-    const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {
-      name: this.userInfo.username,
-      color: this.getRandomColor(),
-    };
-
-    this.editor = await initEditor(
-      this.isWizard,
-      ydoc,
-      this.provider,
-      currentUser
-    );
-
-    if (this.isWizard) this.editor.chain().focus().user(currentUser).run();
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    this.listenForSpeechEvents();
-  },
-  beforeDestroy() {
-    this.editor.destroy();
-    this.$store.commit("CLEAR_CONNECTED_USERS");
   },
 };
 </script>

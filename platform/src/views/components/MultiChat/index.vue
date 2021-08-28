@@ -1,8 +1,14 @@
 <template>
   <!-- wizard UI -->
-  <v-container class="fill-height" v-if="this.curRole !== 'participant'">
+  <v-container
+    v-if="this.curRole !== 'participant'"
+    class="fill-height"
+  >
     <v-row>
-      <v-col id="chat" cols="6">
+      <v-col
+        id="chat"
+        cols="6"
+      >
         <!-- timeline -->
         <v-card
           id="chatbox"
@@ -13,10 +19,14 @@
         >
           <v-row>
             <v-col>
-              <h3 class="text-center">User</h3>
+              <h3 class="text-center">
+                User
+              </h3>
             </v-col>
             <v-col>
-              <h3 class="text-center">Wizard</h3>
+              <h3 class="text-center">
+                Wizard
+              </h3>
             </v-col>
           </v-row>
           <v-timeline class="ma-4">
@@ -29,27 +39,26 @@
               :right="timeLine.align.charAt(0) === 'r'"
             >
               <v-alert
+                v-if="timeLine.align === 'l'"
                 elevation="2"
                 outlined
                 rounded
-                v-if="timeLine.align === 'l'"
               >
                 {{ timeLine.content }}
               </v-alert>
               <v-alert
-                :class="`alert__playing--${timeLine.playing? 'yes':'no'}`"
+                v-if="timeLine.align.charAt(0) === 'r'"
+                :id="'content_' + timeLine.id"
+                :class="`alert__playing--${timeLine.playing ? 'yes' : 'no'}`"
                 elevation="2"
                 color="#757575"
                 rounded
-                v-if="timeLine.align.charAt(0) === 'r'"
                 min-height="55px"
-                :id="'content_' + timeLine.id"
                 @dblclick="recall(timeLine)"
               >
                 {{ timeLine.content }}
                 <div>
-                  <div :class="`alert__status alert__status--${timeLine.align.charAt(1)}`">
-                  </div>
+                  <div :class="`alert__status alert__status--${timeLine.align.charAt(1)}`" />
                 </div>
               </v-alert>
             </v-timeline-item>
@@ -57,29 +66,35 @@
         </v-card>
         <v-row>
           <v-col cols="6">
-            <h3 class="text-center">Wizard1 Input Box</h3>
+            <h3 class="text-center">
+              Wizard1 Input Box
+            </h3>
             <text-editor
+              v-if="currentUser.uid"
               id="left_input_box"
               style="width: 100%"
               class="pt-3"
-              @wizardSendMsg="sendMsg"
               :role="1"
-              v-if="currentUser.uid"
-              :currentUser="currentUser"
+              :current-user="currentUser"
+              @wizardSendMsg="sendMsg"
             />
           </v-col>
           <v-col cols="6">
-            <h3 class="text-center">Wizard2 Input Box</h3>
+            <h3 class="text-center">
+              Wizard2 Input Box
+            </h3>
             <text-editor
+              v-if="currentUser.uid"
               id="right_input_box"
               style="width: 100%"
               class="pt-3"
               :role="2"
+              :current-user="currentUser"
               @wizardSendMsg="sendMsg"
-              v-if="currentUser.uid"
-              :currentUser="currentUser"
             />
-            <h3 class="text-center mt-10">Privacy Input Box</h3>
+            <h3 class="text-center mt-10">
+              Privacy Input Box
+            </h3>
             <v-textarea
               id="temp_input_box"
               class="pt-3"
@@ -93,44 +108,50 @@
               class="float-right mt-n4 mr-4"
               elevation="2"
               color="#7CB342"
-              @click="sendTempMsg()"
+              @click="sendTempMsg"
             >
               Send
             </v-btn>
           </v-col>
         </v-row>
         <!-- test input area -->
-        <h3 class="text-center mt-5">User (for test)</h3>
+        <h3 class="text-center mt-5">
+          User (for test)
+        </h3>
         <v-textarea
-          label="Message"
           v-model="message"
+          label="Message"
           outlined
           no-resize
           class="overflow-y-auto overflow-x-hidden pt-1"
           height="100px"
-        >
-        </v-textarea>
+        />
         <v-btn
           class="float-right mt-n4 ml-4 mr-2"
           elevation="2"
           color="#7CB342"
-          @click="sendUserMsg()"
+          @click="sendUserMsg"
         >
           Send
         </v-btn>
       </v-col>
-      <v-col col="6">
+      <v-col class="col">
         <tips-dialog v-model="showTipsDialog" />
         <!-- contain four boxes -->
         <v-row>
           <!-- left -->
-          <v-col id="box" cols="6">
+          <v-col
+            id="box"
+            cols="6"
+          >
             <!-- Quick Replies -->
             <v-row>
               <v-col cols="8">
-                <h3 class="text-center mt-1">Quick Replies</h3>
+                <h3 class="text-center mt-1">
+                  Quick Replies
+                </h3>
               </v-col>
-              <v-spacer></v-spacer>
+              <v-spacer />
               <v-col>
                 <v-btn
                   class="fab mx-2"
@@ -141,7 +162,9 @@
                   color="#FFFFFF"
                   @click="addReply"
                 >
-                  <v-icon dark> mdi-plus</v-icon>
+                  <v-icon dark>
+                    mdi-plus
+                  </v-icon>
                 </v-btn>
               </v-col>
             </v-row>
@@ -156,15 +179,15 @@
                 :key="reply.id"
                 solo
                 class="ml-4 mr-4 mt-4 mb-n8"
-                backgroundColor="#7CB342"
+                background-color="#7CB342"
                 rows="1"
                 auto-grow
                 :value="reply.content"
-                @dblclick="sendReply"
                 clearable
+                @dblclick="sendReply"
               />
             </v-card>
-            <br />
+            <br>
             <!-- Points -->
             <!-- <v-row>
               <v-col cols="8">
@@ -207,19 +230,19 @@
             <v-row>
               <v-col cols="3">
                 <v-btn
-                  @click="
-                    isSpeaking
-                      ? emitSpeakerEvent(false)
-                      : emitSpeakerEvent(true)
-                  "
                   fab
                   :color="
                     !isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
                   "
                   class="mt-4"
+                  @click="
+                    isSpeaking
+                      ? emitSpeakerEvent(false)
+                      : emitSpeakerEvent(true)
+                  "
                 >
-                  <v-icon
-                    >{{ isSpeaking ? "mdi-microphone-off" : "mdi-microphone" }}
+                  <v-icon>
+                    {{ isSpeaking ? "mdi-microphone-off" : "mdi-microphone" }}
                   </v-icon>
                 </v-btn>
               </v-col>
@@ -235,34 +258,43 @@
             </v-row>
           </v-col>
           <!-- right -->
-          <v-col id="others" cols="6">
-            <h3 class="text-center mt-1">Logger</h3>
+          <v-col
+            id="others"
+            cols="6"
+          >
+            <h3 class="text-center mt-1">
+              Logger
+            </h3>
             <v-card
               id="loggerbox"
               outlined
               class="overflow-y-auto overflow-x-hidden mt-3"
               height="250px"
             >
-              <div v-for="wizardLog in allLogs" :key="wizardLog.id">
+              <div
+                v-for="wizardLog in allLogs"
+                :key="wizardLog.id"
+              >
                 {{ wizardLog.content }}
               </div>
             </v-card>
-            <br />
-            <h3 class="text-center mt-1">WhiteBoard</h3>
+            <br>
+            <h3 class="text-center mt-1">
+              WhiteBoard
+            </h3>
             <v-textarea
-              label="Notes"
               v-model="logger_message"
+              label="Notes"
               outlined
               no-resize
               class="overflow-y-auto overflow-x-hidden pt-3"
               height="210px"
-            >
-            </v-textarea>
+            />
             <v-btn
               class="float-right mt-n4 ml-2 mr-4"
               elevation="2"
               color="#7CB342"
-              @click="sendLogMsg()"
+              @click="sendLogMsg"
             >
               Send
             </v-btn>
@@ -279,11 +311,17 @@
     </v-row>
   </v-container>
   <!-- participant UI -->
-  <v-container class="fill-height" v-else>
+  <v-container
+    v-else
+    class="fill-height"
+  >
     <!-- timeline -->
     <v-row>
       <v-spacer />
-      <v-col id="chat" cols="8">
+      <v-col
+        id="chat"
+        cols="8"
+      >
         <v-card
           id="chatbox"
           elevation="0"
@@ -293,10 +331,14 @@
         >
           <v-row>
             <v-col>
-              <h3 class="text-center">User</h3>
+              <h3 class="text-center">
+                User
+              </h3>
             </v-col>
             <v-col>
-              <h3 class="text-center">Wizard</h3>
+              <h3 class="text-center">
+                Wizard
+              </h3>
             </v-col>
           </v-row>
           <v-timeline class="ma-4">
@@ -309,25 +351,24 @@
               :right="timeLine.align.charAt(0) === 'r'"
             >
               <v-alert
+                v-if="timeLine.align === 'l'"
                 elevation="2"
                 outlined
                 rounded
-                v-if="timeLine.align === 'l'"
               >
                 {{ timeLine.content }}
               </v-alert>
               <v-alert
+                v-if="timeLine.align.charAt(0) === 'r'"
+                :id="'content_' + timeLine.id"
                 elevation="2"
                 color="#757575"
                 rounded
-                v-if="timeLine.align.charAt(0) === 'r'"
                 min-height="55px"
-                :id="'content_' + timeLine.id"
               >
                 {{ timeLine.content }}
                 <div>
-                  <div :class="`alert__status alert__status--${timeLine.align.charAt(1)}`">
-                  </div>
+                  <div :class="`alert__status alert__status--${timeLine.align.charAt(1)}`" />
                 </div>
               </v-alert>
             </v-timeline-item>
@@ -341,17 +382,17 @@
       <v-spacer />
       <v-col cols="1">
         <v-btn
-          @click="isSpeaking ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
           fab
           :color="!isSpeaking ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'"
           class="mt-4"
+          @click="isSpeaking ? emitSpeakerEvent(false) : emitSpeakerEvent(true)"
         >
-          <v-icon
-            >{{ isSpeaking ? "mdi-microphone-off" : "mdi-microphone" }}
+          <v-icon>
+            {{ isSpeaking ? "mdi-microphone-off" : "mdi-microphone" }}
           </v-icon>
         </v-btn>
       </v-col>
-      <v-col col="1" class="pt-5 mt-2">
+      <v-col class="pt-5 mt-2 col">
         <span> {{ isSpeaking ? "speaking..." : "closed" }} </span>
         <v-progress-linear
           style="width:70%"
@@ -366,7 +407,9 @@
       <v-spacer />
       <v-col cols="6">
         <v-row>
-          <h2 class="ml-4 mt-6">Direction</h2>
+          <h2 class="ml-4 mt-6">
+            Direction
+          </h2>
         </v-row>
         <v-row>
           <div class="ml-4 mt-2">
@@ -381,25 +424,26 @@
       <v-spacer />
       <v-col cols="6">
         <v-row>
-          <h3 class="text-center ml-4 mt-6">User (for test)</h3>
+          <h3 class="text-center ml-4 mt-6">
+            User (for test)
+          </h3>
         </v-row>
         <v-row>
           <v-textarea
-            label="Message"
             v-model="message"
+            label="Message"
             outlined
             no-resize
             class="overflow-y-auto overflow-x-hidden ml-4 pt-1"
             height="100px"
-          >
-          </v-textarea>
+          />
         </v-row>
         <v-row>
           <v-btn
             class="float-right mt-n4 ml-6 mr-2"
             elevation="2"
             color="#7CB342"
-            @click="sendUserMsg()"
+            @click="sendUserMsg"
           >
             Send
           </v-btn>
@@ -423,12 +467,12 @@ const downSampleBuffer = (buffer, sampleRate, outSampleRate) => {
   const sampleRateRatio = sampleRate / outSampleRate;
   let result = new Int16Array(Math.round(buffer.length / sampleRateRatio));
   let offsetResult = 0,
-    offsetBuffer = 0;
+      offsetBuffer = 0;
 
   while (offsetResult < result.length) {
     let nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
     let accum = 0,
-      count = 0;
+        count = 0;
     for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
       accum += buffer[i];
       count++;
@@ -512,6 +556,24 @@ export default {
       console.log("Run time Content", newVal, oldVal);
     },
   },
+  created() {
+    this.allReplies.push({
+      content: "Okay, I got it.",
+    });
+    this.allReplies.push({
+      content: "Sorry, please speak again.",
+    });
+    this.allReplies.push({
+      content: "",
+    });
+    // this.allPoints.push({
+    //   content: "Point 1",
+    // });
+    // this.allPoints.push({
+    //   content: "Point 2",
+    // });
+  },
+  mounted() {},
   methods: {
     getRandomColor() {
       const list = [
@@ -589,50 +651,50 @@ export default {
           if (data.content) {
             const receivedTime = this.dayjs().format("MM-DD HH:mm:ss");
             switch (data.align) {
-              case "r1":
-              case "r2":
-                console.log(
-                  `Wizard Message ${data.content} , from ${data.uid} `
-                );
-                this.allTimeLines.push({ ...data });
-                this.allLogs.push({
-                  content: `Wizard ${data.uid} sent a message at ${receivedTime}`,
-                });
-                break;
-              case "rq":
-                console.log(
-                  `Wizard Quick Reply ${data.content} , from ${data.uid} `
-                );
-                this.allTimeLines.push({ ...data, align: "r" });
-                this.allLogs.push({
-                  content: `Wizard ${data.uid} sent a quick reply at ${receivedTime}`,
-                });
-                break;
-              case "l":
-                console.log(
-                  `Participant Message ${data.content} , from ${data.uid} `
-                );
-                this.allTimeLines.push({ ...data });
-                this.allLogs.push({
-                  content: `Participant sent a message at ${receivedTime}`,
-                });
-                break;
-              case "n":
-                console.log(`Logger logs ${data.content} , from ${data.uid} `);
-                this.allLogs.push({
-                  content: `Wizard ${data.uid} sent a log at ${receivedTime}\ncontent: ${data.content}`,
-                });
-                break;
-              default:
-                console.log(
-                  `Unknown Message ${data.content} , from ${data.uid} `
-                );
-                this.allLogs.push({
-                  content: `Unknown Message at ${this.dayjs().format(
-                    "MM-DD HH:mm:ss"
-                  )}`,
-                });
-                break;
+            case "r1":
+            case "r2":
+              console.log(
+                `Wizard Message ${data.content} , from ${data.uid} `
+              );
+              this.allTimeLines.push({ ...data });
+              this.allLogs.push({
+                content: `Wizard ${data.uid} sent a message at ${receivedTime}`,
+              });
+              break;
+            case "rq":
+              console.log(
+                `Wizard Quick Reply ${data.content} , from ${data.uid} `
+              );
+              this.allTimeLines.push({ ...data, align: "r" });
+              this.allLogs.push({
+                content: `Wizard ${data.uid} sent a quick reply at ${receivedTime}`,
+              });
+              break;
+            case "l":
+              console.log(
+                `Participant Message ${data.content} , from ${data.uid} `
+              );
+              this.allTimeLines.push({ ...data });
+              this.allLogs.push({
+                content: `Participant sent a message at ${receivedTime}`,
+              });
+              break;
+            case "n":
+              console.log(`Logger logs ${data.content} , from ${data.uid} `);
+              this.allLogs.push({
+                content: `Wizard ${data.uid} sent a log at ${receivedTime}\ncontent: ${data.content}`,
+              });
+              break;
+            default:
+              console.log(
+                `Unknown Message ${data.content} , from ${data.uid} `
+              );
+              this.allLogs.push({
+                content: `Unknown Message at ${this.dayjs().format(
+                  "MM-DD HH:mm:ss"
+                )}`,
+              });
+              break;
             }
             await this.playAll();
           }
@@ -864,24 +926,6 @@ export default {
       }
     },
   },
-  created() {
-    this.allReplies.push({
-      content: "Okay, I got it.",
-    });
-    this.allReplies.push({
-      content: "Sorry, please speak again.",
-    });
-    this.allReplies.push({
-      content: "",
-    });
-    // this.allPoints.push({
-    //   content: "Point 1",
-    // });
-    // this.allPoints.push({
-    //   content: "Point 2",
-    // });
-  },
-  mounted() {},
 };
 </script>
 

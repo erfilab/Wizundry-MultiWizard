@@ -29,6 +29,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const routes = require('./routes/index')
+app.use('/', routes)
+
 app.use(
     express.static(
         path.join(
@@ -77,9 +80,6 @@ sql.query("CREATE TABLE IF NOT EXISTS `multi_doc_logs` (\n" +
     if(err) console.log('Error when creating logs table ', err)
     else console.log('Logs table created: ', res.info)
 })
-
-const routes = require('./routes/index')
-app.use('/', routes)
 
 
 const HOST = process.env.HOST || "localhost";

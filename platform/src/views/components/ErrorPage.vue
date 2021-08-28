@@ -1,7 +1,7 @@
 <template>
   <app-center>
     <template v-slot:page>
-      <h1 class="display-2 primary--text">
+      <h1 class="text-h3 primary--text">
         {{ `${$t('errors.whoops')}, ${errorCode}` }}
       </h1>
       <p>{{ $t(`errors.${errorCode}`) }}</p>

@@ -1,17 +1,19 @@
 <template>
   <v-snackbar
-      :color="color"
-      :timeout="timer"
-      v-model="showSnackbar"
-      top
+    v-model="showSnackbar"
+    :color="color"
+    :timeout="timer"
+    top
   >
-    <v-icon left>{{color==='success'? 'mdi-check-circle':'mdi-alert-circle'}}</v-icon>{{message}}
+    <v-icon left>
+      {{ color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+    </v-icon>{{ message }}
   </v-snackbar>
 </template>
 
 <script>
 export default {
-  name: "vtoast",
+  name: "Vtoast",
   data() {
     return{
       showSnackbar: false,

@@ -1,8 +1,7 @@
 <template>
   <div>
     <github-corner class="github-corner" />
-    <v-container class="container--fluid grid-list-md text-center">
-    </v-container>
+    <v-container class="container--fluid grid-list-md text-center" />
   </div>
 </template>
 

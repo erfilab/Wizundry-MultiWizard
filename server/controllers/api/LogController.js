@@ -10,10 +10,8 @@ exports.createMultiDocLog = async (req, res) => {
 };
 
 exports.listMultiDocLogs = (req, res) => {
-    console.log(1);
-    const { query_time } = req.params;
-    console.log('qsqs', query_time);
-    Log.getAll({ query_time }, (err, data) => {
+    console.log({ ...req.query });
+    Log.getAll({...req.query }, (err, data) => {
         if (err) res.status(500).send({ message: err.message || "Some error occurred while retrieving Logs Data" });
         else res.status(200).json({ data: data });
     })

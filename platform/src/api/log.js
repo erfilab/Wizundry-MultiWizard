@@ -1,8 +1,10 @@
 import axios from "./index";
 
 export default {
-    async getAllLogs() {
-        return await axios.get("/log/multidoc")
+    async getAllLogs(params) {
+        const queryString = `?start=${encodeURIComponent(params.start)}&end=${encodeURIComponent(params.end)}`;
+
+        return await axios.get(`/log/multdocs/${queryString}`)
             .then(res => res.data)
             .catch(err => {
                 console.log(err);

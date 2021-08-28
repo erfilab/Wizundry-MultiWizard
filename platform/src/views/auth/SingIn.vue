@@ -1,7 +1,16 @@
 <template>
   <v-container class="container--fluid fill-height primary">
-    <v-row no-gutters align="center" justify="center">
-      <v-col cols="12" sm="8" md="4" lg="4">
+    <v-row
+      no-gutters
+      align="center"
+      justify="center"
+    >
+      <v-col
+        cols="12"
+        sm="8"
+        md="4"
+        lg="4"
+      >
         <v-card class="elevation-5 pa-3">
           <v-card-text>
             <div class="layout column align-center">
@@ -10,8 +19,10 @@
                 alt="Wizard of Oz Logo"
                 width="120"
                 height="120"
-              />
-              <h1 class="text-center my-4 primary--text">Wizard of Oz</h1>
+              >
+              <h1 class="text-center my-4 primary--text">
+                Wizard of Oz
+              </h1>
             </div>
             <v-form>
               <v-text-field
@@ -35,7 +46,11 @@
             </v-form>
           </v-card-text>
           <v-card-text>
-            <v-row class="text-center" dense no-gutters>
+            <v-row
+              class="text-center"
+              dense
+              no-gutters
+            >
               <v-col cols="12">
                 <v-btn-toggle>
                   <v-btn
@@ -52,7 +67,7 @@
                   >
                     <span>Wizard</span>
                   </v-btn>
-                   <v-btn
+                  <v-btn
                     text
                     color="warning"
                     @click="() => (model.roles = ['admin', 'wizard', 'user'])"
@@ -66,7 +81,11 @@
           <v-card-actions>
             <localization />
             <v-spacer />
-            <v-btn color="primary" :loading="loading" @click="login">
+            <v-btn
+              color="primary"
+              :loading="loading"
+              @click="login"
+            >
               {{ $t("login.singIn") }}
             </v-btn>
           </v-card-actions>

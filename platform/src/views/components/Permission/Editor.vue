@@ -1,7 +1,7 @@
 <template>
   <app-center>
     <template v-slot:page>
-      <v-col class="display-4">
+      <v-col class="text-h1">
         Editor
       </v-col>
     </template>

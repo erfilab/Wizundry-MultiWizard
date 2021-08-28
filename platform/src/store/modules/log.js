@@ -27,9 +27,8 @@ const log = {
     },
 
     actions: {
-        GetAllLogs: async ({ commit }) => {
-            const logs = await logApi.getAllLogs();
-            console.log(logs);
+        GetAllLogs: async ({ commit }, params) => {
+            const logs = await logApi.getAllLogs(params);
             commit('SET_LOGS', logs);
         },
         CreateNewLog: async ({ commit }, log) => {

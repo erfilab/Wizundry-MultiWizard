@@ -1,8 +1,16 @@
 <template>
   <div>
     <template v-for="(item, index) in items">
-      <div class="divider" v-if="item.type === 'divider'" :key="index" />
-      <menu-item v-else :key="index" v-bind="item" />
+      <div
+        v-if="item.type === 'divider'"
+        :key="index"
+        class="divider"
+      />
+      <menu-item
+        v-else
+        :key="index"
+        v-bind="item"
+      />
     </template>
   </div>
 </template>
@@ -123,10 +131,10 @@ export default {
           icon: 'format-clear',
           title: 'Clear Format',
           action: () => this.editor.chain()
-              .focus()
-              .clearNodes()
-              .unsetAllMarks()
-              .run(),
+            .focus()
+            .clearNodes()
+            .unsetAllMarks()
+            .run(),
         },
         {
           type: 'divider',

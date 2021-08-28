@@ -12,7 +12,7 @@ routes.use('/text', TextRoute);
 routes.use('/log', LogRoute);
 
 routes.get('/', (req, res) => {
-    res.status(200).json({message: 'Connected to API'})
+    res.status(200).json({ message: 'Connected to API' })
 })
 
 module.exports = routes;
