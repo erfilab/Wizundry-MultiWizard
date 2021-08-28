@@ -169,6 +169,8 @@ export default {
       audioSpeech: new window.SpeechSynthesisUtterance(),
       itemTalking: -1,
       itemStyle: 1,
+      lastSpeakerWizard: "",
+      lastSpeakerType: "",
 
       runTimeContent: "",
       newContent: "",
@@ -209,23 +211,14 @@ export default {
     this.socket
       .on("WEB_RECORDING", async (e) => {
         console.log("WEB RECORDING STATUS: ", e);
-        this.createNewLog({ type: "WEB_RECORDING", status: e });
         if (e && this.isUser && !this.isTesting) this.initRecording();
         else if (!e && this.isUser && this.isTesting) this.endRecording();
         else if (e && this.isWizard) this.isTesting = this.isSpeaking = true;
         else if (!e && this.isWizard) this.isTesting = this.isSpeaking = false;
       })
       .on("WEB_SPEAKER", async (param) => {
-        console.log("WEB SPEAKER From Anchor: ", param);
-        const { size } = this.editor.view.state.doc.content;
-        const selectedText = this.editor.state.doc.textBetween(param.anchor, size, " ");
-        this.createNewLog({
-          type: "SPEAKER_FROM_ANCHOR",
-          status: true,
-          value: selectedText,
-        });
         if (param.status && this.isUser && !this.speechLoading)
-          this.speakBack(selectedText);
+          this.speakBack(param.content);
         else if (!param.status && this.isUser) {
           this.synth.cancel();
           this.speechLoading = false;
@@ -233,11 +226,7 @@ export default {
       })
       .on("START_SPEAKER", async (data) => {
         console.log("START SPEAKER: ", data);
-        this.createNewLog({
-          type: "WEB_SPEAKER",
-          status: true,
-          value: data.content,
-        });
+        this.lastSpeakerWizard = data.username;
         if (data.content.length > 0 && this.isUser) {
           this.speakBack(data.content);
         } else if (this.isUser) {
@@ -249,10 +238,14 @@ export default {
           this.speechLoading = true;
         }
       })
-      .on("END_SPEAKER", async () => {
-        this.emitSpeakerEvent(true);
+      .on("END_SPEAKER", async (str) => {
+        // this.emitSpeakerEvent(true);
         console.log("END SPEAKER");
-        this.createNewLog({ type: "WEB_SPEAKER", status: false });
+        this.createNewLog({
+          username: this.lastSpeakerWizard,
+          type: str.length > 0? str:"COMMAND_SPEAKER",
+          status: false
+        });
         this.itemTalking = -1;
         this.itemStyle = 1;
         this.speechLoading = false;
@@ -310,9 +303,9 @@ export default {
   methods: {
     // take logs
     createNewLog(log) {
-      if (this.isAdmin || log.type === "SPEECH_CONTENT") {
+      if (this.isUser) {
         const params = {
-          username: this.userInfo.username,
+          username: log.username || this.userInfo.username,
           timestamp: new Date().toISOString().slice(0, 19).replace("T", " "),
           type: log.type || "",
           status: log.status || false,
@@ -323,9 +316,9 @@ export default {
     },
     //speaker
     emitSpeakEvent(item) {
-      console.log("emitSpeakEvent >> ", item);
-      this.emitSpeakerEvent(false);
+      // this.emitSpeakerEvent(false);
       this.socket.emit("SPEAK", {
+        username: this.userInfo.username,
         id: item.id,
         content: item.title,
         style: item.style,
@@ -333,17 +326,27 @@ export default {
     },
     // speaker from anchor point
     emitTalkEvent(event) {
-      console.log("emitTalkEvent >> ", event);
-      if (event) this.emitSpeakerEvent(false);
+      let selectedText = ""
+      if (event) {
+        // this.emitSpeakerEvent(false);
+        const { size } = this.editor.view.state.doc.content;
+        selectedText = this.editor.state.doc.textBetween(this.editor.state.selection.anchor, size, " ");
+      }
+
       this.socket.emit("SPEAK_FROM", {
+        username: this.userInfo.username,
         status: event,
-        anchor: this.editor.state.selection.anchor,
+        content: selectedText,
       });
+
     },
     //microphone
     emitSpeakerEvent(e) {
       this.isTesting = e;
-      this.socket.emit("MICROPHONE", { status: e });
+      this.socket.emit("MICROPHONE", {
+        username: this.userInfo.username,
+        status: e
+      });
     },
     initRecording() {
       this.isTesting = this.isSpeaking = true;
@@ -394,6 +397,7 @@ export default {
       this.audioSpeech.onend = () => {
         this.speechLoading = false;
         this.socket.emit("SPEAK", {
+          username: 'NULL',
           id: this.itemTalking,
           content: "",
           style: this.itemStyle,

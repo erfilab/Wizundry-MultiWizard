@@ -63,9 +63,9 @@ sql.query("CREATE TABLE IF NOT EXISTS `user_info` (\n" +
     "\tPRIMARY KEY (`id`) USING BTREE\n" +
     ")\n" +
     "ENGINE=InnoDB;", (err, res) => {
-    if(err) console.log('Error when creating user table ', err)
-    else console.log('User table created: ', res.info)
-})
+        if (err) console.log('Error when creating user table ', err)
+        else console.log('User table created: ', res.info)
+    })
 
 sql.query("CREATE TABLE IF NOT EXISTS `multi_doc_logs` (\n" +
     "\t`id` BIGINT(20) NOT NULL AUTO_INCREMENT,\n" +
@@ -77,9 +77,9 @@ sql.query("CREATE TABLE IF NOT EXISTS `multi_doc_logs` (\n" +
     "\tPRIMARY KEY (`id`) USING BTREE\n" +
     ")\n" +
     "ENGINE=InnoDB;", (err, res) => {
-    if(err) console.log('Error when creating logs table ', err)
-    else console.log('Logs table created: ', res.info)
-})
+        if (err) console.log('Error when creating logs table ', err)
+        else console.log('Logs table created: ', res.info)
+    })
 
 
 const HOST = process.env.HOST || "localhost";
@@ -88,7 +88,7 @@ const server = app.listen(PORT, () => {
     console.log(`env: ${process.env.NODE_ENV}\nlistening on ${HOST}:${PORT}`);
 });
 const { Server } = require('socket.io');
-const io = new Server(server, { cors: { origin: '*' }});
+const io = new Server(server, { cors: { origin: '*' } });
 
 //google cloud speech
 const speech = require('@google-cloud/speech');
@@ -113,6 +113,22 @@ const request = {
     },
     interimResults: true, // If you want interim results, set this to true
 };
+const Log = require('./models/log');
+
+const createNewLog = (log) => {
+    const params = {
+        username: log.username || "",
+        timestamp: new Date().toISOString().slice(0, 19).replace("T", " "),
+        type: log.type || "",
+        status: log.status || false,
+        value: log.value || "",
+    };
+
+    Log.create(params, (err, log) => {
+        if (err) console.log(err)
+        else console.log("Log created: ", log)
+    })
+}
 
 const namespaces = io.of(/^\/[a-zA-Z0-9_\/-]+$/)
 namespaces.on('connection', socket => {
@@ -126,19 +142,42 @@ namespaces.on('connection', socket => {
 
         // multi-wizard speaker event
         socket.on('SPEAK', async (data) => {
-            console.log(`SPEAKER_EVENT ${data.id}: ${data.content}`)
-            if (data.content) namespaces.in(room).emit("START_SPEAKER", {...data});
-            else namespaces.in(room).emit("END_SPEAKER", '');
+            console.log(`COMMAND_SPEAKER ${data.id}: ${data.content}`)
+
+            if (data.username !== 'NULL' && data.content) {
+                await createNewLog({
+                    username: data.username,
+                    type: "COMMAND_SPEAKER",
+                    status: true,
+                    value: data.content
+                })
+            }
+
+            if (data.content)
+                namespaces.in(room).emit("START_SPEAKER", { ...data });
+            else namespaces.in(room).emit("END_SPEAKER", data.username !== 'NULL' ? "EDITOR_SPEAKER":"");
         });
 
         socket.on('SPEAK_FROM', async (data) => {
-            console.log(`SPEAKER_EVENT ${data.status}\t Start from: ${data.anchor}`)
-            namespaces.in(room).emit("WEB_SPEAKER", {...data});
+            await createNewLog({
+                username: data.username,
+                type: "EDITOR_SPEAKER",
+                status: data.status,
+                value: data.content
+            })
+
+            console.log(`EDITOR_SPEAKER ${data.status}`)
+            namespaces.in(room).emit("WEB_SPEAKER", { ...data });
         });
-        
+
 
         //mic event
-        socket.on('MICROPHONE', e => {
+        socket.on('MICROPHONE', async e => {
+            await createNewLog({
+                username: e.username,
+                type: "MICROPHONE",
+                status: e.status,
+            })
             namespaces.in(room).emit('WEB_RECORDING', e.status)
         })
 
@@ -156,10 +195,12 @@ namespaces.on('connection', socket => {
                 recognizeStream.write(data);
             }
         });
+
         socket.on('HIGHLIGHT', e => {
             console.log("Highlight Event", e)
-            namespaces.in(room).emit('AUTO_HIGHLIGHT', {status: e})
+            namespaces.in(room).emit('AUTO_HIGHLIGHT', { status: e })
         });
+
         socket.on('SPEAKER', (e) => {
             console.log("Speaker Event", e)
             namespaces.in(room).emit('WEB_SPEAKER', {
@@ -169,7 +210,7 @@ namespaces.on('connection', socket => {
         })
         socket.on('msg', e => {
             console.log('mess', e)
-            namespaces.in(room).emit('message', {...e})
+            namespaces.in(room).emit('message', { ...e })
         })
 
         socket.on('sendMessage', e => {
@@ -197,7 +238,7 @@ function startRecognitionStream(room, uid) {
                     : '\n\nReached transcription time limit, press Ctrl+C\n'
             );
             // console.log("DATA", data)
-            namespaces.in(room).emit("SPEECH_DATA", {data: data, uid: uid});
+            namespaces.in(room).emit("SPEECH_DATA", { data: data, uid: uid });
 
             if (data.results[0] && data.results[0].isFinal) {
                 stopRecognitionStream();

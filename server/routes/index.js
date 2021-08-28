@@ -11,8 +11,8 @@ routes.use('/project', ProjectRoute);
 routes.use('/text', TextRoute);
 routes.use('/log', LogRoute);
 
-routes.get('/', (req, res) => {
-    res.status(200).json({ message: 'Connected to API' })
-})
+// routes.get('/', (req, res) => {
+//     res.status(200).json({ message: 'Connected to API' })
+// })
 
 module.exports = routes;
