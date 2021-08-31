@@ -2,10 +2,7 @@
   <v-container>
     <v-row>
       <v-col cols="6">
-        <v-col
-          class=""
-          cols="12"
-        >
+        <v-col class="" cols="12">
           <v-row>
             <v-col cols="2">
               <v-btn
@@ -23,10 +20,7 @@
                 </v-icon>
               </v-btn>
             </v-col>
-            <v-col
-              cols="4"
-              class="pt-5"
-            >
+            <v-col cols="4" class="pt-5">
               <span> {{ isTesting ? "speaking..." : "closed" }} </span>
               <v-progress-linear
                 :color="
@@ -57,16 +51,13 @@
             </v-col>
           </v-row>
         </v-col>
-        <v-col
-          v-if="isWizard"
-          cols="12"
-        >
+        <v-col v-if="isWizard" cols="12">
           <div>
             <CommandBoxes
               :talking.sync="speechLoading"
               :item-talking.sync="itemTalking"
               :item-style="itemStyle"
-              @startSpeak="emitSpeakEvent"
+              @speak="emitSpeakEvent"
             />
           </div>
         </v-col>
@@ -82,20 +73,9 @@
             speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)
           "
         >
-          <menu-bar
-            v-if="isWizard"
-            class="editor__header"
-            :editor="editor"
-          />
-          <editor-content
-            style=""
-            class="editor__content"
-            :editor="editor"
-          />
-          <div
-            v-if="isWizard"
-            class="editor__footer"
-          >
+          <menu-bar v-if="isWizard" class="editor__header" :editor="editor" />
+          <editor-content style="" class="editor__content" :editor="editor" />
+          <div v-if="isWizard" class="editor__footer">
             <div :class="`editor__status editor__status--${status}`">
               <template v-if="status === 'connected'">
                 {{ connectedUsers.length }} user{{
@@ -104,9 +84,7 @@
                 online in
                 {{ this.nowDay }}
               </template>
-              <template v-else>
-                offline
-              </template>
+              <template v-else> offline </template>
             </div>
             <div class="editor__name">
               <button>
@@ -188,21 +166,48 @@ export default {
   },
   watch: {
     newContent(text) {
-      this.editor.chain().focus().undo().run();
+      if (text.length <= 0)
+        this.editor
+          .chain()
+          .focus("end")
+          .command(({ tr }) => {
+            tr.insertText(`${this.runTimeContent} `);
+            return true;
+          })
+          .run();
 
-      const { size } = this.editor.view.state.doc.content;
-      this.editor.commands.insertContent(`${text} `, size - 1);
-      const insertTrans = this.editor.state.tr.insertText(``, size - 1);
-      this.editor.view.dispatch(insertTrans);
+      this.editor.chain().focus().undo().run();
+      this.editor
+        .chain()
+        .focus("end")
+        .command(({ tr }) => {
+          tr.insertText(`${text} `);
+          return true;
+        })
+        .run();
     },
     runTimeContent(newVal, oldVal) {
       const { size } = this.editor.view.state.doc.content;
 
       if (newVal && !oldVal) {
-        this.editor.commands.insertContent(`${newVal}`, size - 1);
+        this.editor
+          .chain()
+          .focus("end")
+          .command(({ tr }) => {
+            tr.insertText(`${newVal} `);
+            return true;
+          })
+          .run();
       } else if (newVal && oldVal) {
         if (size > 1) this.editor.chain().focus().undo().run();
-        this.editor.commands.insertContent(` ${newVal} `, size - 1);
+        this.editor
+          .chain()
+          .focus("end")
+          .command(({ tr }) => {
+            tr.insertText(`${newVal} `);
+            return true;
+          })
+          .run();
       }
     },
   },
@@ -224,12 +229,13 @@ export default {
           this.speechLoading = false;
         }
       })
-      .on("START_SPEAKER", async (data) => {
-        console.log("START SPEAKER: ", data);
+      .on("SPEAKER_EVENT", async (data) => {
+        console.log("SPEAKER_EVENT: ", data);
         this.lastSpeakerWizard = data.username;
-        if (data.content.length > 0 && this.isUser) {
+
+        if (data.status && this.isUser) {
           this.speakBack(data.content);
-        } else if (this.isUser) {
+        } else if (!data.status && this.isUser) {
           this.synth.cancel();
           this.speechLoading = false;
         } else if (data && this.isWizard) {
@@ -243,8 +249,8 @@ export default {
         console.log("END SPEAKER");
         this.createNewLog({
           username: this.lastSpeakerWizard,
-          type: str.length > 0? str:"COMMAND_SPEAKER",
-          status: false
+          type: str.length > 0 ? str : "COMMAND_SPEAKER",
+          status: false,
         });
         this.itemTalking = -1;
         this.itemStyle = 1;
@@ -318,6 +324,7 @@ export default {
     emitSpeakEvent(item) {
       // this.emitSpeakerEvent(false);
       this.socket.emit("SPEAK", {
+        status: item.status,
         username: this.userInfo.username,
         id: item.id,
         content: item.title,
@@ -326,11 +333,15 @@ export default {
     },
     // speaker from anchor point
     emitTalkEvent(event) {
-      let selectedText = ""
+      let selectedText = "";
       if (event) {
         // this.emitSpeakerEvent(false);
         const { size } = this.editor.view.state.doc.content;
-        selectedText = this.editor.state.doc.textBetween(this.editor.state.selection.anchor, size, " ");
+        selectedText = this.editor.state.doc.textBetween(
+          this.editor.state.selection.anchor,
+          size,
+          " "
+        );
       }
 
       this.socket.emit("SPEAK_FROM", {
@@ -338,14 +349,13 @@ export default {
         status: event,
         content: selectedText,
       });
-
     },
     //microphone
     emitSpeakerEvent(e) {
       this.isTesting = e;
       this.socket.emit("MICROPHONE", {
         username: this.userInfo.username,
-        status: e
+        status: e,
       });
     },
     initRecording() {
@@ -397,7 +407,7 @@ export default {
       this.audioSpeech.onend = () => {
         this.speechLoading = false;
         this.socket.emit("SPEAK", {
-          username: 'NULL',
+          username: "NULL",
           id: this.itemTalking,
           content: "",
           style: this.itemStyle,

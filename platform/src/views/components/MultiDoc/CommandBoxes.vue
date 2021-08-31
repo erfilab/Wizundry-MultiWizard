@@ -7,71 +7,25 @@
         cols="6"
       >
         <v-row>
-          <v-col cols="2">
-            <v-btn-toggle
-              borderless
-              dense
-              style="flex-direction: column;"
-            >
-              <v-btn @click="speakerEvent(item)">
+          <v-col>
+            <v-card :color="item.color">
+              <div class="d-flex flex-no-wrap justify-space-between">
+                <div>
+                  <v-text-field
+                    @keyup.enter="item.color === '#f0f0f0'? speakerEvent2(item):speakerEvent(item)"
+                    v-model="item.title"
+                    class="mt-3 ml-3"
+                  />
+                </div>
+                <v-btn text x-small @click="speakerEvent(item)"
+                  style="top: 10%; position: absolute;right: 0;"
+                >
                 <v-icon>
                   {{
                     item.actionStatus ? "mdi-pause" : "mdi-play"
                   }}
                 </v-icon>
               </v-btn>
-              <v-btn @click="speakerEvent2(item)">
-                <v-icon>{{ item.actionStatus ? "mdi-progress-close" : "mdi-repeat-once" }}</v-icon>
-              </v-btn>
-            </v-btn-toggle>
-          </v-col>
-          <v-col>
-            <v-card :color="item.color">
-              <div class="d-flex flex-no-wrap justify-space-between">
-                <div>
-                  <v-text-field
-                    v-model="item.title"
-                    class="mt-3 ml-3"
-                  />
-                </div>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-col>
-      <v-col
-        v-for="item in items2"
-        :key="item.id"
-        cols="6"
-      >
-        <v-row>
-          <v-col cols="2">
-            <v-btn-toggle
-              borderless
-              dense
-              style="flex-direction: column;"
-            >
-              <v-btn @click="speakerEvent(item)">
-                <v-icon>
-                  {{
-                    item.actionStatus ? "mdi-pause" : "mdi-play"
-                  }}
-                </v-icon>
-              </v-btn>
-              <v-btn @click="speakerEvent2(item)">
-                <v-icon>{{ item.actionStatus ? "mdi-progress-close" : "mdi-repeat-once" }}</v-icon>
-              </v-btn>
-            </v-btn-toggle>
-          </v-col>
-          <v-col>
-            <v-card :color="item.color">
-              <div class="d-flex flex-no-wrap justify-space-between">
-                <div>
-                  <v-text-field
-                    v-model="item.title"
-                    class="mt-3 ml-3"
-                  />
-                </div>
               </div>
             </v-card>
           </v-col>
@@ -137,8 +91,6 @@ export default {
         title: "No, I don't think so.",
         actionStatus: false,
       },
-    ],
-    items2: [
       {
         id: 6,
         color: "#CDE589",
@@ -193,12 +145,11 @@ export default {
   methods: {
     speakerEvent(item) {
       console.log(item.title);
-      this.$emit("startSpeak", {...item, style: 1});
-      // item.actionStatus = !item.actionStatus
+      this.$emit("speak", {...item, style: 1, status: !item.actionStatus});
     },
     speakerEvent2(item) {
       console.log('2', item.title);
-      this.$emit("startSpeak", {...item, style: 2});
+      this.$emit("speak", {...item, style: 2, status: !item.actionStatus});
     },
   },
 };

@@ -153,8 +153,8 @@ namespaces.on('connection', socket => {
                 })
             }
 
-            if (data.content)
-                namespaces.in(room).emit("START_SPEAKER", { ...data });
+            if (data.content.length > 0)
+                namespaces.in(room).emit("SPEAKER_EVENT", { ...data });
             else namespaces.in(room).emit("END_SPEAKER", data.username !== 'NULL' ? "EDITOR_SPEAKER":"");
         });
 
