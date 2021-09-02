@@ -93,6 +93,13 @@
             </div>
           </div>
         </div>
+        <div class="ma-3">
+          <ul>
+            <li v-for="(value, name, index) in currentExperiment" :key="index">
+              <span>{{ name }} : {{ value }}</span>
+            </li>
+          </ul>
+        </div>
       </v-col>
     </v-row>
   </v-container>
@@ -121,6 +128,10 @@ export default {
   },
   data() {
     return {
+      // env variable
+      useLineBreak: true,
+      showRunTimeContent: true,
+
       //editor
       provider: null,
       editor: null,
@@ -152,6 +163,7 @@ export default {
 
       runTimeContent: "",
       newContent: "",
+      contentAnchor: 0,
     };
   },
   computed: {
@@ -162,49 +174,51 @@ export default {
       "isUser",
       "isWizard",
       "isAdmin",
+      "currentExperiment",
     ]),
   },
   watch: {
     newContent(text) {
-      if (text.length <= 0)
+      console.log("new content", text);
+      if (text && this.showRunTimeContent) {
         this.editor
           .chain()
+          .focus()
+          .command(({ editor, tr }) => {
+            tr.delete(this.contentAnchor, editor.view.state.doc.content.size);
+            return true;
+          })
           .focus("end")
-          .command(({ tr }) => {
-            tr.insertText(`${this.runTimeContent} `);
+          .command(({ editor, tr }) => {
+            tr.insertText(`${text}${this.useLineBreak ? "\n" : " "}`);
+            this.contentAnchor = editor.view.state.doc.content.size;
             return true;
           })
           .run();
-
-      this.editor.chain().focus().undo().run();
-      this.editor
-        .chain()
-        .focus("end")
-        .command(({ tr }) => {
-          tr.insertText(`${text} `);
-          return true;
-        })
-        .run();
+      } else {
+        this.editor
+          .chain()
+          .focus("end")
+          .command(({ editor, tr }) => {
+            tr.insertText(`${text}${this.useLineBreak ? "\n" : " "}`);
+            this.contentAnchor = editor.view.state.doc.content.size;
+            return true;
+          })
+          .run();
+      }
     },
-    runTimeContent(newVal, oldVal) {
-      const { size } = this.editor.view.state.doc.content;
-
-      if (newVal && !oldVal) {
+    runTimeContent(text) {
+      if (text && this.showRunTimeContent) {
         this.editor
           .chain()
-          .focus("end")
-          .command(({ tr }) => {
-            tr.insertText(`${newVal} `);
+          .focus()
+          .command(({ editor, tr }) => {
+            tr.delete(this.contentAnchor, editor.view.state.doc.content.size);
             return true;
           })
-          .run();
-      } else if (newVal && oldVal) {
-        if (size > 1) this.editor.chain().focus().undo().run();
-        this.editor
-          .chain()
           .focus("end")
           .command(({ tr }) => {
-            tr.insertText(`${newVal} `);
+            tr.insertText(`${text}`);
             return true;
           })
           .run();
@@ -213,6 +227,12 @@ export default {
   },
   async mounted() {
     this.socket = await initSocket(this.nowDay);
+    console.log("experiment", this.currentExperiment);
+    let { features, project_name } = this.currentExperiment;
+    features = JSON.parse(features);
+    this.useLineBreak = features.includes(1);
+    this.showRunTimeContent = features.includes(2);
+
     this.socket
       .on("WEB_RECORDING", async (e) => {
         console.log("WEB RECORDING STATUS: ", e);
@@ -222,9 +242,9 @@ export default {
         else if (!e && this.isWizard) this.isTesting = this.isSpeaking = false;
       })
       .on("WEB_SPEAKER", async (param) => {
-        if (param.status && this.isUser && !this.speechLoading)
+        if (param.status && this.isUser && !this.speechLoading) {
           this.speakBack(param.content);
-        else if (!param.status && this.isUser) {
+        } else if (!param.status && this.isUser) {
           this.synth.cancel();
           this.speechLoading = false;
         }
@@ -279,9 +299,9 @@ export default {
         }
       });
 
-    this.socket.emit("joinRoom", "multiDoc");
+    this.socket.emit("joinRoom", project_name);
 
-    const [indexdb, ydoc, yDocProvider] = await initYDoc(this.nowDay);
+    const [indexdb, ydoc, yDocProvider] = await initYDoc(project_name);
     this.indexdb = indexdb;
     this.provider = yDocProvider;
     this.provider.on("status", (event) => (this.status = event.status));
@@ -333,6 +353,7 @@ export default {
     },
     // speaker from anchor point
     emitTalkEvent(event) {
+      this.speechLoading = event;
       let selectedText = "";
       if (event) {
         // this.emitSpeakerEvent(false);

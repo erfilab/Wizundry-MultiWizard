@@ -5,6 +5,7 @@ import permission from './modules/permission';
 import settings from './modules/settings';
 import user from './modules/user';
 import log from './modules/log';
+import experiment from './modules/experiment';
 
 Vue.use(Vuex);
 
@@ -13,7 +14,8 @@ export default new Vuex.Store({
     permission,
     settings,
     user,
-    log
+    log,
+    experiment,
   },
 
   plugins: [

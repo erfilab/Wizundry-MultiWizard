@@ -8,6 +8,7 @@ import authRouter from './modules/auth';
 import errorsRouter from './modules/errors';
 import permissionRouter from './modules/permission';
 import logsRouter from './modules/logs';
+import adminRouter from './modules/admin';
 
 Vue.use(Router);
 
@@ -88,8 +89,9 @@ export default new Router({
 
 export const asyncRoutes = [
   /** When your routing table is too long, you can split it into small modules */
-  permissionRouter,
+  // permissionRouter,
   logsRouter,
   errorsRouter,
+  adminRouter,
   { path: '*', redirect: '/error/404', hidden: true },
 ];

@@ -17,6 +17,11 @@ export default {
     editor: 'Editor',
     visitor: 'Visitor',
   },
+  admins: "Admin",
+  admin: {
+    create: "Create Experiment",
+    all: "All Experiments"
+  },
   log: {
     user: 'User Logs',
     error: 'Error Logs',
