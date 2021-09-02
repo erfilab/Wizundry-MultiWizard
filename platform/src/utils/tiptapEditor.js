@@ -7,6 +7,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
 import CharacterCount from "@tiptap/extension-character-count";
 // import History from "@tiptap/extension-history";
+import HardBreak from '@tiptap/extension-hard-break'
 import store from "../store";
 
 export const initEditor = (collab, ydoc, yDocProvider, user) => {
@@ -33,6 +34,7 @@ export const initEditor = (collab, ydoc, yDocProvider, user) => {
                 CharacterCount.configure({
                     limit: 10000,
                 }),
+                HardBreak
             ],
         });
     } else {
@@ -51,6 +53,7 @@ export const initEditor = (collab, ydoc, yDocProvider, user) => {
                 CharacterCount.configure({
                     limit: 10000,
                 }),
+                HardBreak,
             ],
         });
     }

@@ -119,6 +119,7 @@ const MEDIA_ACCESS_CONSTRAINTS = { audio: true, video: false };
 
 import { mapGetters } from "vuex";
 import CommandBoxes from "./CommandBoxes";
+import log from "../../../api/log";
 
 export default {
   components: {
@@ -179,19 +180,29 @@ export default {
   },
   watch: {
     newContent(text) {
-      console.log("new content", text);
       if (text && this.showRunTimeContent) {
         this.editor
           .chain()
           .focus()
           .command(({ editor, tr }) => {
-            tr.delete(this.contentAnchor, editor.view.state.doc.content.size);
+            tr.delete(this.contentAnchor, tr.selection.anchor);
             return true;
           })
           .focus("end")
-          .command(({ editor, tr }) => {
-            tr.insertText(`${text}${this.useLineBreak ? "\n" : " "}`);
-            this.contentAnchor = editor.view.state.doc.content.size;
+          .insertContent(`${text} `)
+          .run();
+      } else {
+        this.editor.chain().focus("end").insertContent(`${text} `).run();
+      }
+
+      if (this.useLineBreak) {
+        this.editor
+          .chain()
+          .focus("end")
+          .setHardBreak()
+          .focus("end")
+          .command(({ tr }) => {
+            this.contentAnchor = tr.selection.anchor;
             return true;
           })
           .run();
@@ -199,29 +210,44 @@ export default {
         this.editor
           .chain()
           .focus("end")
-          .command(({ editor, tr }) => {
-            tr.insertText(`${text}${this.useLineBreak ? "\n" : " "}`);
-            this.contentAnchor = editor.view.state.doc.content.size;
+          .command(({ tr }) => {
+            this.contentAnchor = tr.selection.anchor;
             return true;
           })
           .run();
       }
     },
-    runTimeContent(text) {
-      if (text && this.showRunTimeContent) {
+    runTimeContent(text, old) {
+      try {
+        if (text && old && this.showRunTimeContent) {
+          this.editor
+            .chain()
+            .focus()
+            .command(({ editor, tr }) => {
+              tr.delete(this.contentAnchor, tr.selection.anchor);
+              return true;
+            })
+            .focus("end")
+            .insertContent(`${text} `)
+            .run();
+        }
+        if (this.useLineBreak) {
+          this.editor.chain().focus("end").setHardBreak().focus("end").run();
+        } else {
+          this.editor
+            .chain()
+            .focus("end")
+            .run();
+        }
+      } catch (err) {
+        console.error(err);
         this.editor
           .chain()
-          .focus()
-          .command(({ editor, tr }) => {
-            tr.delete(this.contentAnchor, editor.view.state.doc.content.size);
-            return true;
-          })
           .focus("end")
           .command(({ tr }) => {
-            tr.insertText(`${text}`);
-            return true;
-          })
-          .run();
+            this.contentAnchor =
+              tr.selection.anchor - 2 >= 0 ? tr.selection.anchor - 2 : 0;
+          });
       }
     },
   },
