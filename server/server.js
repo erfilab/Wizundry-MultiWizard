@@ -81,6 +81,21 @@ sql.query("CREATE TABLE IF NOT EXISTS `multi_doc_logs` (\n" +
         else console.log('Logs table created: ', res.info)
     })
 
+sql.query(`CREATE TABLE experiment (
+        id BIGINT(20) NOT NULL AUTO_INCREMENT,
+        project_name VARCHAR(50) NOT NULL COLLATE 'latin1_swedish_ci',
+        type VARCHAR(50) NULL COLLATE 'latin1_swedish_ci',
+        division VARCHAR(50) NULL COLLATE 'latin1_swedish_ci',
+        features VARCHAR(256) NULL COLLATE 'latin1_swedish_ci',
+        confirm TINYINT(2) NULL,
+        username VARCHAR(64) NOT NULL COLLATE 'latin1_swedish_ci',
+        created_at TIMESTAMP NULL,
+        PRIMARY KEY(id) USING BTREE
+    ) ENGINE = InnoDB`, (err, res) => {
+        if (err) console.log('Error when creating experiment table ', err)
+        else console.log('Experiment table created: ', res.info)
+    })
+
 
 const HOST = process.env.HOST || "localhost";
 const PORT = process.env.PORT || 3000;
@@ -155,7 +170,7 @@ namespaces.on('connection', socket => {
 
             if (data.content.length > 0)
                 namespaces.in(room).emit("SPEAKER_EVENT", { ...data });
-            else namespaces.in(room).emit("END_SPEAKER", data.username !== 'NULL' ? "EDITOR_SPEAKER":"");
+            else namespaces.in(room).emit("END_SPEAKER", data.username !== 'NULL' ? "EDITOR_SPEAKER" : "");
         });
 
         socket.on('SPEAK_FROM', async (data) => {
