@@ -255,11 +255,11 @@ function startRecognitionStream(room, uid) {
         .on('error', console.error)
         .on('data', data => {
             // console.log(`Transcription: ${data.results[0].alternatives[0].transcript}`);
-            process.stdout.write(
-                data.results[0] && data.results[0].alternatives[0]
-                    ? `Transcription: ${data.results[0].alternatives[0].transcript}\n`
-                    : '\n\nReached transcription time limit, press Ctrl+C\n'
-            );
+            // process.stdout.write(
+            //     data.results[0] && data.results[0].alternatives[0]
+            //         ? `Transcription: ${data.results[0].alternatives[0].transcript}\n`
+            //         : '\n\nReached transcription time limit, press Ctrl+C\n'
+            // );
             // console.log("DATA", data)
             namespaces.in(room).emit("SPEECH_DATA", { data: data, uid: uid });
 
