@@ -50,6 +50,7 @@ const log = {
         GetExperimentLogsById: async ({ commit }, id) => {
             const logs = await logApi.getExperimentLogsById(id);
             commit('SET_SELECTED_LOGS', logs);
+            return logs;
         }
     },
 };

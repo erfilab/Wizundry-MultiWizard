@@ -28,12 +28,7 @@
             <b>Download</b>
           </button>
         </vue-json-to-csv>
-        <v-btn
-          color="primary"
-          elevation="2"
-          outlined
-          @click.end="searchLogs"
-        >
+        <v-btn color="primary" elevation="2" outlined @click.end="searchLogs">
           Search
         </v-btn>
       </v-row>
@@ -45,23 +40,17 @@
       class="elevation-1"
       :search="search"
     >
-      <template v-slot:[`item.actions`]="{item}">
-        <v-icon
-          class="mr-2"
-          @click="join(item)"
+      <template v-slot:[`item.actions`]="{ item }">
+        <v-icon class="mr-2" @click="join(item)"> mdi-location-enter </v-icon>
+        <v-icon v-if="isAdmin" @click="deleteItem(item)"> mdi-delete </v-icon>
+        <vue-json-to-csv
+          id="download-csv"
+          :json-data="selectedLogs"
+          :csv-title="`logs-${new Date().toISOString().slice(0, 16)}`"
+          @error="(val) => handleDownloadError(val)"
         >
-          mdi-location-enter
-        </v-icon>
-        <v-icon
-          v-if="isAdmin"
-          @click="deleteItem(item)"
-        >
-          mdi-delete
-        </v-icon>
-        <v-icon
-          v-if="isAdmin"
-          @click="inspectLogs(item)"
-        >
+        </vue-json-to-csv>
+        <v-icon v-if="isAdmin" @click="inspectLogs(item)">
           mdi-file-search
         </v-icon>
       </template>
@@ -106,7 +95,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(["allExperiment", "isAdmin"]),
+    ...mapGetters(["allExperiment", "isAdmin", "selectedLogs"]),
   },
   async mounted() {
     await this.$store.dispatch("GetAllExperiments");
@@ -125,9 +114,23 @@ export default {
     },
     async inspectLogs(item) {
       await this.$store.dispatch("GetExperimentLogsById", item.id);
+      try {
+        document.getElementById("download-csv").click();
+      } catch (e) {
+        console.log(e);
+        alert("Error downloading file");
+      }
+    },
+    async handleDownloadError(err) {
+      console.log(err);
+      alert("Error downloading file");
     },
   },
 };
 </script>
 
-<style></style>
+<style lang="scss" scoped>
+#download-csv {
+  display: none;
+}
+</style>
