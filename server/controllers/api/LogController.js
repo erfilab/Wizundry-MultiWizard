@@ -16,3 +16,11 @@ exports.listMultiDocLogs = (req, res) => {
         else res.status(200).json({ data: data });
     })
 }
+
+exports.getMultiDocLogsById = (req, res) => {
+    // console.log(req.params.id);
+    Log.getMultiDocById(req.params.id, (err, data) => {
+        if (err) res.status(500).send({ message: err.message || "Some error occurred while retrieving Logs Data" });
+        else res.status(200).json({ data: data });
+    })
+}

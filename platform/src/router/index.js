@@ -59,7 +59,9 @@ export const constantRoutes = [
         component: () => import('@/views/components/MultiDoc/index'),
         name: 'MultiDoc',
         meta: {
-          title: 'route.multidoc', icon: 'mdi-file-document', noCache: true, affix: true,
+          title: 'route.multidoc', icon: 'mdi-file-document',
+          noCache: true,
+          affix: false,
         },
       },
     ],
@@ -82,7 +84,7 @@ export const constantRoutes = [
 ];
 
 export default new Router({
-  // mode: 'history', // gh-pages
+  mode: 'history', // gh-pages
   scrollBehavior: () => ({ y: 0 }),
   routes: constantRoutes,
 });

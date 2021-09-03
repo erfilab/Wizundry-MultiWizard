@@ -2,7 +2,7 @@
   <v-card>
     <v-card-title v-if="isAdmin">
       All Experiment Records
-      <v-spacer></v-spacer>
+      <v-spacer />
       <v-row>
         <v-col>
           <v-text-field
@@ -12,7 +12,7 @@
             single-line
             clearable
             hide-details
-          ></v-text-field>
+          />
         </v-col>
       </v-row>
       <v-row>
@@ -28,32 +28,43 @@
             <b>Download</b>
           </button>
         </vue-json-to-csv>
-        <v-btn @click.end="searchLogs" color="primary" elevation="2" outlined
-          >Search</v-btn
+        <v-btn
+          color="primary"
+          elevation="2"
+          outlined
+          @click.end="searchLogs"
         >
+          Search
+        </v-btn>
       </v-row>
     </v-card-title>
     <v-data-table
       :headers="headers"
       :items="allExperiment"
-      :items-per-page="30"
+      :items-per-page="50"
       class="elevation-1"
       :search="search"
     >
-    <template v-slot:[`item.actions`]="{ item }">
-      <v-icon
-        class="mr-2"
-        @click="join(item)"
-      >
-        mdi-location-enter
-      </v-icon>
-      <v-icon
-        v-if="isAdmin"
-        @click="deleteItem(item)"
-      >
-        mdi-delete
-      </v-icon>
-    </template>
+      <template v-slot:[`item.actions`]="{item}">
+        <v-icon
+          class="mr-2"
+          @click="join(item)"
+        >
+          mdi-location-enter
+        </v-icon>
+        <v-icon
+          v-if="isAdmin"
+          @click="deleteItem(item)"
+        >
+          mdi-delete
+        </v-icon>
+        <v-icon
+          v-if="isAdmin"
+          @click="inspectLogs(item)"
+        >
+          mdi-file-search
+        </v-icon>
+      </template>
     </v-data-table>
   </v-card>
 </template>
@@ -97,21 +108,24 @@ export default {
   computed: {
     ...mapGetters(["allExperiment", "isAdmin"]),
   },
+  async mounted() {
+    await this.$store.dispatch("GetAllExperiments");
+  },
   methods: {
     async searchLogs() {
       await this.$store.dispatch("GetAllExperiments");
     },
     async deleteItem(item) {
-        await this.$store.dispatch("DeleteExperiment", item.id);
-        // await this.$store.dispatch("GetAllExperiments");
+      await this.$store.dispatch("DeleteExperiment", item.id);
+      // await this.$store.dispatch("GetAllExperiments");
     },
     async join(item) {
-        await this.$store.dispatch("GetSingleExperiment", item.id);
-        this.$router.push({ name: "MultiDoc" });
+      await this.$store.dispatch("GetSingleExperiment", item.id);
+      this.$router.push({ name: "MultiDoc", replace: true });
     },
-  },
-  async mounted() {
-    await this.$store.dispatch("GetAllExperiments");
+    async inspectLogs(item) {
+      await this.$store.dispatch("GetExperimentLogsById", item.id);
+    },
   },
 };
 </script>

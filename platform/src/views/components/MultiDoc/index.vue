@@ -4,7 +4,40 @@
       <v-col cols="6">
         <v-col class="" cols="12">
           <v-row>
-            <v-col cols="2">
+            <v-col cols="6">
+              <v-card>
+                <v-card-title>
+                  <span class="headline">
+                    <v-icon>mdi-file-document-outline</v-icon>
+                    <span>Useful Shortcut</span>
+                  </span>
+                </v-card-title>
+                <v-card-text>
+                  <v-simple-table>
+                    <template v-slot:default>
+                      <thead>
+                        <tr>
+                          <th class="text-left">Shortcuts</th>
+                          <th class="text-left">Functions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="item in commands" :key="item.shortcut">
+                          <td>
+                            <v-chip class="ma-2" label>
+                              {{ item.shortcut }}
+                            </v-chip>
+                          </td>
+                          <td>{{ item.func }}</td>
+                        </tr>
+                      </tbody>
+                    </template>
+                  </v-simple-table>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <v-spacer />
+            <v-col cols="1">
               <v-btn
                 :disabled="isUser"
                 fab
@@ -165,6 +198,22 @@ export default {
       runTimeContent: "",
       newContent: "",
       contentAnchor: 0,
+
+      // commands
+      commands: [
+        {
+          shortcut: "fn+f9",
+          func: "Microphone On/Off",
+        },
+        {
+          shortcut: "cursor + esc",
+          func: "Editor Content Review On/Off",
+        },
+        {
+          shortcut: "enter",
+          func: "Command box Speak On/Off",
+        },
+      ],
     };
   },
   computed: {
@@ -234,10 +283,7 @@ export default {
         if (this.useLineBreak) {
           this.editor.chain().focus("end").setHardBreak().focus("end").run();
         } else {
-          this.editor
-            .chain()
-            .focus("end")
-            .run();
+          this.editor.chain().focus("end").run();
         }
       } catch (err) {
         console.error(err);
@@ -246,12 +292,15 @@ export default {
           .focus("end")
           .command(({ tr }) => {
             this.contentAnchor =
-              tr.selection.anchor - 2 >= 0 ? tr.selection.anchor - 2 : 0;
+              tr.selection.anchor - 2 >= 0
+                ? tr.selection.anchor - 2
+                : tr.selection.anchor;
           });
       }
     },
   },
   async mounted() {
+    console.log(1, this.editor);
     this.socket = await initSocket(this.nowDay);
     console.log("experiment", this.currentExperiment);
     let { features, project_name } = this.currentExperiment;
@@ -332,7 +381,7 @@ export default {
     this.provider = yDocProvider;
     this.provider.on("status", (event) => (this.status = event.status));
 
-    const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {
+    const currentUser = {
       name: this.userInfo.username,
       color: this.getRandomColor(),
     };
@@ -345,11 +394,13 @@ export default {
     );
 
     if (this.isWizard) this.editor.chain().focus().user(currentUser).run();
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    // localStorage.setItem("currentUser", JSON.stringify(currentUser));
     this.listenForSpeechEvents();
   },
   beforeDestroy() {
     this.editor.destroy();
+    // localStorage.setItem("currentUser", "");
+    this.$store.commit("CLEAR_CURRENT_EXPERIMENT");
     this.$store.commit("CLEAR_CONNECTED_USERS");
   },
   methods: {
@@ -357,6 +408,8 @@ export default {
     createNewLog(log) {
       if (this.isUser) {
         const params = {
+          experiment_id: this.currentExperiment.id,
+          project_name: this.currentExperiment.project_name,
           username: log.username || this.userInfo.username,
           timestamp: new Date().toISOString().slice(0, 19).replace("T", " "),
           type: log.type || "",
@@ -372,6 +425,8 @@ export default {
       this.socket.emit("SPEAK", {
         status: item.status,
         username: this.userInfo.username,
+        experiment_id: this.currentExperiment.id,
+        project_name: this.currentExperiment.project_name,
         id: item.id,
         content: item.title,
         style: item.style,
@@ -392,6 +447,8 @@ export default {
       }
 
       this.socket.emit("SPEAK_FROM", {
+        experiment_id: this.currentExperiment.id,
+        project_name: this.currentExperiment.project_name,
         username: this.userInfo.username,
         status: event,
         content: selectedText,
@@ -401,6 +458,8 @@ export default {
     emitSpeakerEvent(e) {
       this.isTesting = e;
       this.socket.emit("MICROPHONE", {
+        experiment_id: this.currentExperiment.id,
+        project_name: this.currentExperiment.project_name,
         username: this.userInfo.username,
         status: e,
       });
@@ -454,6 +513,8 @@ export default {
       this.audioSpeech.onend = () => {
         this.speechLoading = false;
         this.socket.emit("SPEAK", {
+          experiment_id: this.currentExperiment.id,
+          project_name: this.currentExperiment.project_name,
           username: "NULL",
           id: this.itemTalking,
           content: "",

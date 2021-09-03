@@ -14,5 +14,14 @@ export default {
     },
     async createLog(params) {
         return await axios.post("/log/multidoc", params);
+    },
+    async getExperimentLogsById(id) {
+        return await axios.get(`/log/multidocs/${id}`)
+            .then(res => res.data)
+            .catch(err => {
+                console.log(err);
+                return [];
+            }
+        );
     }
 };

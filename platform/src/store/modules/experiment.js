@@ -28,7 +28,10 @@ const experiment = {
         },
         SET_CURRENT_EXPERIMENT: (state, payload) => {
             state.currentExperiment = payload;
-        }
+        },
+        CLEAR_CURRENT_EXPERIMENT: (state) => {
+            state.currentExperiment = null;
+        },
     },
     actions: {
         GetAllExperiments: async ({ commit }) => {

@@ -4,11 +4,13 @@ const log = {
     state: {
         allLogs: [],
         newLog: null,
+        selectedLogs: [],
     },
 
     getters: {
         allLogs: state => state.allLogs,
         newLog: state => state.newLog,
+        selectedLogs: state => state.selectedLogs,
     },
 
     mutations: {
@@ -24,6 +26,12 @@ const log = {
         SET_NEW_LOG: (state, log) => {
             state.newLog = log;
         },
+        SET_SELECTED_LOGS: (state, logs) => {
+            state.selectedLogs = logs;
+        },
+        CLEAR_SELECTED_LOGS: (state) => {
+            state.selectedLogs = [];
+        }
     },
 
     actions: {
@@ -39,6 +47,10 @@ const log = {
         ClearLogs: async ({ commit }) => {
             commit('CLEAR_LOGS');
         },
+        GetExperimentLogsById: async ({ commit }, id) => {
+            const logs = await logApi.getExperimentLogsById(id);
+            commit('SET_SELECTED_LOGS', logs);
+        }
     },
 };
 

@@ -12,20 +12,23 @@
               <div class="d-flex flex-no-wrap justify-space-between">
                 <div>
                   <v-text-field
-                    @keyup.enter="item.color === '#f0f0f0'? speakerEvent2(item):speakerEvent(item)"
                     v-model="item.title"
                     class="mt-3 ml-3"
+                    @keyup.enter="item.color === '#f0f0f0' ? speakerEvent2(item) : speakerEvent(item)"
                   />
                 </div>
-                <v-btn text x-small @click="speakerEvent(item)"
+                <v-btn
+                  text
+                  x-small
                   style="top: 10%; position: absolute;right: 0;"
+                  @click="speakerEvent(item)"
                 >
-                <v-icon>
-                  {{
-                    item.actionStatus ? "mdi-pause" : "mdi-play"
-                  }}
-                </v-icon>
-              </v-btn>
+                  <v-icon>
+                    {{
+                      item.actionStatus ? "mdi-pause" : "mdi-play"
+                    }}
+                  </v-icon>
+                </v-btn>
               </div>
             </v-card>
           </v-col>

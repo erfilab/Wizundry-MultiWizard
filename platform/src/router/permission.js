@@ -43,7 +43,7 @@ router.beforeEach(async (to, from, next) => {
         if (!store.getters.roles || store.getters.roles.length === 0) {
           logMsg += `\t[roles=${store.getters.roles}]`;
           // Determine whether the current user has pulled the user_info information
-          // await store.dispatch('GetUserInfo');
+          await store.dispatch('GetUserInfo');
           console.log(store.getters.userInfo);
           if (!store.getters.userInfo || !store.getters.user.roles) {
             logMsg += '\t[LogOut]\t[next /]';
@@ -68,6 +68,10 @@ router.beforeEach(async (to, from, next) => {
           // delete the following permission judgment ↓
           if (hasPermission(store.getters.roles, to.meta.roles)) {
             logMsg += `\t[Permission=${to.meta.roles}]\t[next]`;
+            console.log(from, to);
+            // if (from.path === '/multidoc' && to.path === '/dashboard') {
+            //   next({...to, replace: true});
+            // }
             next();
           } else {
             logMsg += `\t[!Permission=${to.meta.roles}]\t[next /401]`;
@@ -82,6 +86,7 @@ router.beforeEach(async (to, from, next) => {
         next();
       } else {
         logMsg += '\t[!whiteList]';
+        // this.$store.commit('CLEAR_USER_INFO')
         next(`/singin?redirect=${to.path}`);
       }
     }

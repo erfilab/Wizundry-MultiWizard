@@ -40,6 +40,20 @@ Log.getAll = ({ start, end }, result) => {
     });
 };
 
+
+Log.getMultiDocById = (id, result) => {
+    console.log(id);
+    sql.query(`SELECT * FROM multi_doc_logs WHERE experiment_id = ${parseInt(id)}`, (err, res) => {
+        if (err) {
+            console.error(err)
+            result(null, err);
+            return;
+        }
+        result(null, res);
+    });
+};
+
+
 Log.getAllBehaviors = ({ query_time }, result) => {
     sql.query(`SELECT * FROM behavior_log WHERE behavior_log.timestamp >= ${query_time} AND behavior_log.timestamp < ${parseInt(query_time) + 86400000}`,
         (err, res) => {

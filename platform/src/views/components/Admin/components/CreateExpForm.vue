@@ -1,26 +1,30 @@
 <template>
-  <v-form ref="form" v-model="valid" lazy-validation>
+  <v-form
+    ref="form"
+    v-model="valid"
+    lazy-validation
+  >
     <v-text-field
       v-model="projectName"
       :counter="10"
       :rules="nameRules"
       label="Project Name"
       required
-    ></v-text-field>
+    />
     <v-autocomplete
       v-model="experimentType"
       :items="experimentTypes"
       auto-select-first
       clearable
       label="Experiment Type"
-    ></v-autocomplete>
+    />
     <v-autocomplete
       v-model="divisionMethod"
       :items="divisionMethods"
       auto-select-first
       clearable
       label="Labor Division Method"
-    ></v-autocomplete>
+    />
 
     <h6>Choose Features</h6>
     <v-chip-group
@@ -29,20 +33,50 @@
       multiple
       active-class="primary--text"
     >
-      <v-chip filter outlined> Multiple Cursor </v-chip>
-      <v-chip filter outlined> Line Break </v-chip>
-      <v-chip filter outlined> Run-time Content </v-chip>
-      <v-chip filter outlined> Google Speech Recognition </v-chip>
-      <v-chip filter outlined> MDN Speech Recognition </v-chip>
+      <v-chip
+        filter
+        outlined
+      >
+        Multiple Cursor
+      </v-chip>
+      <v-chip
+        filter
+        outlined
+      >
+        Line Break
+      </v-chip>
+      <v-chip
+        filter
+        outlined
+      >
+        Run-time Content
+      </v-chip>
+      <v-chip
+        filter
+        outlined
+      >
+        Google Speech Recognition
+      </v-chip>
+      <v-chip
+        filter
+        outlined
+      >
+        MDN Speech Recognition
+      </v-chip>
     </v-chip-group>
     <v-checkbox
       v-model="confirm"
       :rules="[(v) => !!v || 'You must agree to continue!']"
       label="Do you agree to let experimenter collect the data?"
       required
-    ></v-checkbox>
+    />
     <div class="text-right">
-      <v-btn outlined color="error" class="mr-4" @click="reset">
+      <v-btn
+        outlined
+        color="error"
+        class="mr-4"
+        @click="reset"
+      >
         Reset Form
       </v-btn>
       <v-btn

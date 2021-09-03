@@ -81,7 +81,7 @@ sql.query("CREATE TABLE IF NOT EXISTS `multi_doc_logs` (\n" +
         else console.log('Logs table created: ', res.info)
     })
 
-sql.query(`CREATE TABLE experiment (
+sql.query(`CREATE TABLE IF NOT EXISTS experiment (
         id BIGINT(20) NOT NULL AUTO_INCREMENT,
         project_name VARCHAR(50) NOT NULL COLLATE 'latin1_swedish_ci',
         type VARCHAR(50) NULL COLLATE 'latin1_swedish_ci',
@@ -132,6 +132,8 @@ const Log = require('./models/log');
 
 const createNewLog = (log) => {
     const params = {
+        experiment_id: log.experiment_id,
+        project_name: log.project_name,
         username: log.username || "",
         timestamp: new Date().toISOString().slice(0, 19).replace("T", " "),
         type: log.type || "",
@@ -161,6 +163,8 @@ namespaces.on('connection', socket => {
 
             if (data.username !== 'NULL' && data.content) {
                 await createNewLog({
+                    experiment_id: data.experiment_id,
+                    project_name: data.project_name,
                     username: data.username,
                     type: "COMMAND_SPEAKER",
                     status: true,
@@ -175,6 +179,8 @@ namespaces.on('connection', socket => {
 
         socket.on('SPEAK_FROM', async (data) => {
             await createNewLog({
+                experiment_id: data.experiment_id,
+                project_name: data.project_name,
                 username: data.username,
                 type: "EDITOR_SPEAKER",
                 status: data.status,
@@ -189,6 +195,8 @@ namespaces.on('connection', socket => {
         //mic event
         socket.on('MICROPHONE', async e => {
             await createNewLog({
+                experiment_id: e.experiment_id,
+                project_name: e.project_name,
                 username: e.username,
                 type: "MICROPHONE",
                 status: e.status,

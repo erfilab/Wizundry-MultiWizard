@@ -56,6 +56,9 @@ const user = {
     CLEAR_CONNECTED_USERS: (state) => {
       // console.log('clear connected users', state.connectedUsers);
       state.connectedUsers = [];
+    },
+    CLEAR_USER_INFO: (state) => {
+      state.userInfo = {}
     }
   },
 
@@ -100,6 +103,7 @@ const user = {
       try {
         console.log('[vuex.user] LogOut');
         await commit('SET_USER_INFO', { logout: true });
+        await commit('CLEAR_USER_INFO');
       } catch (err) {
         console.warn('[vuex.user] LogOut', err);
       }

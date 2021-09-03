@@ -2,7 +2,7 @@
   <v-card>
     <v-card-title>
       MultiDoc Logs
-      <v-spacer></v-spacer>
+      <v-spacer />
       <v-row>
         <v-col>
           <v-menu
@@ -14,7 +14,7 @@
             offset-y
             min-width="auto"
           >
-            <template v-slot:activator="{ on, attrs }">
+            <template v-slot:activator="{on, attrs}">
               <v-text-field
                 v-model="start"
                 label="Start Time Picker"
@@ -23,14 +23,26 @@
                 clearable
                 v-bind="attrs"
                 v-on="on"
-              ></v-text-field>
+              />
             </template>
-            <v-date-picker v-model="start" no-title scrollable>
-              <v-spacer></v-spacer>
-              <v-btn text color="primary" @click="start_menu = false">
+            <v-date-picker
+              v-model="start"
+              no-title
+              scrollable
+            >
+              <v-spacer />
+              <v-btn
+                text
+                color="primary"
+                @click="start_menu = false"
+              >
                 Cancel
               </v-btn>
-              <v-btn text color="primary" @click="$refs.start_menu.save(start)">
+              <v-btn
+                text
+                color="primary"
+                @click="$refs.start_menu.save(start)"
+              >
                 OK
               </v-btn>
             </v-date-picker>
@@ -46,7 +58,7 @@
             offset-y
             min-width="auto"
           >
-            <template v-slot:activator="{ on, attrs }">
+            <template v-slot:activator="{on, attrs}">
               <v-text-field
                 v-model="end"
                 label="End Time Picker"
@@ -55,14 +67,26 @@
                 clearable
                 v-bind="attrs"
                 v-on="on"
-              ></v-text-field>
+              />
             </template>
-            <v-date-picker v-model="end" no-title scrollable>
-              <v-spacer></v-spacer>
-              <v-btn text color="primary" @click="end_menu = false">
+            <v-date-picker
+              v-model="end"
+              no-title
+              scrollable
+            >
+              <v-spacer />
+              <v-btn
+                text
+                color="primary"
+                @click="end_menu = false"
+              >
                 Cancel
               </v-btn>
-              <v-btn text color="primary" @click="$refs.end_menu.save(end)">
+              <v-btn
+                text
+                color="primary"
+                @click="$refs.end_menu.save(end)"
+              >
                 OK
               </v-btn>
             </v-date-picker>
@@ -76,7 +100,7 @@
             single-line
             clearable
             hide-details
-          ></v-text-field>
+          />
         </v-col>
       </v-row>
       <v-row>
@@ -92,9 +116,14 @@
             <b>Download</b>
           </button>
         </vue-json-to-csv>
-        <v-btn @click.end="searchLogs" color="primary" elevation="2" outlined
-          >Search</v-btn
+        <v-btn
+          color="primary"
+          elevation="2"
+          outlined
+          @click.end="searchLogs"
         >
+          Search
+        </v-btn>
       </v-row>
     </v-card-title>
     <v-data-table
@@ -139,6 +168,12 @@ export default {
   computed: {
     ...mapGetters(["allLogs"]),
   },
+  async mounted() {
+    // get day before one month
+    await this.$store.dispatch("GetAllLogs", {
+      end: new Date().toISOString().slice(0, 19).replace("T", " "),
+    });
+  },
   methods: {
     async searchLogs() {
       console.log(this.start, this.end);
@@ -150,12 +185,6 @@ export default {
         end: new Date(this.end).toISOString().slice(0, 19).replace("T", " "),
       });
     },
-  },
-  async mounted() {
-    // get day before one month
-    await this.$store.dispatch("GetAllLogs", {
-      end: new Date().toISOString().slice(0, 19).replace("T", " "),
-    });
   },
 };
 </script>
