@@ -1,140 +1,145 @@
 <template>
   <v-container>
-    <v-row>
-      <v-col cols="6">
-        <v-col class="" cols="12">
-          <v-row>
-            <v-col cols="6">
-              <v-card>
-                <v-card-title>
-                  <span class="headline">
-                    <v-icon>mdi-file-document-outline</v-icon>
-                    <span>Useful Shortcut</span>
-                  </span>
-                </v-card-title>
-                <v-card-text>
-                  <v-simple-table>
-                    <template v-slot:default>
-                      <thead>
-                        <tr>
-                          <th class="text-left">Shortcuts</th>
-                          <th class="text-left">Functions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr v-for="item in commands" :key="item.shortcut">
-                          <td>
-                            <v-chip class="ma-2" label>
-                              {{ item.shortcut }}
-                            </v-chip>
-                          </td>
-                          <td>{{ item.func }}</td>
-                        </tr>
-                      </tbody>
-                    </template>
-                  </v-simple-table>
-                </v-card-text>
-              </v-card>
-            </v-col>
-            <v-spacer />
-            <v-col cols="1">
-              <v-btn
-                :disabled="isUser"
-                fab
-                :color="
-                  !isTesting ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
-                "
-                @click="
-                  isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
-                "
-              >
-                <v-icon>
-                  {{ isTesting ? "mdi-microphone" : "mdi-microphone-off" }}
-                </v-icon>
-              </v-btn>
-            </v-col>
-            <v-col cols="4" class="pt-5">
-              <span> {{ isTesting ? "speaking..." : "closed" }} </span>
-              <v-progress-linear
-                :color="
-                  !isTesting ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
-                "
-                :indeterminate="isTesting"
+    <div id="box" @mousemove="handleMouseMove">
+      <v-row>
+        <v-col cols="6">
+          <v-col class="" cols="12">
+            <v-row>
+              <v-col cols="6">
+                <v-card>
+                  <v-card-title>
+                    <span class="headline">
+                      <v-icon>mdi-file-document-outline</v-icon>
+                      <span>Useful Shortcut</span>
+                    </span>
+                  </v-card-title>
+                  <v-card-text>
+                    <v-simple-table>
+                      <template v-slot:default>
+                        <thead>
+                          <tr>
+                            <th class="text-left">Shortcuts</th>
+                            <th class="text-left">Functions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="item in commands" :key="item.shortcut">
+                            <td>
+                              <v-chip class="ma-2" label>
+                                {{ item.shortcut }}
+                              </v-chip>
+                            </td>
+                            <td>{{ item.func }}</td>
+                          </tr>
+                        </tbody>
+                      </template>
+                    </v-simple-table>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+              <v-spacer />
+              <v-col cols="1">
+                <v-btn
+                  :disabled="isUser"
+                  fab
+                  :color="
+                    !isTesting ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
+                  "
+                  @click="
+                    isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
+                  "
+                >
+                  <v-icon>
+                    {{ isTesting ? "mdi-microphone" : "mdi-microphone-off" }}
+                  </v-icon>
+                </v-btn>
+              </v-col>
+              <v-col cols="4" class="pt-5">
+                <span> {{ isTesting ? "speaking..." : "closed" }} </span>
+                <v-progress-linear
+                  :color="
+                    !isTesting ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
+                  "
+                  :indeterminate="isTesting"
+                />
+              </v-col>
+            </v-row>
+            <v-row v-if="isUser">
+              <v-col cols="3">
+                <v-btn
+                  fab
+                  :color="!speechLoading ? 'cyan' : 'cyan darken-3'"
+                  class="mt-2"
+                >
+                  <v-icon>
+                    {{ speechLoading ? "mdi-volume-high" : "mdi-volume-off" }}
+                  </v-icon>
+                </v-btn>
+              </v-col>
+              <v-col class="pt-5">
+                <span> {{ speechLoading ? "speaking..." : "closed" }} </span>
+                <v-progress-linear
+                  :color="!speechLoading ? 'cyan' : 'cyan darken-3'"
+                  :indeterminate="speechLoading"
+                />
+              </v-col>
+            </v-row>
+          </v-col>
+          <v-col v-if="isWizard" cols="12">
+            <div>
+              <CommandBoxes
+                :talking.sync="speechLoading"
+                :item-talking.sync="itemTalking"
+                :item-style="itemStyle"
+                @speak="emitSpeakEvent"
               />
-            </v-col>
-          </v-row>
-          <v-row v-if="isUser">
-            <v-col cols="3">
-              <v-btn
-                fab
-                :color="!speechLoading ? 'cyan' : 'cyan darken-3'"
-                class="mt-2"
-              >
-                <v-icon>
-                  {{ speechLoading ? "mdi-volume-high" : "mdi-volume-off" }}
-                </v-icon>
-              </v-btn>
-            </v-col>
-            <v-col class="pt-5">
-              <span> {{ speechLoading ? "speaking..." : "closed" }} </span>
-              <v-progress-linear
-                :color="!speechLoading ? 'cyan' : 'cyan darken-3'"
-                :indeterminate="speechLoading"
-              />
-            </v-col>
-          </v-row>
+            </div>
+          </v-col>
         </v-col>
-        <v-col v-if="isWizard" cols="12">
-          <div>
-            <CommandBoxes
-              :talking.sync="speechLoading"
-              :item-talking.sync="itemTalking"
-              :item-style="itemStyle"
-              @speak="emitSpeakEvent"
-            />
+        <v-col cols="6">
+          <div
+            v-if="editor"
+            class="editor"
+            @keyup.120="
+              isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
+            "
+            @keyup.esc="
+              speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)
+            "
+          >
+            <menu-bar v-if="isWizard" class="editor__header" :editor="editor" />
+            <editor-content style="" class="editor__content" :editor="editor" />
+            <div v-if="isWizard" class="editor__footer">
+              <div :class="`editor__status editor__status--${status}`">
+                <template v-if="status === 'connected'">
+                  {{ connectedUsers.length }} user{{
+                    connectedUsers.length === 1 ? "" : "s"
+                  }}
+                  online in
+                  {{ this.nowDay }}
+                </template>
+                <template v-else> offline </template>
+              </div>
+              <div class="editor__name">
+                <button>
+                  {{ userInfo.username }}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="ma-3">
+            <ul>
+              <li
+                v-for="(value, name, index) in currentExperiment"
+                :key="index"
+              >
+                <span>{{ name }} : {{ value }}</span>
+              </li>
+            </ul>
           </div>
         </v-col>
-      </v-col>
-      <v-col cols="6">
-        <div
-          v-if="editor"
-          class="editor"
-          @keyup.120="
-            isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
-          "
-          @keyup.esc="
-            speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)
-          "
-        >
-          <menu-bar v-if="isWizard" class="editor__header" :editor="editor" />
-          <editor-content style="" class="editor__content" :editor="editor" />
-          <div v-if="isWizard" class="editor__footer">
-            <div :class="`editor__status editor__status--${status}`">
-              <template v-if="status === 'connected'">
-                {{ connectedUsers.length }} user{{
-                  connectedUsers.length === 1 ? "" : "s"
-                }}
-                online in
-                {{ this.nowDay }}
-              </template>
-              <template v-else> offline </template>
-            </div>
-            <div class="editor__name">
-              <button>
-                {{ userInfo.username }}
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="ma-3">
-          <ul>
-            <li v-for="(value, name, index) in currentExperiment" :key="index">
-              <span>{{ name }} : {{ value }}</span>
-            </li>
-          </ul>
-        </div>
-      </v-col>
-    </v-row>
+      </v-row>
+    </div>
   </v-container>
 </template>
 
@@ -152,7 +157,6 @@ const MEDIA_ACCESS_CONSTRAINTS = { audio: true, video: false };
 
 import { mapGetters } from "vuex";
 import CommandBoxes from "./CommandBoxes";
-import log from "../../../api/log";
 
 export default {
   components: {
@@ -300,8 +304,8 @@ export default {
     },
   },
   async mounted() {
-    console.log(1, this.editor);
     this.socket = await initSocket(this.nowDay);
+
     console.log("experiment", this.currentExperiment);
     let { features, project_name } = this.currentExperiment;
     features = JSON.parse(features);
@@ -309,6 +313,18 @@ export default {
     this.showRunTimeContent = features.includes(2);
 
     this.socket
+      .on("CURSOR_POSITION", async (e) => {
+        if (
+          e.experiment_id === this.currentExperiment.id &&
+          this.isWizard &&
+          e.username !== this.userInfo.username
+        ) {
+          const cursor = await this.getOrCreateCursor(e);
+          const { cursor_position } = e;
+          // console.log("<", cursor_position);
+          cursor.style.transform = `translate(${cursor_position.x}px, ${cursor_position.y}px)`;
+        }
+      })
       .on("WEB_RECORDING", async (e) => {
         console.log("WEB RECORDING STATUS: ", e);
         if (e && this.isUser && !this.isTesting) this.initRecording();
@@ -540,11 +556,51 @@ export default {
       ];
       return list[Math.floor(Math.random() * list.length)];
     },
+    // canvas
+    handleMouseMove(e) {
+      const cursorPosition = { x: e.clientX, y: e.clientY };
+      // console.log(">", cursorPosition);
+      this.socket.emit("CURSOR_POS", {
+        experiment_id: this.currentExperiment.id,
+        username: this.userInfo.username,
+        cursor_position: cursorPosition,
+      });
+    },
+    getOrCreateCursor(e) {
+      const sender = e.username;
+      const existing = document.querySelector(`[data-sender='${sender}']`);
+      if (existing) {
+        return existing;
+      }
+      
+      const template = document.getElementById("cursor-path");
+      const cursor = template.firstElementChild.cloneNode(true);
+      const svgPath = cursor.getElementsByTagName("path")[0];
+
+      // console.log(cursor)
+      cursor.setAttribute("data-sender", sender);
+      svgPath.setAttribute(
+        "fill",
+        `hsl(${Math.floor(Math.random() * 360)}, 50%, 50%)`
+      );
+      document.body.appendChild(cursor);
+
+      return cursor;
+    },
   },
 };
 </script>
 
 <style scoped>
+/* cursor */
+#box {
+  /* height: 50vh; */
+  margin: 0;
+  /* background-color: aliceblue; */
+  /* overflow: hidden; */
+  /* cursor: none; */
+}
+
 .editor {
   display: flex;
   flex-direction: column;

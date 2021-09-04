@@ -245,6 +245,12 @@ namespaces.on('connection', socket => {
             console.log('playMessage', e)
             namespaces.in(room).emit('PLAY_MESSAGE', e)
         })
+
+
+        //cursor event
+        socket.on('CURSOR_POS', e => {
+            namespaces.in(room).emit('CURSOR_POSITION', e)
+        })
     })
 })
 

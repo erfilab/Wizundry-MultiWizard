@@ -104,7 +104,7 @@ export default {
   data: () => ({
     loading: false,
     model: {
-      username: "",
+      username: "admin",
       password: "pass1",
       roles: ["user"],
     },
