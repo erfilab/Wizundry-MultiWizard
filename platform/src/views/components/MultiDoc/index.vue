@@ -1,18 +1,12 @@
 <template>
-  <v-container>
-    <div id="box" @mousemove="handleMouseMove">
+  <div id="box" class="ma-3">
+    <div @mousemove="handleMouseMove">
       <v-row>
         <v-col cols="6">
           <v-col class="" cols="12">
             <v-row>
-              <v-col cols="6">
+              <v-col cols="6" v-if="isWizard">
                 <v-card>
-                  <v-card-title>
-                    <span class="headline">
-                      <v-icon>mdi-file-document-outline</v-icon>
-                      <span>Useful Shortcut</span>
-                    </span>
-                  </v-card-title>
                   <v-card-text>
                     <v-simple-table>
                       <template v-slot:default>
@@ -37,31 +31,56 @@
                   </v-card-text>
                 </v-card>
               </v-col>
-              <v-spacer />
-              <v-col cols="1">
-                <v-btn
-                  :disabled="isUser"
-                  fab
-                  :color="
-                    !isTesting ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
-                  "
-                  @click="
-                    isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
-                  "
-                >
-                  <v-icon>
-                    {{ isTesting ? "mdi-microphone" : "mdi-microphone-off" }}
-                  </v-icon>
-                </v-btn>
-              </v-col>
-              <v-col cols="4" class="pt-5">
-                <span> {{ isTesting ? "speaking..." : "closed" }} </span>
-                <v-progress-linear
-                  :color="
-                    !isTesting ? 'grey' : isSpeaking ? 'cyan' : 'cyan darken-3'
-                  "
-                  :indeterminate="isTesting"
-                />
+              <v-col cols="6">
+                <v-row>
+                  <v-col cols="2">
+                    <v-btn
+                      :disabled="isUser"
+                      icon
+                      :color="
+                        !isTesting
+                          ? 'grey'
+                          : isSpeaking
+                          ? 'cyan'
+                          : 'cyan darken-3'
+                      "
+                      @click="
+                        isTesting
+                          ? emitSpeakerEvent(false)
+                          : emitSpeakerEvent(true)
+                      "
+                    >
+                      <v-icon>
+                        {{
+                          isTesting ? "mdi-microphone" : "mdi-microphone-off"
+                        }}
+                      </v-icon>
+                    </v-btn>
+                  </v-col>
+                  <v-col cols="10" class="pt-5">
+                    <span> {{ isTesting ? "speaking..." : "closed" }} </span>
+                    <v-progress-linear
+                      :color="
+                        !isTesting
+                          ? 'grey'
+                          : isSpeaking
+                          ? 'cyan'
+                          : 'cyan darken-3'
+                      "
+                      :indeterminate="isTesting"
+                    />
+                  </v-col>
+                </v-row>
+                <v-col class="mt-5">
+                  <ul>
+                    <li
+                      v-for="(value, name, index) in currentExperiment"
+                      :key="index"
+                    >
+                      <span>{{ name }} : {{ value }}</span>
+                    </li>
+                  </ul>
+                </v-col>
               </v-col>
             </v-row>
             <v-row v-if="isUser">
@@ -100,10 +119,7 @@
           <div
             v-if="editor"
             class="editor"
-            @keyup.120="
-              isTesting ? emitSpeakerEvent(false) : emitSpeakerEvent(true)
-            "
-            @keyup.esc="
+            @keydown.esc="
               speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)
             "
           >
@@ -127,20 +143,10 @@
               </div>
             </div>
           </div>
-          <div class="ma-3">
-            <ul>
-              <li
-                v-for="(value, name, index) in currentExperiment"
-                :key="index"
-              >
-                <span>{{ name }} : {{ value }}</span>
-              </li>
-            </ul>
-          </div>
         </v-col>
       </v-row>
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script>
@@ -169,6 +175,8 @@ export default {
       // env variable
       useLineBreak: true,
       showRunTimeContent: true,
+      markKeys: false,
+      markConj: false,
 
       //editor
       provider: null,
@@ -206,17 +214,13 @@ export default {
       // commands
       commands: [
         {
-          shortcut: "fn+f9",
+          shortcut: "ctrl+q",
           func: "Microphone On/Off",
         },
         {
           shortcut: "cursor + esc",
           func: "Editor Content Review On/Off",
-        },
-        {
-          shortcut: "enter",
-          func: "Command box Speak On/Off",
-        },
+        }
       ],
     };
   },
@@ -295,22 +299,20 @@ export default {
           .chain()
           .focus("end")
           .command(({ tr }) => {
-            this.contentAnchor =
-              tr.selection.anchor - 2 >= 0
-                ? tr.selection.anchor - 2
-                : tr.selection.anchor;
+            this.contentAnchor = this.useLineBreak? (tr.selection.anchor - 1 >= 0? tr.selection.anchor - 1: tr.selection.anchor) : tr.selection.anchor;
           });
       }
     },
   },
   async mounted() {
     this.socket = await initSocket(this.nowDay);
-
-    console.log("experiment", this.currentExperiment);
+    
     let { features, project_name } = this.currentExperiment;
     features = JSON.parse(features);
     this.useLineBreak = features.includes(1);
     this.showRunTimeContent = features.includes(2);
+    this.markKeys = features.includes(3);
+    this.markConj = features.includes(4);
 
     this.socket
       .on("CURSOR_POSITION", async (e) => {
@@ -321,7 +323,6 @@ export default {
         ) {
           const cursor = await this.getOrCreateCursor(e);
           const { cursor_position } = e;
-          // console.log("<", cursor_position);
           cursor.style.transform = `translate(${cursor_position.x}px, ${cursor_position.y}px)`;
         }
       })
@@ -412,6 +413,14 @@ export default {
     if (this.isWizard) this.editor.chain().focus().user(currentUser).run();
     // localStorage.setItem("currentUser", JSON.stringify(currentUser));
     this.listenForSpeechEvents();
+    this._keyListener = function(e) {
+            if (e.key === "q" && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                this.emitSpeakerEvent(!this.isTesting);
+            }
+        };
+
+    document.addEventListener('keydown', this._keyListener.bind(this));
   },
   beforeDestroy() {
     this.editor.destroy();
@@ -558,12 +567,15 @@ export default {
     },
     // canvas
     handleMouseMove(e) {
+      if (this.isUser) return;
+      
       const cursorPosition = { x: e.clientX, y: e.clientY };
       // console.log(">", cursorPosition);
       this.socket.emit("CURSOR_POS", {
         experiment_id: this.currentExperiment.id,
         username: this.userInfo.username,
         cursor_position: cursorPosition,
+        color: Math.floor(Math.random() * 360),
       });
     },
     getOrCreateCursor(e) {
@@ -572,17 +584,14 @@ export default {
       if (existing) {
         return existing;
       }
-      
+
       const template = document.getElementById("cursor-path");
       const cursor = template.firstElementChild.cloneNode(true);
       const svgPath = cursor.getElementsByTagName("path")[0];
 
       // console.log(cursor)
       cursor.setAttribute("data-sender", sender);
-      svgPath.setAttribute(
-        "fill",
-        `hsl(${Math.floor(Math.random() * 360)}, 50%, 50%)`
-      );
+      svgPath.setAttribute("fill", `hsl(${e.color}, 50%, 50%)`);
       document.body.appendChild(cursor);
 
       return cursor;
@@ -594,10 +603,11 @@ export default {
 <style scoped>
 /* cursor */
 #box {
-  /* height: 50vh; */
+  height: 40em;
+  width: 99em;
   margin: 0;
-  /* background-color: aliceblue; */
-  /* overflow: hidden; */
+  background-color: aliceblue;
+  overflow: hidden;
   /* cursor: none; */
 }
 

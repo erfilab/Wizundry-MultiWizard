@@ -29,16 +29,5 @@ export default {
     AppWidget,
     AllExperiments,
   },
-  watch: {
-    // $route(to, from) {
-    //   if (from.path === "/multidoc") {
-
-    //   }
-    // },
-  },
-  mounted() {
-    // this.$router.go(0)
-    // window.location.reload()
-  },
 };
 </script>

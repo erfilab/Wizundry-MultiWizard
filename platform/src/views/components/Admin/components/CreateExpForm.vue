@@ -55,13 +55,13 @@
         filter
         outlined
       >
-        Google Speech Recognition
+        Highlight Keyword
       </v-chip>
       <v-chip
         filter
         outlined
       >
-        MDN Speech Recognition
+        Highlight Conjunction Word
       </v-chip>
     </v-chip-group>
     <v-checkbox
@@ -94,6 +94,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import Highlight from '@tiptap/extension-highlight';
 
 export default {
   components: {},
