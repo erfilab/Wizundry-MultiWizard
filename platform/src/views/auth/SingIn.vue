@@ -1,5 +1,5 @@
 <template>
-  <v-container class="container--fluid fill-height primary">
+  <v-container class="container--fluid">
     <v-row
       no-gutters
       align="center"
@@ -11,22 +11,16 @@
         md="4"
         lg="4"
       >
-        <v-card class="elevation-5 pa-3">
+        <v-card class="elevation-0 pa-3 mt-5">
           <v-card-text>
             <div class="layout column align-center">
-              <img
-                src="img/icons/icon-144x144.png"
-                alt="Wizard of Oz Logo"
-                width="120"
-                height="120"
-              >
               <h1 class="text-center my-4 primary--text">
-                Wizard of Oz
+                Multi-Wizards
               </h1>
             </div>
             <v-form>
               <v-text-field
-                v-model="model.username"
+                v-model="userInfo.username"
                 append-icon="mdi-account"
                 name="username"
                 label="username"
@@ -35,13 +29,12 @@
                 autocomplete="username"
               />
               <v-text-field
-                v-model="model.password"
-                append-icon="mdi-lock"
-                name="password"
-                :label="$t('login.password')"
-                type="password"
+                v-model="trialInfo.trialName"
+                append-icon="mdi-movie-open"
+                name="trialName"
+                label="trialName"
+                type="text"
                 required
-                autocomplete="current-password"
               />
             </v-form>
           </v-card-text>
@@ -56,40 +49,49 @@
                   <v-btn
                     text
                     color="warning"
-                    @click="() => (model.roles = ['user'])"
+                    @click="() => (userInfo.userRole = 'user')"
                   >
                     <span>Users</span>
                   </v-btn>
                   <v-btn
                     text
                     color="warning"
-                    @click="() => (model.roles = ['wizard', 'user'])"
+                    @click="() => (userInfo.userRole = 'wizard')"
                   >
                     <span>Wizard</span>
                   </v-btn>
                   <v-btn
                     text
                     color="warning"
-                    @click="() => (model.roles = ['admin', 'wizard', 'user'])"
+                    @click="() => (userInfo.userRole = 'observer')"
                   >
-                    <span>Admin</span>
+                    <span>Observer</span>
                   </v-btn>
                 </v-btn-toggle>
               </v-col>
             </v-row>
           </v-card-text>
           <v-card-actions>
-            <localization />
-            <v-spacer />
+            <localization/>
+            <v-spacer/>
             <v-btn
               color="primary"
               :loading="loading"
-              @click="login"
+              @click="start"
             >
-              {{ $t("login.singIn") }}
+              Trial Start
             </v-btn>
           </v-card-actions>
         </v-card>
+      </v-col>
+      <v-col>
+        <v-checkbox
+          v-for="(task, name) in tasks"
+          :key="name"
+          v-model="userInfo.selectedTasks"
+          :label="task"
+          :value="name"
+        />
       </v-col>
     </v-row>
   </v-container>
@@ -97,19 +99,32 @@
 
 <script>
 import Localization from "../widget/AppLocalization.vue";
+import {Tasks} from '@/utils/tasks.ts'
 
 export default {
   name: "SingIn",
-  components: { Localization },
+  components: {Localization},
   data: () => ({
     loading: false,
-    model: {
-      username: "admin",
-      password: "pass1",
-      roles: ["user"],
+
+    // tasks: ["dictation", "label (participants)", "label (content)", "highlight", "note taking", "summarization"],
+    tasks: Tasks,
+    userInfo: {
+      username: "wizard2",
+      userRole: "user",
+      selectedTasks: ["DICT"]
     },
+    trialInfo: {
+      trialName: "1-3",
+      connectedUsers: []
+    }
   }),
   methods: {
+    uuidv4() {
+      return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      );
+    },
     async login() {
       if (this.model.username.length && this.model.password.length) {
         await this.$store
@@ -134,6 +149,25 @@ export default {
         });
       }
     },
+    async start() {
+      const userInfo = {
+        userId: this.uuidv4(),
+        ...this.userInfo,
+        loginTime: new Date().toJSON().substring(0, 19).replace('T', ' ')
+      };
+      this.trialInfo.connectedUsers.push(userInfo)
+
+      await this.$store.dispatch("StartTrial", {
+        userInfo: {...userInfo},
+        trialInfo: {
+          trialId: this.uuidv4(),
+          ...this.trialInfo,
+          trialStartTime: new Date().toJSON().substring(0, 19).replace('T', ' ')
+        }
+      })
+
+      await this.$router.push({name: 'editor'})
+    }
   },
 };
 </script>

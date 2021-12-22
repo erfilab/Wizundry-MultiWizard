@@ -41,6 +41,6 @@ module.exports = {
     'vuetify/no-legacy-grid': 'warn',
   },
   parserOptions: {
-    parser: 'babel-eslint',
+    parser: '@typescript-eslint/parser',
   },
 };

@@ -1,0 +1,541 @@
+<template>
+  <div class="ma-3">
+    <v-row>
+      <v-col cols="4">
+        <v-col cols="12">
+          <v-card>
+            <v-card-text>
+              <v-simple-table>
+                <template v-slot:default>
+                  <thead>
+                    <tr>
+                      <th class="text-left">
+                        Shortcuts
+                      </th>
+                      <th class="text-left">
+                        Functions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="item in shortcuts"
+                      :key="item.shortcut"
+                    >
+                      <td>
+                        <v-chip
+                          class="ma-2"
+                          label
+                        >
+                          {{ item.shortcut }}
+                        </v-chip>
+                      </td>
+                      <td>{{ item.func }}</td>
+                    </tr>
+                  </tbody>
+                </template>
+              </v-simple-table>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12">
+          <v-card
+            v-for="item in voiceBoxes"
+            :key="item.id"
+            :color="item.color"
+          >
+            <div class="d-flex flex-no-wrap justify-space-between">
+              <div>
+                <v-text-field
+                  v-model="item.content"
+                  class="mt-3 ml-3"
+                  @keyup.enter="item.color === '#f0f0f0' ? emitVoiceBoxEvent(item) : emitVoiceBoxEvent(item)"
+                />
+              </div>
+              <v-btn
+                text
+                x-small
+                style="top: 10%; position: absolute; right: 0;"
+                @click="emitVoiceBoxEvent(item)"
+              >
+                <v-icon>
+                  {{ item.actionStatus ? "mdi-pause" : "mdi-play" }}
+                </v-icon>
+              </v-btn>
+            </div>
+          </v-card>
+        </v-col>
+      </v-col>
+      <v-col cols="8">
+        <v-row>
+          <v-col cols="3">
+            <v-btn
+              text
+              :color="!isRecording ? 'grey' : 'cyan'"
+              @click="isRecording ? emitMicrophoneEvent(false) : emitMicrophoneEvent(true)"
+            >
+              {{ isRecording ? "speaking..." : "closed" }}
+              <v-icon>
+                {{ !isRecording ? "mdi-microphone-off" : "mdi-microphone" }}
+              </v-icon>
+            </v-btn>
+          </v-col>
+          <v-col class="pt-5 mt-2">
+            <v-progress-linear
+              :color="!isRecording ? 'cyan' : 'cyan darken-3'"
+              :indeterminate="isRecording"
+            />
+          </v-col>
+        </v-row>
+        <div
+          v-if="editor"
+          class="editor"
+          @keydown.esc="isSpeaking ? emitContentReviewEvent(false) : emitContentReviewEvent(true)"
+        >
+          <menu-bar
+            class="editor__header"
+            :editor="editor"
+          />
+          <bubble-menu
+            v-if="editor"
+            :editor="editor"
+          >
+            <v-btn-toggle
+              dense
+              background-color="#b8b4b4"
+            >
+              <v-btn
+                small
+                :class="{'is-active': editor.isActive('bold')}"
+                @click="editor.chain().focus().toggleBold().run()"
+              >
+                <v-icon>mdi-format-bold</v-icon>
+              </v-btn>
+              <v-btn
+                small
+                :class="{'is-active': editor.isActive('italic')}"
+                @click="editor.chain().focus().toggleItalic().run()"
+              >
+                <v-icon>mdi-format-italic</v-icon>
+              </v-btn>
+              <v-btn
+                small
+                :class="{'is-active': editor.isActive('strike')}"
+                @click="editor.chain().focus().toggleStrike().run()"
+              >
+                <v-icon>mdi-format-strikethrough-variant</v-icon>
+              </v-btn>
+              <v-btn
+                small
+                :class="{'is-active': editor.isActive('highlight')}"
+                @click="editor.chain().focus().toggleHighlight().run()"
+              >
+                <v-icon>mdi-format-color-fill</v-icon>
+              </v-btn>
+            </v-btn-toggle>
+          </bubble-menu>
+          <editor-content
+            class="editor__content"
+            :editor="editor"
+          />
+          <div class="editor__footer">
+            <div :class="`editor__status editor__status--${connectStatus}`">
+              <template v-if="connectStatus === 'connected'">
+                {{ connectedUsers.length }} user{{
+                  connectedUsers.length === 1 ? "" : "s"
+                }}
+                online in
+                {{ trialInfo.trialName }}
+              </template>
+              <template v-else>
+                offline
+              </template>
+            </div>
+            <div class="editor__name">
+              <button>
+                {{ userInfo.username }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </v-col>
+    </v-row>
+  </div>
+</template>
+
+<script>
+import {EditorContent, BubbleMenu} from "@tiptap/vue-2";
+import {initSocket} from "../../../utils/webSocket";
+import {initYDoc} from "../../../utils/yDoc";
+import {initEditor} from "../../../utils/tiptapEditor";
+import MenuBar from "./MenuBar";
+import {mapGetters} from 'vuex';
+
+let socket;
+
+export default {
+  name: "DictationWizardEditor",
+  components: {
+    EditorContent,
+    MenuBar,
+    BubbleMenu
+  },
+  props: {
+    userInfo: {
+      default: null,
+      type: Object
+    },
+    trialInfo: {
+      default: null,
+      type: Object
+    },
+  },
+  data() {
+    return {
+      nowDay: new Date().toISOString().slice(0, 10),
+
+      //editor
+      yDocProvider: null,
+      editor: null,
+      connectStatus: "connecting",
+
+      //web speech
+      isRecording: false,
+
+
+      // speaker
+      isSpeaking: false,
+      itemTalking: -1,
+      itemStyle: 1,
+      lastSpeakerWizard: "",
+      lastSpeakerType: "",
+
+      // voiceBoxes
+      voiceBoxes: [
+        {
+          id: 1,
+          color: "#f0f0f0",
+          content: "",
+          actionStatus: false,
+        },
+        {
+          id: 2,
+          color: "#CDE589",
+          content: "Please speak slower!",
+          actionStatus: false,
+        },
+      ],
+
+      runTimeContent: "",
+      newContent: "",
+      contentAnchor: 0,
+
+      // shortcuts
+      shortcuts: [
+        {
+          shortcut: "ctrl+q",
+          func: "Microphone On/Off",
+        },
+        {
+          shortcut: "ctrl+e",
+          func: "Send Voice",
+        },
+        {
+          shortcut: "esc",
+          func: " Review Content",
+        }
+      ],
+    }
+  },
+  computed: {
+    ...mapGetters([
+      "connectedUsers",
+    ])
+  },
+  beforeDestroy() {
+    this.editor.destroy();
+    this.yDocProvider.destroy();
+    document.removeEventListener('keydown', this._keyListener)
+  },
+  async mounted() {
+    socket = await initSocket(this.nowDay);
+
+    socket.on("WEB_RECORDING", async (e) => {
+      console.log("WEB RECORDING STATUS: ", e)
+      this.isRecording = e
+    })
+
+    socket.emit("joinRoom", this.trialInfo.trialName);
+
+    const [indexdb, ydoc, yDocProvider] = initYDoc(this.trialInfo.trialName);
+    this.yDocProvider = yDocProvider;
+    this.yDocProvider.on("status", (event) => (this.connectStatus = event.status));
+
+    const currentUser = {
+      name: this.userInfo.username,
+      color: this.getRandomColor(),
+    };
+
+    this.editor = await initEditor(
+      true,
+      ydoc,
+      this.yDocProvider,
+      currentUser
+    );
+
+    this.editor.chain().focus().user(currentUser).run();
+    this._keyListener = function (e) {
+      if (e.key === "q" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        this.emitMicrophoneEvent(!this.isRecording);
+      } else if (e.key === "e" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('keydown', this._keyListener.bind(this));
+  },
+  methods: {
+    // mic record
+    emitMicrophoneEvent(e) {
+      this.isRecording = e
+      socket.emit("MICROPHONE", {
+        trialName: this.trialInfo.trialName,
+        userId: this.userInfo.userId,
+        status: e,
+      })
+    },
+
+    // voice box speaker
+    emitVoiceBoxEvent(item) {
+      socket.emit("VOICE_BOX_SPEAK", {
+        userId: this.userInfo.userId,
+        trialName: this.trialInfo.trialName,
+        ...item
+      });
+    },
+
+    // content review speaker
+    emitContentReviewEvent(e) {
+      let selectedText = "";
+      if (e) {
+        const {size} = this.editor.view.state.doc.content;
+        selectedText = this.editor.state.doc.textBetween(
+          this.editor.state.selection.anchor,
+          size,
+          " "
+        );
+      }
+
+      socket.emit("CONTENT_REVIEW_SPEAK", {
+        trialName: this.trialInfo.trialName,
+        userId: this.userInfo.userId,
+        status: e,
+        content: selectedText,
+      });
+    },
+
+    getRandomColor() {
+      const list = [
+        "#958DF1",
+        "#F98181",
+        "#FBBC88",
+        "#FAF594",
+        "#70CFF8",
+        "#94FADB",
+        "#B9F18D",
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    },
+  },
+}
+</script>
+
+<style scoped>
+.editor {
+  display: flex;
+  flex-direction: column;
+  /*min-height: 550px;*/
+  /*width: 680px;*/
+  color: #0d0d0d;
+  background-color: white;
+  border: 3px solid #0d0d0d;
+  border-radius: 0.75rem;
+  /* Some information about the status */
+}
+
+.editor__header {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  padding: 0.25rem;
+  border-bottom: 3px solid #0d0d0d;
+}
+
+.editor__content {
+  padding: 1.25rem 1rem;
+  font-family: monospace;
+  font-size: 18px;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.editor__footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  white-space: nowrap;
+  border-top: 3px solid #0d0d0d;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0d0d0d;
+  padding: 0.25rem 0.75rem;
+}
+
+.editor__status {
+  display: flex;
+  align-items: center;
+  border-radius: 5px;
+}
+
+.editor__status::before {
+  content: " ";
+  flex: 0 0 auto;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: rgba(13, 13, 13, 0.5);
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+.editor__status--connecting::before {
+  background: #616161;
+}
+
+.editor__status--connected::before {
+  background: #b9f18d;
+}
+
+.editor__name button {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0d0d0d;
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.editor__name button:hover {
+  color: #fff;
+  background-color: #0d0d0d;
+}
+</style>
+
+<style>
+.collaboration-cursor__caret {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 1px solid #0d0d0d;
+  border-right: 1px solid #0d0d0d;
+  word-break: normal;
+  pointer-events: none;
+}
+
+/* Render the username above the caret */
+.collaboration-cursor__label {
+  position: absolute;
+  top: -1.4em;
+  left: -1px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+  user-select: none;
+  color: #0d0d0d;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px 3px 3px 0;
+  white-space: nowrap;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding: 0 1rem;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+  line-height: 1.1;
+}
+
+.ProseMirror code {
+  background-color: rgba(97, 97, 97, 0.1);
+  color: #616161;
+}
+
+.ProseMirror pre {
+  background: #0d0d0d;
+  color: #fff;
+  font-family: "JetBrainsMono", monospace;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.ProseMirror pre code {
+  color: inherit;
+  padding: 0;
+  background: none;
+  font-size: 0.8rem;
+}
+
+.ProseMirror mark {
+  background-color: #faf594;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+}
+
+.ProseMirror hr {
+  margin: 1rem 0;
+}
+
+.ProseMirror blockquote {
+  padding-left: 1rem;
+  border-left: 2px solid rgba(13, 13, 13, 0.1);
+}
+
+.ProseMirror hr {
+  border: none;
+  border-top: 2px solid rgba(13, 13, 13, 0.1);
+  margin: 2rem 0;
+}
+
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: center;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-right: 0.5rem;
+}
+</style>

@@ -100,7 +100,6 @@ export default {
   }),
   watch: {
     itemTalking(newVal, oldVal) {
-      console.log("it", newVal);
       if (newVal !== -1) {
         if (this.itemStyle === 2) this.items[newVal].title = "";
         this.items[newVal].actionStatus = true;

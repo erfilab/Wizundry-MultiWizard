@@ -40,12 +40,27 @@ export const constantRoutes = [
     component: Layout,
     children: [
       {
-        path: '/dashboard',
+        path: '/signin',
         alias: '/',
-        component: () => import('@/views/components/Dashboard/index'),
-        name: 'Dashboard',
+        component: () => import('@/views/auth/SingIn.vue'),
+        name: 'signin',
         meta: {
-          title: 'route.dashboard', icon: 'mdi-view-dashboard', noCache: true, affix: true,
+          title: 'route.signin', icon: 'mdi-view-dashboard', noCache: true, affix: true,
+        },
+      },
+    ],
+  },
+  {
+    path: '/',
+    component: Layout,
+    children: [
+      {
+        path: '/editor',
+        // alias: '/',
+        component: () => import('@/views/components/Editor.vue'),
+        name: 'editor',
+        meta: {
+          title: 'route.editor', icon: 'mdi-view-dashboard', noCache: true, affix: true,
         },
       },
     ],
@@ -62,20 +77,6 @@ export const constantRoutes = [
           title: 'route.multidoc', icon: 'mdi-file-document',
           noCache: true,
           affix: false,
-        },
-      },
-    ],
-  },
-  {
-    path: '/',
-    component: Layout,
-    children: [
-      {
-        path: '/multichat',
-        component: () => import('@/views/components/MultiChat/index'),
-        name: 'MultiChat',
-        meta: {
-          title: 'route.multichat', icon: 'mdi-forum', noCache: true, affix: true,
         },
       },
     ],

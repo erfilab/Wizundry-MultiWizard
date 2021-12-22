@@ -2,23 +2,27 @@ import userApi from '../../api/user';
 
 const user = {
   state: {
+    userInfo: {},
+    trialInfo: {},
+
     token: '',
     roles: [],
     username: '',
     uid: '',
     status: '',
-    userInfo: {},
 
     connectedUsers: [],
   },
 
   getters: {
+    userInfo: (state) => state.userInfo,
+    trialInfo: (state) => state.trialInfo,
+
     token: (state) => state.token,
     roles: (state) => state.roles,
     username: (state) => state.username,
     uid: (state) => state.uid,
     status: (state) => state.status,
-    userInfo: (state) => state.userInfo,
     connectedUsers: (state) => state.connectedUsers,
     isWizard: (state) => state.roles.includes('wizard') && !state.isAdmin,
     isAdmin: (state) => state.roles.includes('admin'),
@@ -27,24 +31,28 @@ const user = {
 
   mutations: {
     SET_USER_INFO: (state, payload) => {
-      if (payload.logout) {
-        state.userInfo = {};
-        state.token = '';
-        state.roles = [];
-        state.username = '';
-        state.uid = '';
-      } else {
-        state.token = payload.token || state.token;
-        state.roles = payload.roles || state.roles;
-        state.username = payload.username || state.username;
-        state.uid = payload.uid || state.uid;
-        state.userInfo = {
-          token: state.token,
-          roles: state.roles,
-          username: state.username,
-          uid: state.uid
-        } || state.userInfo;
-      }
+      // if (payload.logout) {
+      //   state.userInfo = {};
+      //   state.token = '';
+      //   state.roles = [];
+      //   state.username = '';
+      //   state.uid = '';
+      // } else {
+      //   state.token = payload.token || state.token;
+      //   state.roles = payload.roles || state.roles;
+      //   state.username = payload.username || state.username;
+      //   state.uid = payload.uid || state.uid;
+      //   state.userInfo = {
+      //     token: state.token,
+      //     roles: state.roles,
+      //     username: state.username,
+      //     uid: state.uid
+      //   } || state.userInfo;
+      // }
+      state.userInfo = {...payload}
+    },
+    SET_TRIAL_INFO: (state, payload) => {
+      state.trialInfo = {...payload}
     },
     SET_TOKEN: (state, token) => {
       state.token = token;
@@ -76,6 +84,11 @@ const user = {
       } else {
         throw new Error(res.message);
       }
+    },
+
+    StartTrial: async ({commit, dispatch}, payload) => {
+      await commit('SET_USER_INFO', payload.userInfo)
+      await commit('SET_TRIAL_INFO', payload.trialInfo)
     },
 
     GetUserInfo: async ({ commit, state }) => {

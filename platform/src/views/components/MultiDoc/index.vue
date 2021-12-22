@@ -11,20 +11,20 @@
                     <v-simple-table>
                       <template v-slot:default>
                         <thead>
-                          <tr>
-                            <th class="text-left">Shortcuts</th>
-                            <th class="text-left">Functions</th>
-                          </tr>
+                        <tr>
+                          <th class="text-left">Shortcuts</th>
+                          <th class="text-left">Functions</th>
+                        </tr>
                         </thead>
                         <tbody>
-                          <tr v-for="item in commands" :key="item.shortcut">
-                            <td>
-                              <v-chip class="ma-2" label>
-                                {{ item.shortcut }}
-                              </v-chip>
-                            </td>
-                            <td>{{ item.func }}</td>
-                          </tr>
+                        <tr v-for="item in commands" :key="item.shortcut">
+                          <td>
+                            <v-chip class="ma-2" label>
+                              {{ item.shortcut }}
+                            </v-chip>
+                          </td>
+                          <td>{{ item.func }}</td>
+                        </tr>
                         </tbody>
                       </template>
                     </v-simple-table>
@@ -123,8 +123,8 @@
               speechLoading ? emitTalkEvent(false) : emitTalkEvent(true)
             "
           >
-            <menu-bar v-if="isWizard" class="editor__header" :editor="editor" />
-            <editor-content style="" class="editor__content" :editor="editor" />
+            <menu-bar v-if="isWizard" class="editor__header" :editor="editor"/>
+            <editor-content style="" class="editor__content" :editor="editor"/>
             <div v-if="isWizard" class="editor__footer">
               <div :class="`editor__status editor__status--${status}`">
                 <template v-if="status === 'connected'">
@@ -134,7 +134,7 @@
                   online in
                   {{ this.nowDay }}
                 </template>
-                <template v-else> offline </template>
+                <template v-else> offline</template>
               </div>
               <div class="editor__name">
                 <button>
@@ -150,18 +150,18 @@
 </template>
 
 <script>
-import { EditorContent } from "@tiptap/vue-2";
-import MenuBar from "./MenuBar.vue";
+import {EditorContent} from "@tiptap/vue-2";
+import MenuBar from "../Editor/MenuBar.vue";
 
-import { downSampleBuffer } from "../../../utils/webRecord";
-import { initSocket } from "../../../utils/webSocket.js";
-import { initYDoc } from "../../../utils/yDoc";
-import { initEditor } from "../../../utils/tiptapEditor";
+import {downSampleBuffer} from "../../../utils/webRecord";
+import {initSocket} from "../../../utils/webSocket.js";
+import {initYDoc} from "../../../utils/yDoc";
+import {initEditor} from "../../../utils/tiptapEditor";
 
 const BUFFER_SIZE = 2048;
-const MEDIA_ACCESS_CONSTRAINTS = { audio: true, video: false };
+const MEDIA_ACCESS_CONSTRAINTS = {audio: true, video: false};
 
-import { mapGetters } from "vuex";
+import {mapGetters} from "vuex";
 import CommandBoxes from "./CommandBoxes";
 
 export default {
@@ -241,7 +241,7 @@ export default {
         this.editor
           .chain()
           .focus()
-          .command(({ editor, tr }) => {
+          .command(({editor, tr}) => {
             tr.delete(this.contentAnchor, tr.selection.anchor);
             return true;
           })
@@ -258,7 +258,7 @@ export default {
           .focus("end")
           .setHardBreak()
           .focus("end")
-          .command(({ tr }) => {
+          .command(({tr}) => {
             this.contentAnchor = tr.selection.anchor;
             return true;
           })
@@ -267,7 +267,7 @@ export default {
         this.editor
           .chain()
           .focus("end")
-          .command(({ tr }) => {
+          .command(({tr}) => {
             this.contentAnchor = tr.selection.anchor;
             return true;
           })
@@ -280,7 +280,7 @@ export default {
           this.editor
             .chain()
             .focus()
-            .command(({ editor, tr }) => {
+            .command(({editor, tr}) => {
               tr.delete(this.contentAnchor, tr.selection.anchor);
               return true;
             })
@@ -298,16 +298,16 @@ export default {
         this.editor
           .chain()
           .focus("end")
-          .command(({ tr }) => {
-            this.contentAnchor = this.useLineBreak? (tr.selection.anchor - 1 >= 0? tr.selection.anchor - 1: tr.selection.anchor) : tr.selection.anchor;
+          .command(({tr}) => {
+            this.contentAnchor = this.useLineBreak ? (tr.selection.anchor - 1 >= 0 ? tr.selection.anchor - 1 : tr.selection.anchor) : tr.selection.anchor;
           });
       }
     },
   },
   async mounted() {
     this.socket = await initSocket(this.nowDay);
-    
-    let { features, project_name } = this.currentExperiment;
+
+    let {features, project_name} = this.currentExperiment;
     features = JSON.parse(features);
     this.useLineBreak = features.includes(1);
     this.showRunTimeContent = features.includes(2);
@@ -322,7 +322,7 @@ export default {
           e.username !== this.userInfo.username
         ) {
           const cursor = await this.getOrCreateCursor(e);
-          const { cursor_position } = e;
+          const {cursor_position} = e;
           cursor.style.transform = `translate(${cursor_position.x}px, ${cursor_position.y}px)`;
         }
       })
@@ -369,7 +369,7 @@ export default {
         this.speechLoading = false;
       })
       .on("SPEECH_DATA", async (param) => {
-        let { data, uid } = param;
+        let {data, uid} = param;
         if (
           data &&
           this.isUser &&
@@ -413,12 +413,12 @@ export default {
     if (this.isWizard) this.editor.chain().focus().user(currentUser).run();
     // localStorage.setItem("currentUser", JSON.stringify(currentUser));
     this.listenForSpeechEvents();
-    this._keyListener = function(e) {
-            if (e.key === "q" && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                this.emitSpeakerEvent(!this.isTesting);
-            }
-        };
+    this._keyListener = function (e) {
+      if (e.key === "q" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        this.emitSpeakerEvent(!this.isTesting);
+      }
+    };
 
     document.addEventListener('keydown', this._keyListener.bind(this));
   },
@@ -463,7 +463,7 @@ export default {
       let selectedText = "";
       if (event) {
         // this.emitSpeakerEvent(false);
-        const { size } = this.editor.view.state.doc.content;
+        const {size} = this.editor.view.state.doc.content;
         selectedText = this.editor.state.doc.textBetween(
           this.editor.state.selection.anchor,
           size,
@@ -493,7 +493,7 @@ export default {
       this.isTesting = this.isSpeaking = true;
       this.socket.emit("startGoogleCloudStream", this.userInfo.uid);
       this.audioContext = window.AudioContext || window.webkitAudioContext;
-      this.context = new this.audioContext({ latencyHint: "interactive" });
+      this.context = new this.audioContext({latencyHint: "interactive"});
       this.processor = this.context.createScriptProcessor(BUFFER_SIZE, 1, 1);
       this.processor.connect(this.context.destination);
       this.context.resume();
@@ -568,8 +568,8 @@ export default {
     // canvas
     handleMouseMove(e) {
       if (this.isUser) return;
-      
-      const cursorPosition = { x: e.clientX, y: e.clientY };
+
+      const cursorPosition = {x: e.clientX, y: e.clientY};
       // console.log(">", cursorPosition);
       this.socket.emit("CURSOR_POS", {
         experiment_id: this.currentExperiment.id,
