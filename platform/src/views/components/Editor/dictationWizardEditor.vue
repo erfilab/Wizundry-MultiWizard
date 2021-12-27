@@ -8,30 +8,30 @@
               <v-simple-table>
                 <template v-slot:default>
                   <thead>
-                    <tr>
-                      <th class="text-left">
-                        Shortcuts
-                      </th>
-                      <th class="text-left">
-                        Functions
-                      </th>
-                    </tr>
+                  <tr>
+                    <th class="text-left">
+                      Shortcuts
+                    </th>
+                    <th class="text-left">
+                      Functions
+                    </th>
+                  </tr>
                   </thead>
                   <tbody>
-                    <tr
-                      v-for="item in shortcuts"
-                      :key="item.shortcut"
-                    >
-                      <td>
-                        <v-chip
-                          class="ma-2"
-                          label
-                        >
-                          {{ item.shortcut }}
-                        </v-chip>
-                      </td>
-                      <td>{{ item.func }}</td>
-                    </tr>
+                  <tr
+                    v-for="item in shortcuts"
+                    :key="item.shortcut"
+                  >
+                    <td>
+                      <v-chip
+                        class="ma-2"
+                        label
+                      >
+                        {{ item.shortcut }}
+                      </v-chip>
+                    </td>
+                    <td>{{ item.func }}</td>
+                  </tr>
                   </tbody>
                 </template>
               </v-simple-table>
@@ -49,17 +49,17 @@
                 <v-text-field
                   v-model="item.content"
                   class="mt-3 ml-3"
-                  @keyup.enter="item.color === '#f0f0f0' ? emitVoiceBoxEvent(item) : emitVoiceBoxEvent(item)"
+                  @keyup.enter="item.status ? emitSpeakerEvent({type: 'VOICE_BOX', ...item, status: false}) : emitSpeakerEvent({type: 'VOICE_BOX', ...item, status: true})"
                 />
               </div>
               <v-btn
                 text
                 x-small
                 style="top: 10%; position: absolute; right: 0;"
-                @click="emitVoiceBoxEvent(item)"
+                @click="item.status ? emitSpeakerEvent({type: 'VOICE_BOX', ...item, status: false}) : emitSpeakerEvent({type: 'VOICE_BOX', ...item, status: true})"
               >
                 <v-icon>
-                  {{ item.actionStatus ? "mdi-pause" : "mdi-play" }}
+                  {{ item.status ? "mdi-pause" : "mdi-play" }}
                 </v-icon>
               </v-btn>
             </div>
@@ -90,7 +90,7 @@
         <div
           v-if="editor"
           class="editor"
-          @keydown.esc="isSpeaking ? emitContentReviewEvent(false) : emitContentReviewEvent(true)"
+          @keydown.esc="isSpeaking ? emitSpeakerEvent({type: 'CONTENT_REVIEW', status: false}) : emitSpeakerEvent({type: 'CONTENT_REVIEW', status: true})"
         >
           <menu-bar
             class="editor__header"
@@ -216,13 +216,19 @@ export default {
           id: 1,
           color: "#f0f0f0",
           content: "",
-          actionStatus: false,
+          status: false,
         },
         {
           id: 2,
           color: "#CDE589",
           content: "Please speak slower!",
-          actionStatus: false,
+          status: false,
+        },
+        {
+          id: 3,
+          color: "#CDE589",
+          content: "Can you repeat?",
+          status: false,
         },
       ],
 
@@ -260,10 +266,29 @@ export default {
   async mounted() {
     socket = await initSocket(this.nowDay);
 
-    socket.on("WEB_RECORDING", async (e) => {
-      console.log("WEB RECORDING STATUS: ", e)
-      this.isRecording = e
-    })
+    socket
+      .on("WEB_RECORDING", async (e) => {
+        console.log("WEB RECORDING STATUS: ", e)
+        this.isRecording = e
+      })
+      .on("WEB_SPEAKER", async e => {
+        console.log("WEB_SPEAKER", e)
+        if (e.type === 'VOICE_BOX') {
+          this.voiceBoxes.map(vb => {
+            if (vb.id === e.id) {
+              vb.status = e.status
+            }
+          })
+        } else if (e.type === 'CONTENT_REVIEW'){
+          this.isSpeaking = e.status
+        } else {
+          this.isSpeaking = e.status
+          this.voiceBoxes.map(vb => {
+            vb.status = false
+            if (vb.color === '#f0f0f0') vb.content = ""
+          })
+        }
+      })
 
     socket.emit("joinRoom", this.trialInfo.trialName);
 
@@ -298,43 +323,43 @@ export default {
   methods: {
     // mic record
     emitMicrophoneEvent(e) {
-      this.isRecording = e
       socket.emit("MICROPHONE", {
         trialName: this.trialInfo.trialName,
         userId: this.userInfo.userId,
         status: e,
       })
     },
-
-    // voice box speaker
-    emitVoiceBoxEvent(item) {
-      socket.emit("VOICE_BOX_SPEAK", {
-        userId: this.userInfo.userId,
-        trialName: this.trialInfo.trialName,
-        ...item
-      });
-    },
-
-    // content review speaker
-    emitContentReviewEvent(e) {
-      let selectedText = "";
-      if (e) {
-        const {size} = this.editor.view.state.doc.content;
-        selectedText = this.editor.state.doc.textBetween(
-          this.editor.state.selection.anchor,
-          size,
-          " "
-        );
+    // speaker event
+    emitSpeakerEvent(event) {
+      // voice box speaker
+      if (event.type === 'VOICE_BOX') {
+        socket.emit("SPEAKER", {
+          type: 'VOICE_BOX',
+          userId: this.userInfo.userId,
+          trialName: this.trialInfo.trialName,
+          ...event
+        });
       }
-
-      socket.emit("CONTENT_REVIEW_SPEAK", {
-        trialName: this.trialInfo.trialName,
-        userId: this.userInfo.userId,
-        status: e,
-        content: selectedText,
-      });
+      // content review speaker
+      else {
+        let selectedText = "";
+        if (event.status) {
+          const {size} = this.editor.view.state.doc.content;
+          selectedText = this.editor.state.doc.textBetween(
+            this.editor.state.selection.anchor,
+            size,
+            " "
+          );
+        }
+        socket.emit("SPEAKER", {
+          type: "CONTENT_REVIEW",
+          trialName: this.trialInfo.trialName,
+          userId: this.userInfo.userId,
+          status: event.status,
+          content: selectedText,
+        });
+      }
     },
-
     getRandomColor() {
       const list = [
         "#958DF1",

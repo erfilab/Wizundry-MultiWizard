@@ -103,6 +103,7 @@
                     :color="color"
                     small
                     class="mr-2"
+                    @click="addLabel(color, content)"
                   >
                     {{ content }}
                   </v-btn>
@@ -267,10 +268,18 @@ export default {
       // const fromIndex = $from.posAtIndex()
       // const toIndex = $to.posAtIndex()
       let nodes = []
+      let removeList = [...(this.participantsLabel.map(p => p[1])), ...(this.contentLabel.map(c => c[1])), '💬']
+
       this.editor.state.doc.nodesBetween(from, to, (node, pos) => {
-        const { type: {name}, text, nodeSize } = node
-        console.log(color, labelName, name, text)
-        if (name==='text') nodes.push([color, labelName, pos, text, nodeSize])
+        let { type: {name}, text, nodeSize, marks } = node
+        // console.log('Node: ', node)
+        if (text) {
+          text = text.trim()
+          if (name === 'text' && !removeList.includes(text) && !text.includes('💬') && !marks.length) {
+            console.log(color, labelName, name, text)
+            nodes.push([color, labelName, pos, text, nodeSize])
+          }
+        }
       })
 
       for (let i=nodes.length-1; i>=0; i--) {
