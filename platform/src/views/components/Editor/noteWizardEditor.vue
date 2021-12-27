@@ -33,7 +33,7 @@
               </v-btn>
               <v-btn
                 small
-                @click="clearNote"
+                @click="clearNote(null)"
               >
                 <v-icon>mdi-comment-remove-outline</v-icon>
               </v-btn>
@@ -117,6 +117,12 @@
               >
                 <v-card-title>
                   {{ note.note.content }}
+                  <v-btn
+                    icon
+                    @click.end="clearNote(note)"
+                  >
+                    <v-icon>mdi-delete</v-icon>
+                  </v-btn>
                 </v-card-title>
                 <v-card-text>
                   <p>Name : {{ note.note.username }}</p>
@@ -175,16 +181,12 @@ export default {
       editor: null,
       connectStatus: "connecting",
 
-      isRecording: false,
-      isSpeaking: false,
-
       // note
       noteContent: "",
       openNoteEditor: false,
 
       currentSelectedNote: {},
       notesList: [],
-      noteSelectInList: {},
     }
   },
   computed: {
@@ -199,10 +201,15 @@ export default {
   async mounted() {
     socket = await initSocket(this.nowDay);
 
-    socket.on("WEB_RECORDING", async (e) => {
-      console.log("WEB RECORDING STATUS: ", e)
-      this.isRecording = e
-    })
+    socket
+      .on("NOTE_ADDED", async (e) => {
+        console.log("Note Added: ", e.note.content)
+        this.notesList.push(e)
+      })
+      .on("NOTE_REMOVED", async (uuid) => {
+        console.log("Note Removed: ", uuid)
+        this.notesList = this.notesList.filter(note => note.uuid !== uuid)
+      })
 
     socket.emit("joinRoom", this.trialInfo.trialName);
 
@@ -227,6 +234,7 @@ export default {
         this.setCurrentSelectedNote(editor)
       }
     })
+    setTimeout(this.findCommentsAndStoreValues, 500)
 
     this.editor.chain().focus().user(currentUser).run();
   },
@@ -248,6 +256,21 @@ export default {
       ];
       return list[Math.floor(Math.random() * list.length)];
     },
+    findCommentsAndStoreValues() {
+      const proseMirror = document.querySelector('.ProseMirror');
+      const notes = proseMirror.querySelectorAll('span[data-note]');
+
+      if (!notes) {
+        this.notesList = [];
+        return;
+      }
+
+      notes.forEach((node) => {
+        const noteNodes = node.getAttribute('data-note');
+        const jsonNotes = noteNodes ? JSON.parse(noteNodes) : null;
+        this.notesList.push(jsonNotes)
+      });
+    },
     highlightText() {
       this.editor.chain().focus().toggleHighlight().run()
       this.noteContent = ""
@@ -268,10 +291,11 @@ export default {
         },
       }
 
-      const {to, $to} = this.editor.view.state.selection
-      const toIndex = $to.posAtIndex()
+      const {to} = this.editor.view.state.selection
+      // const toIndex = $to.posAtIndex()
 
-      this.notesList.push(newNote)
+      socket.emit('ADD_NOTE', {...newNote})
+
       this.editor.chain()
         .setNote(JSON.stringify(newNote))
         .focus(to)
@@ -281,11 +305,15 @@ export default {
       this.noteContent = ""
       this.openNoteEditor = false
     },
-    clearNote() {
+    clearNote(note) {
+      if (note) this.currentSelectedNote = note
+      console.log(note)
       this.noteContent = ""
       this.openNoteEditor = false
-      this.notesList = this.notesList.filter(note => note.uuid !== this.currentSelectedNote.uuid)
-      const { to } = this.editor.view.state.selection
+
+      socket.emit('REMOVE_NOTE', this.currentSelectedNote.uuid)
+
+      const {to} = this.editor.view.state.selection
       this.editor.chain()
         .unsetNote()
         .focus(to)
@@ -294,12 +322,12 @@ export default {
           return true;
         })
         .run();
+
     },
     setCurrentSelectedNote(editor) {
       const note = editor.getAttributes('note').note
       if (note) {
         const parsedNote = JSON.parse(editor.getAttributes('note').note);
-        console.log('note: ', parsedNote)
         this.openNoteEditor = !editor.state.selection.empty;
         this.noteContent = parsedNote.note.content
         this.currentSelectedNote = parsedNote

@@ -1,5 +1,6 @@
-import {getMarkRange, Mark, mergeAttributes} from '@tiptap/vue-2';
+import {getMarkRange, Mark, mergeAttributes, VueNodeViewRenderer} from '@tiptap/vue-2';
 import {Plugin, TextSelection} from 'prosemirror-state';
+import NoteWrapper from'./NoteWrapper.vue'
 
 export const Note = Mark.create({
   name: 'note',
@@ -39,6 +40,10 @@ export const Note = Mark.create({
       toggleNote: () => ({commands}) => commands.toggleMark('note'),
       unsetNote: () => ({commands}) => commands.unsetMark('note'),
     };
+  },
+
+  addNodeView() {
+    return VueNodeViewRenderer(NoteWrapper)
   },
 
   addProseMirrorPlugins() {

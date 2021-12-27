@@ -73,6 +73,7 @@ export const initEditor = (collab, ydoc, yDocProvider, user) => {
           //   return 'Can you add some further context?'
           // },
         }),
+        Note
       ],
     });
   }

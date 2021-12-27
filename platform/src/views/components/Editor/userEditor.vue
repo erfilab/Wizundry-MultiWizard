@@ -1,8 +1,6 @@
 <template>
   <div>
     <v-row>
-      <v-col cols="4">
-      </v-col>
       <v-col cols="8">
         <v-row>
           <v-col cols="3">
@@ -55,6 +53,43 @@
           />
         </div>
       </v-col>
+      <v-col cols="4">
+        <v-card
+          max-width="100%"
+          tile
+        >
+          <hooper
+            ref="verticalNotesList"
+            :vertical="true"
+            style="height: 550px"
+            :items-to-show="4.5"
+            :center-mode="true"
+          >
+            <slide
+              v-for="note in notesList"
+              :key="note.uuid"
+              :index="note.uuid"
+            >
+              <v-card
+                style="width: 90%"
+                :class="{'currentNote': note.uuid === currentSelectedNote.uuid}"
+              >
+                <v-card-title>
+                  {{ note.note.content }}
+                </v-card-title>
+                <v-card-text>
+                  <p>Name : {{ note.note.username }}</p>
+                  <p>
+                    Time : {{
+                      new Date(note.note.time).toJSON().substring(0, 19).replace('T', ' ')
+                    }}
+                  </p>
+                </v-card-text>
+              </v-card>
+            </slide>
+          </hooper>
+        </v-card>
+      </v-col>
     </v-row>
   </div>
 </template>
@@ -68,6 +103,8 @@ import {downSampleBuffer} from "../../../utils/webRecord";
 import {initSocket} from "../../../utils/webSocket.js";
 import {initYDoc} from "../../../utils/yDoc";
 import {initEditor} from "../../../utils/tiptapEditor";
+import {Hooper, Slide} from 'hooper';
+import 'hooper/dist/hooper.css';
 
 const BUFFER_SIZE = 2048;
 const MEDIA_ACCESS_CONSTRAINTS = {audio: true, video: false};
@@ -78,6 +115,8 @@ export default {
   name: "UserEditor",
   components: {
     EditorContent,
+    Hooper,
+    Slide
   },
   props: {
     userInfo: {
@@ -102,6 +141,10 @@ export default {
 
       yDocProvider: null,
       editor: null,
+
+      // notes
+      currentSelectedNote: {},
+      notesList: [],
     }
   },
   watch: {
@@ -180,7 +223,8 @@ export default {
         }
       })
       .on("SPEECH_DATA", async (data) => {
-        if (data.length) {
+        if (data) {
+          console.log(data)
           this.runTimeContent = data.results[0].alternatives[0].transcript;
           if (data.results[0].isFinal && this.runTimeContent) {
             let temp_cont = this.runTimeContent;
@@ -188,7 +232,15 @@ export default {
             this.finalContent = temp_cont;
           }
         }
-      });
+      })
+      .on("NOTE_ADDED", async (e) => {
+        console.log("Note Added: ", e.note.content)
+        this.notesList.push(e)
+      })
+      .on("NOTE_REMOVED", async (uuid) => {
+        console.log("Note Removed: ", uuid)
+        this.notesList = this.notesList.filter(note => note.uuid !== uuid)
+      })
 
     socket.emit("joinRoom", this.trialInfo.trialName);
 
@@ -205,9 +257,43 @@ export default {
       }
     );
 
+    this.editor.on("selectionUpdate", ({editor, event}) => {
+      if (editor.state.selection.content().size > 0) {
+        this.setCurrentSelectedNote(editor)
+      }
+    })
+    setTimeout(this.findCommentsAndStoreValues, 500)
+
     this.listenForSpeechEvents();
   },
   methods: {
+    setCurrentSelectedNote(editor) {
+      const note = editor.getAttributes('note').note
+      if (note) {
+        const parsedNote = JSON.parse(editor.getAttributes('note').note);
+        this.currentSelectedNote = parsedNote
+        this.$refs.verticalNotesList.slideTo(
+          this.notesList.map(n => n.uuid).indexOf(parsedNote.uuid)
+        );
+      } else {
+        this.currentSelectedNote = {}
+      }
+    },
+    findCommentsAndStoreValues() {
+      const proseMirror = document.querySelector('.ProseMirror');
+      const notes = proseMirror.querySelectorAll('span[data-note]');
+
+      if (!notes) {
+        this.notesList = [];
+        return;
+      }
+
+      notes.forEach((node) => {
+        const noteNodes = node.getAttribute('data-note');
+        const jsonNotes = noteNodes ? JSON.parse(noteNodes) : null;
+        this.notesList.push(jsonNotes)
+      });
+    },
     listenForSpeechEvents() {
       audioSpeech.onstart = () => {
         this.isSpeaking = true;
@@ -215,9 +301,10 @@ export default {
 
       audioSpeech.onend = () => {
         this.isSpeaking = false;
-        socket.emit("SPEAKER_EVENT", {
-          trialName: this.trialInfo.trialName,
-          content: ""
+        socket.emit("SPEAKER", {
+          type: 'None',
+          content: '',
+          status: false
         });
       };
     },

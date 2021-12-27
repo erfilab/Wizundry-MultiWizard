@@ -156,57 +156,20 @@ namespaces.on('connection', socket => {
         socket.join(room);
         console.log(`connect ${namespaceDir} - ${room}`)
 
-
-        // multi-wizard speaker event
-        socket.on('SPEAK', async (data) => {
-            console.log(`COMMAND_SPEAKER ${data.id}: ${data.content}`)
-
-            if (data.username !== 'NULL' && data.content) {
-                await createNewLog({
-                    experiment_id: data.experiment_id,
-                    project_name: data.project_name,
-                    username: data.username,
-                    type: "COMMAND_SPEAKER",
-                    status: true,
-                    value: data.content
-                })
-            }
-
-            if (data.content.length > 0)
-                namespaces.in(room).emit("SPEAKER_EVENT", { ...data });
-            else namespaces.in(room).emit("END_SPEAKER", data.username !== 'NULL' ? "EDITOR_SPEAKER" : "");
-        });
-
-        socket.on('SPEAK_FROM', async (data) => {
-            await createNewLog({
-                experiment_id: data.experiment_id,
-                project_name: data.project_name,
-                username: data.username,
-                type: "EDITOR_SPEAKER",
-                status: data.status,
-                value: data.content
-            })
-
-            console.log(`EDITOR_SPEAKER ${data.status}`)
-            namespaces.in(room).emit("WEB_SPEAKER", { ...data });
-        });
-
-
-        //mic event
+        // microphone recording event
         socket.on('MICROPHONE', async e => {
-            await createNewLog({
-                experiment_id: e.experiment_id,
-                project_name: e.project_name,
-                username: e.username,
-                type: "MICROPHONE",
-                status: e.status,
-            })
+            // await createNewLog({
+            //     experiment_id: e.experiment_id,
+            //     project_name: e.project_name,
+            //     username: e.username,
+            //     type: "MICROPHONE",
+            //     status: e.status,
+            // })
             namespaces.in(room).emit('WEB_RECORDING', e.status)
         })
 
-        socket.on('startGoogleCloudStream', uid => {
-            if (uid) sender_uid = uid
-            startRecognitionStream(room, sender_uid);
+        socket.on('startGoogleCloudStream', () => {
+            startRecognitionStream(room);
         });
 
         socket.on('endGoogleCloudStream', () => {
@@ -219,58 +182,49 @@ namespaces.on('connection', socket => {
             }
         });
 
-        socket.on('HIGHLIGHT', e => {
-            console.log("Highlight Event", e)
-            namespaces.in(room).emit('AUTO_HIGHLIGHT', { status: e })
-        });
 
+        // speaker event
         socket.on('SPEAKER', (e) => {
-            console.log("Speaker Event", e)
-            namespaces.in(room).emit('WEB_SPEAKER', {
-                status: e.status,
-                start: e.start
-            })
-        })
-        socket.on('msg', e => {
-            console.log('mess', e)
-            namespaces.in(room).emit('message', { ...e })
+            console.log("Speaker Event", e.type, ': ', e.content)
+            namespaces.in(room).emit('WEB_SPEAKER', { ...e })
         })
 
-        socket.on('sendMessage', e => {
-            console.log('sendMessage', e)
-            namespaces.in(room).emit('MESSAGE', e)
+        // note
+        socket.on('ADD_NOTE', e => {
+            console.log("Add Note", e.uuid, ': ', e.note.content)
+            namespaces.in(room).emit('NOTE_ADDED', { ...e })
         })
 
-        socket.on('playMessage', e => {
-            console.log('playMessage', e)
-            namespaces.in(room).emit('PLAY_MESSAGE', e)
+        socket.on('REMOVE_NOTE', uuid => {
+            console.log("Remove Note", uuid)
+            namespaces.in(room).emit('NOTE_REMOVED', uuid)
         })
 
         //cursor event
-        socket.on('CURSOR_POS', e => {
-            namespaces.in(room).emit('CURSOR_POSITION', e)
-        })
+        // socket.on('CURSOR_POS', e => {
+        //     namespaces.in(room).emit('CURSOR_POSITION', e)
+        // })
     })
 })
 
-function startRecognitionStream(room, uid) {
+function startRecognitionStream(room) {
     console.log("SSR", room)
     recognizeStream = speechClient
         .streamingRecognize(request)
         .on('error', console.error)
         .on('data', data => {
-            // console.log(`Transcription: ${data.results[0].alternatives[0].transcript}`);
+            console.log(`Transcription: ${data.results[0].alternatives[0].transcript}`);
             // process.stdout.write(
             //     data.results[0] && data.results[0].alternatives[0]
             //         ? `Transcription: ${data.results[0].alternatives[0].transcript}\n`
             //         : '\n\nReached transcription time limit, press Ctrl+C\n'
             // );
             // console.log("DATA", data)
-            namespaces.in(room).emit("SPEECH_DATA", { data: data, uid: uid });
+            namespaces.in(room).emit("SPEECH_DATA", { ...data });
 
             if (data.results[0] && data.results[0].isFinal) {
                 stopRecognitionStream();
-                startRecognitionStream(room, sender_uid);
+                startRecognitionStream(room);
                 console.log('Restarted Stream on Serverside');
             }
         });
