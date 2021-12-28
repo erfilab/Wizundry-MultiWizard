@@ -224,7 +224,6 @@ export default {
       })
       .on("SPEECH_DATA", async (data) => {
         if (data) {
-          console.log(data)
           this.runTimeContent = data.results[0].alternatives[0].transcript;
           if (data.results[0].isFinal && this.runTimeContent) {
             let temp_cont = this.runTimeContent;
@@ -302,7 +301,9 @@ export default {
       audioSpeech.onend = () => {
         this.isSpeaking = false;
         socket.emit("SPEAKER", {
-          type: 'None',
+          type: 'SPEAKER_END',
+          trialName: this.trialInfo.trialName,
+          userId: this.userInfo.userId,
           content: '',
           status: false
         });
@@ -319,7 +320,10 @@ export default {
     // mic recording
     initRecording() {
       this.isRecording = true;
-      socket.emit("startGoogleCloudStream");
+      socket.emit("startGoogleCloudStream", {
+        trialName: this.trialInfo.trialName,
+        userId: this.userInfo.userId,
+      });
       audioContext = window.AudioContext || window.webkitAudioContext;
       context = new audioContext({latencyHint: "interactive"});
       processor = context.createScriptProcessor(BUFFER_SIZE, 1, 1);

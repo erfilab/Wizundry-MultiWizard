@@ -263,27 +263,41 @@ export default {
   },
   methods: {
     addLabel(color, labelName) {
-      //TODO different types and add double labels
       const {from, to, $from, $to} = this.editor.view.state.selection
       // const fromIndex = $from.posAtIndex()
       // const toIndex = $to.posAtIndex()
       let nodes = []
       let removeList = [...(this.participantsLabel.map(p => p[1])), ...(this.contentLabel.map(c => c[1])), '💬']
 
+      let tempText = ""
       this.editor.state.doc.nodesBetween(from, to, (node, pos) => {
         let { type: {name}, text, nodeSize, marks } = node
-        // console.log('Node: ', node)
         if (text) {
           text = text.trim()
-          if (name === 'text' && !removeList.includes(text) && !text.includes('💬') && !marks.length) {
+          if (name === 'text' && !removeList.includes(text) && !text.includes('💬')) {
             console.log(color, labelName, name, text)
-            nodes.push([color, labelName, pos, text, nodeSize])
+
+            if (nodes.length && marks.length && marks[0].type.name==='highlight') {
+              tempText = text
+            } else if (!marks.length) {
+              if (!tempText.length) nodes.push([color, labelName, pos, text+' ', nodeSize])
+              tempText = ''
+            }
           }
         }
       })
 
       for (let i=nodes.length-1; i>=0; i--) {
         const [color, labelName, pos, content, nodeSize] = nodes[i]
+
+        socket.emit('ADD_LABEL', {
+          trialName: this.trialInfo.trialName,
+          userId: this.userInfo.userId,
+          labelColor: color,
+          labelName: labelName,
+          labelPosition: pos,
+          content: content
+        })
         this.editor
           .chain()
           .focus(pos)

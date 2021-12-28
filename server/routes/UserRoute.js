@@ -2,6 +2,7 @@ const UserRoute = require('express').Router();
 const UserController = require('../controllers/api/UserController');
 
 // UserRoute.get('/loginTK', UserController.loginWithToken)
+UserRoute.post('/start', UserController.startTrial)
 UserRoute.post('/login', UserController.loginWithPassword)
 UserRoute.get('/index', UserController.listAllUsers)
 // UserRoute.get('/:uid', UserController.loginUser)

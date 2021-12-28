@@ -283,8 +283,9 @@ export default {
       }
       let newNote = {
         uuid: this.uuidv4(),
+        trialName: this.trialInfo.trialName,
+        userId: this.userInfo.userId,
         note: {
-          userId: this.userInfo.userId,
           username: this.userInfo.username,
           time: Date.now(),
           content: this.noteContent,
@@ -293,7 +294,6 @@ export default {
 
       const {to} = this.editor.view.state.selection
       // const toIndex = $to.posAtIndex()
-
       socket.emit('ADD_NOTE', {...newNote})
 
       this.editor.chain()
@@ -307,11 +307,10 @@ export default {
     },
     clearNote(note) {
       if (note) this.currentSelectedNote = note
-      console.log(note)
       this.noteContent = ""
       this.openNoteEditor = false
 
-      socket.emit('REMOVE_NOTE', this.currentSelectedNote.uuid)
+      socket.emit('REMOVE_NOTE', {...this.currentSelectedNote})
 
       const {to} = this.editor.view.state.selection
       this.editor.chain()

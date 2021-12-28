@@ -147,6 +147,16 @@ const createNewLog = (log) => {
     })
 }
 
+const firebaseAdmin = require('./config/firebase');
+const fbDB = firebaseAdmin.database();
+
+const storeDataToFirebase = async (data) => {
+    const timestamp = new Date().toISOString().slice(0, 19).replace("T", " ")
+    const { trialName, userId } = data
+    await fbDB.ref(`study2/trials/${trialName}/connectedUsers/${userId}`)
+        .child('logs').push({createdAt: timestamp, ...data})
+}
+
 const namespaces = io.of(/^\/[a-zA-Z0-9_\/-]+$/)
 namespaces.on('connection', socket => {
     const namespace = socket.nsp;
@@ -158,18 +168,15 @@ namespaces.on('connection', socket => {
 
         // microphone recording event
         socket.on('MICROPHONE', async e => {
-            // await createNewLog({
-            //     experiment_id: e.experiment_id,
-            //     project_name: e.project_name,
-            //     username: e.username,
-            //     type: "MICROPHONE",
-            //     status: e.status,
-            // })
+            await storeDataToFirebase({
+                type: "MICROPHONE",
+                ...e
+            })
             namespaces.in(room).emit('WEB_RECORDING', e.status)
         })
 
-        socket.on('startGoogleCloudStream', () => {
-            startRecognitionStream(room);
+        socket.on('startGoogleCloudStream', (params) => {
+            startRecognitionStream(room, params);
         });
 
         socket.on('endGoogleCloudStream', () => {
@@ -184,20 +191,38 @@ namespaces.on('connection', socket => {
 
 
         // speaker event
-        socket.on('SPEAKER', (e) => {
+        socket.on('SPEAKER', async (e) => {
             console.log("Speaker Event", e.type, ': ', e.content)
+            await storeDataToFirebase({...e})
             namespaces.in(room).emit('WEB_SPEAKER', { ...e })
         })
 
         // note
-        socket.on('ADD_NOTE', e => {
+        socket.on('ADD_NOTE', async e => {
             console.log("Add Note", e.uuid, ': ', e.note.content)
+            await storeDataToFirebase({
+                type: "ADD_NOTE",
+                ...e
+            })
             namespaces.in(room).emit('NOTE_ADDED', { ...e })
         })
 
-        socket.on('REMOVE_NOTE', uuid => {
-            console.log("Remove Note", uuid)
-            namespaces.in(room).emit('NOTE_REMOVED', uuid)
+        socket.on('REMOVE_NOTE', async e => {
+            console.log("Remove Note", e.uuid)
+            await storeDataToFirebase({
+                type: "REMOVE_NOTE",
+                ...e
+            })
+            namespaces.in(room).emit('NOTE_REMOVED', e.uuid)
+        })
+
+        // label
+        socket.on('ADD_LABEL', async e => {
+            console.log('ADD Label', e.content)
+            await storeDataToFirebase({
+                type: "ADD_LABEL",
+                ...e
+            })
         })
 
         //cursor event
@@ -207,12 +232,12 @@ namespaces.on('connection', socket => {
     })
 })
 
-function startRecognitionStream(room) {
+function startRecognitionStream(room, params) {
     console.log("SSR", room)
     recognizeStream = speechClient
         .streamingRecognize(request)
         .on('error', console.error)
-        .on('data', data => {
+        .on('data', async data => {
             console.log(`Transcription: ${data.results[0].alternatives[0].transcript}`);
             // process.stdout.write(
             //     data.results[0] && data.results[0].alternatives[0]
@@ -221,10 +246,15 @@ function startRecognitionStream(room) {
             // );
             // console.log("DATA", data)
             namespaces.in(room).emit("SPEECH_DATA", { ...data });
+            await storeDataToFirebase({
+                type: "SPEECH_DATA",
+                ...params,
+                ...data.results[0]
+            })
 
             if (data.results[0] && data.results[0].isFinal) {
                 stopRecognitionStream();
-                startRecognitionStream(room);
+                startRecognitionStream(room, params);
                 console.log('Restarted Stream on Serverside');
             }
         });

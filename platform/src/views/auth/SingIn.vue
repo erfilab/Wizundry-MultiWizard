@@ -116,7 +116,7 @@ export default {
     },
     trialInfo: {
       trialName: "1-3",
-      connectedUsers: []
+      connectedUsers: {}
     }
   }),
   methods: {
@@ -155,7 +155,8 @@ export default {
         ...this.userInfo,
         loginTime: new Date().toJSON().substring(0, 19).replace('T', ' ')
       };
-      this.trialInfo.connectedUsers.push(userInfo)
+      const userId = userInfo.userId
+      this.trialInfo.connectedUsers = {[userId]: userInfo}
 
       await this.$store.dispatch("StartTrial", {
         userInfo: {...userInfo},

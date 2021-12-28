@@ -1,16 +1,42 @@
 const User = require("../../models/user.js");
 const Project = require('../../models/project');
-// const firebaseAdmin = require('../../config/firebase');
+const firebaseAdmin = require('../../config/firebase');
+const fbDB = firebaseAdmin.database();
 
 const uuidv4 = () => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         let r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
     });
 }
 
-const rand=()=>Math.random(0).toString(36).substr(2);
-const genToken=(length)=>(rand()+rand()+rand()+rand()).substr(0,length);
+const rand = () => Math.random(0).toString(36).substr(2);
+const genToken = (length) => (rand() + rand() + rand() + rand()).substr(0, length);
+
+exports.startTrial = async (req, res) => {
+    if (!req.body) {
+        res.status(400).send({
+            status: 400,
+            message: "Content can not be empty!",
+            data: null
+        });
+    }
+    const {userInfo, trialInfo} = req.body
+    const trialRef = fbDB.ref(`study2/trials/`)
+    await trialRef.orderByKey().equalTo(`${trialInfo.trialName}`).once('value', async snapshot => {
+        if (snapshot.exists()) {
+            await trialRef.child(`${trialInfo.trialName}`).child('connectedUsers').child(`${userInfo.userId}`).set(userInfo)
+        }
+        else {
+            await trialRef.child(`${trialInfo.trialName}`).set({ ...trialInfo})
+        }
+    })
+
+    res.status(200).json({
+        status: 200,
+        message: "Start successfully"
+    });
+}
 
 
 exports.loginWithPassword = async (req, res) => {
@@ -21,8 +47,8 @@ exports.loginWithPassword = async (req, res) => {
             data: null
         });
     }
-    let { username, password, roles } = req.body;
-    
+    let {username, password, roles} = req.body;
+
     //check if db already exists this username
     await User.getByUsername(username, async (err, data) => {
         if (err) {
@@ -51,15 +77,15 @@ exports.loginWithPassword = async (req, res) => {
                 const token = genToken(32);
                 const createdAt = new Date().valueOf();
                 roles = JSON.stringify(roles);
-                await User.create({ uid, password, username, roles, token, createdAt }, async (err, data) => {
-                    if (err) res.status(500).send({ 
+                await User.create({uid, password, username, roles, token, createdAt}, async (err, data) => {
+                    if (err) res.status(500).send({
                         status: 500,
                         message: err.message || "Some error occurred while create the User",
                         data: null
                     });
                     res.status(201).json({
                         status: 201,
-                        data: { uid, password, username, roles, token, createdAt },
+                        data: {uid, password, username, roles, token, createdAt},
                         message: "User created successfully."
                     });
                 })

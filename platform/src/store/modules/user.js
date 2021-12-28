@@ -89,6 +89,7 @@ const user = {
     StartTrial: async ({commit, dispatch}, payload) => {
       await commit('SET_USER_INFO', payload.userInfo)
       await commit('SET_TRIAL_INFO', payload.trialInfo)
+      await userApi.startTrial({...payload})
     },
 
     GetUserInfo: async ({ commit, state }) => {

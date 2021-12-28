@@ -13,4 +13,7 @@ export default {
       .then((res) => res.data)
       .catch(console.error);
   },
+  async startTrial(params) {
+    return await axios.post('/user/start', { ...params }).catch(err => err)
+  }
 };
