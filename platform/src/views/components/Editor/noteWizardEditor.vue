@@ -38,58 +38,62 @@
                 <v-icon>mdi-comment-remove-outline</v-icon>
               </v-btn>
             </v-btn-toggle>
-            <v-card v-if="openNoteEditor">
-              <v-card-text>
-                <v-textarea
-                  v-model="noteContent"
-                  placeholder="Add note..."
-                  class="border-none outline-none"
-                  @keypress.enter.stop.prevent="addNote"
-                />
-              </v-card-text>
-              <v-card-actions>
-                <v-btn-toggle
-                  dense
-                  background-color="#b8b4b4"
-                >
-                  <v-btn
-                    small
-                    color="warning"
-                    @click="() => (noteContent = '', openNoteEditor = false)"
+            <v-dialog v-model="openNoteEditor" width="200">
+              <v-card>
+                <v-card-text>
+                  <v-textarea
+                    v-model="noteContent"
+                    placeholder="Add note..."
+                    class="border-none outline-none"
+                    @keypress.enter.stop.prevent="addNote"
+                  />
+                </v-card-text>
+                <v-card-actions>
+                  <v-btn-toggle
+                    dense
+                    background-color="#b8b4b4"
                   >
-                    Clear
-                  </v-btn>
-                  <v-btn
-                    small
-                    @click="addNote"
-                  >
-                    Add
-                  </v-btn>
-                </v-btn-toggle>
-              </v-card-actions>
-            </v-card>
+                    <v-btn
+                      small
+                      color="warning"
+                      @click="() => (noteContent = '', openNoteEditor = false)"
+                    >
+                      Clear
+                    </v-btn>
+                    <v-btn
+                      small
+                      @click="addNote"
+                    >
+                      Add
+                    </v-btn>
+                  </v-btn-toggle>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
           </bubble-menu>
-          <editor-content
-            class="editor__content"
-            :editor="editor"
-          />
-          <div class="editor__footer">
-            <div :class="`editor__status editor__status--${connectStatus}`">
-              <template v-if="connectStatus === 'connected'">
-                {{ connectedUsers.length }} user{{
-                  connectedUsers.length === 1 ? "" : "s"
-                }}
-                online in
-                {{ trialInfo.trialName }}
-              </template>
-              <template v-else>
-                offline
-              </template>
-            </div>
-            <div class="editor__name">
-              <button>
-                {{ userInfo.username }}
-              </button>
+          <div ref="target">
+            <editor-content
+              class="editor__content"
+              :editor="editor"
+            />
+            <div class="editor__footer">
+              <div :class="`editor__status editor__status--${connectStatus}`">
+                <template v-if="connectStatus === 'connected'">
+                  {{ connectedUsers.length }} user{{
+                    connectedUsers.length === 1 ? "" : "s"
+                  }}
+                  online in
+                  {{ trialInfo.trialName }}
+                </template>
+                <template v-else>
+                  offline
+                </template>
+              </div>
+              <div class="editor__name">
+                <button>
+                  {{ userInfo.username }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -197,6 +201,7 @@ export default {
   beforeDestroy() {
     this.editor.destroy();
     this.yDocProvider.destroy();
+    document.removeEventListener('mouseup', this._mouseUpHandler.bind(this));
   },
   async mounted() {
     socket = await initSocket(this.nowDay);
@@ -334,11 +339,18 @@ export default {
           this.notesList.map(n => n.uuid).indexOf(parsedNote.uuid)
         );
       } else {
-        this.noteContent = ""
-        this.openNoteEditor = true
+        // this.noteContent = ""
+        // this.openNoteEditor = true
+        document.addEventListener('mouseup', this._mouseUpHandler);
         this.currentSelectedNote = {}
       }
     },
+    _mouseUpHandler() {
+      this.noteContent = ""
+      this.openNoteEditor = true
+      this.currentSelectedNote = {}
+      document.removeEventListener('mouseup', this._mouseUpHandler);
+    }
   }
 }
 </script>
