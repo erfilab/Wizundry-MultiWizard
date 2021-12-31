@@ -60,7 +60,7 @@ export default {
   .content {
     display: inline;
     cursor: pointer;
-    background: #EEEA98;
+    background: #88b957;
   }
   .popup {
     position: absolute;

@@ -38,7 +38,7 @@
                 <v-icon>mdi-comment-remove-outline</v-icon>
               </v-btn>
             </v-btn-toggle>
-            <v-dialog v-model="openNoteEditor" width="200">
+            <v-dialog v-model="openNoteEditor" width="400">
               <v-card>
                 <v-card-text>
                   <v-textarea
@@ -332,16 +332,16 @@ export default {
       const note = editor.getAttributes('note').note
       if (note) {
         const parsedNote = JSON.parse(editor.getAttributes('note').note);
-        this.openNoteEditor = !editor.state.selection.empty;
+        // this.openNoteEditor = !editor.state.selection.empty;
         this.noteContent = parsedNote.note.content
         this.currentSelectedNote = parsedNote
         this.$refs.verticalNotesList.slideTo(
           this.notesList.map(n => n.uuid).indexOf(parsedNote.uuid)
         );
       } else {
-        // this.noteContent = ""
+        this.noteContent = ""
         // this.openNoteEditor = true
-        document.addEventListener('mouseup', this._mouseUpHandler);
+        // document.addEventListener('mouseup', this._mouseUpHandler);
         this.currentSelectedNote = {}
       }
     },
@@ -556,13 +556,13 @@ export default {
 
 <style lang="scss">
 .currentNote {
-  background-color: #EEEA98 !important;
+  background-color: #88b957 !important;
   margin: 0 3px 2px 0;
   border-style: outset;
 }
 
 span[data-note] {
-  background: #EEEA98;
+  background: #88b957;
 
   //&::after {
   //  content: "💬";

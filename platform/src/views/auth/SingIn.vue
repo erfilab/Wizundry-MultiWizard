@@ -36,6 +36,10 @@
                 type="text"
                 required
               />
+              <v-switch
+                v-model="userInfo.dominant"
+                :label="userInfo.dominant? 'Dominant Wizard' : 'Normal Wizard'"
+              ></v-switch>
             </v-form>
           </v-card-text>
           <v-card-text>
@@ -112,6 +116,7 @@ export default {
     userInfo: {
       username: "wizard2",
       userRole: "user",
+      dominant: false,
       selectedTasks: ["DICT"]
     },
     trialInfo: {

@@ -5,43 +5,59 @@
         <v-col cols="12">
           <v-card>
             <v-card-text>
-              <v-simple-table>
-                <template v-slot:default>
-                  <thead>
-                  <tr>
-                    <th class="text-left">
-                      Shortcuts
-                    </th>
-                    <th class="text-left">
-                      Functions
-                    </th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  <tr
-                    v-for="item in shortcuts"
-                    :key="item.shortcut"
+              <v-list>
+                <v-list-group
+                  :value="true"
+                  no-action
+                >
+                  <template v-slot:activator>
+                    <v-list-item-title>Participants</v-list-item-title>
+                  </template>
+                  <v-list-item
+                    v-for="([color, content], i) in participantsLabel"
+                    :key="i"
+                    link
                   >
-                    <td>
-                      <v-chip
-                        class="ma-2"
-                        label
-                      >
-                        {{ item.shortcut }}
-                      </v-chip>
-                    </td>
-                    <td>{{ item.func }}</td>
-                  </tr>
-                  </tbody>
-                </template>
-              </v-simple-table>
+                    <v-btn
+                      :color="color"
+                      small
+                      class="mr-2"
+                      @click="addLabel(color, content)"
+                    >
+                      {{ content }}
+                    </v-btn>
+                  </v-list-item>
+                </v-list-group>
+              </v-list>
+              <v-list>
+                <v-list-group
+                  no-action
+                  :value="true"
+                >
+                  <template v-slot:activator>
+                    <v-list-item-title>Content</v-list-item-title>
+                  </template>
+
+                  <v-list-item
+                    v-for="([color, content], i) in contentLabel"
+                    :key="i"
+                    link
+                  >
+                    <v-btn
+                      :color="color"
+                      small
+                      class="mr-2"
+                      @click="addLabel(color, content)"
+                    >
+                      {{ content }}
+                    </v-btn>
+                  </v-list-item>
+                </v-list-group>
+              </v-list>
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col cols="12" @dblclick="lockFunctionHandler('VBOX')"
-               style="cursor: pointer"
-               :class="$data.lockedFunctions['VBOX'] && !this.userInfo.dominant? 'locked' : ''">
-          <span>SPEAKER : {{ $data.lockedFunctions['VBOX'] ? '🔒 LOCKED' : '🔓 UNLOCKED' }}</span>
+        <v-col cols="12">
           <v-card
             v-for="item in voiceBoxes"
             :key="item.id"
@@ -70,11 +86,49 @@
         </v-col>
       </v-col>
       <v-col cols="8">
-        <v-row class="mb-3" style="background-color: #f5f2f2; border-radius: 10px; cursor: pointer"
-               @dblclick="lockFunctionHandler('MIC')"
-               :class="$data.lockedFunctions['MIC'] && !this.userInfo.dominant? 'locked' : ''"
-        >
-          <span>MIC : {{ $data.lockedFunctions['MIC'] ? '🔒 LOCKED' : '🔓 UNLOCKED' }}</span>
+        <v-row>
+          <v-card
+            max-width="100%"
+            tile
+          >
+            <hooper
+              ref="verticalNotesList"
+              :items-to-show="3.5"
+              :center-mode="true"
+              style="width: 130vh"
+            >
+              <slide
+                v-for="note in notesList"
+                :key="note.uuid"
+                :index="note.uuid"
+              >
+                <v-card
+                  style="width: 90%"
+                  :class="{'currentNote': note.uuid === currentSelectedNote.uuid}"
+                >
+                  <v-card-title>
+                    {{ note.note.content }}
+                    <v-btn
+                      icon
+                      @click.end="clearNote(note)"
+                    >
+                      <v-icon>mdi-delete</v-icon>
+                    </v-btn>
+                  </v-card-title>
+                  <v-card-text>
+                    <p>Name : {{ note.note.username }}</p>
+                    <p>
+                      Time : {{
+                        new Date(note.note.time).toJSON().substring(0, 19).replace('T', ' ')
+                      }}
+                    </p>
+                  </v-card-text>
+                </v-card>
+              </slide>
+            </hooper>
+          </v-card>
+        </v-row>
+        <v-row>
           <v-col cols="3">
             <v-btn
               text
@@ -99,19 +153,13 @@
           class="editor"
           @keydown.esc="isSpeaking ? emitSpeakerEvent({type: 'CONTENT_REVIEW', status: false}) : emitSpeakerEvent({type: 'CONTENT_REVIEW', status: true})"
         >
-          <span
-            style="cursor: pointer"
-            @dblclick="lockFunctionHandler('MENU')"
-          >MENU : {{ $data.lockedFunctions['MENU'] ? '🔒 LOCKED' : '🔓 UNLOCKED' }}</span>
           <menu-bar
             class="editor__header"
             :editor="editor"
-            :class="$data.lockedFunctions['MENU'] && !this.userInfo.dominant? 'locked' : ''"
           />
           <bubble-menu
             v-if="editor"
             :editor="editor"
-            :class="$data.lockedFunctions['MENU'] && !this.userInfo.dominant? 'locked' : ''"
           >
             <v-btn-toggle
               dense
@@ -145,18 +193,55 @@
               >
                 <v-icon>mdi-format-color-fill</v-icon>
               </v-btn>
+              <v-btn
+                small
+                @click="openNoteEditor = !openNoteEditor"
+              >
+                <v-icon>mdi-comment-edit</v-icon>
+              </v-btn>
+              <v-btn
+                small
+                @click="clearNote(null)"
+              >
+                <v-icon>mdi-comment-remove-outline</v-icon>
+              </v-btn>
             </v-btn-toggle>
+            <v-dialog v-model="openNoteEditor" width="400">
+              <v-card>
+                <v-card-text>
+                  <v-textarea
+                    v-model="noteContent"
+                    placeholder="Add note..."
+                    class="border-none outline-none"
+                    @keypress.enter.stop.prevent="addNote"
+                  />
+                </v-card-text>
+                <v-card-actions>
+                  <v-btn-toggle
+                    dense
+                    background-color="#b8b4b4"
+                  >
+                    <v-btn
+                      small
+                      color="warning"
+                      @click="() => (noteContent = '', openNoteEditor = false)"
+                    >
+                      Clear
+                    </v-btn>
+                    <v-btn
+                      small
+                      @click="addNote"
+                    >
+                      Add
+                    </v-btn>
+                  </v-btn-toggle>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
           </bubble-menu>
-          <span
-            style="cursor: pointer"
-            @dblclick="lockFunctionHandler('EDITOR')"
-          >EDITOR : {{
-              $data.lockedFunctions['EDITOR'] ? '🔒 LOCKED' : '🔓 UNLOCKED'
-            }}</span>
           <editor-content
             class="editor__content"
             :editor="editor"
-            :class="$data.lockedFunctions['EDITOR'] && !this.userInfo.dominant? 'locked' : ''"
           />
           <div class="editor__footer">
             <div :class="`editor__status editor__status--${connectStatus}`">
@@ -190,15 +275,19 @@ import {initYDoc} from "../../../utils/yDoc";
 import {initEditor} from "../../../utils/tiptapEditor";
 import MenuBar from "./MenuBar";
 import {mapGetters} from 'vuex';
+import {Hooper, Slide} from 'hooper';
+// import 'hooper/dist/hooper.css';
 
 let socket;
 
 export default {
-  name: "DictationWizardEditor",
+  name: "DominantWizardEditor",
   components: {
     EditorContent,
     MenuBar,
-    BubbleMenu
+    BubbleMenu,
+    Hooper,
+    Slide
   },
   props: {
     userInfo: {
@@ -230,14 +319,6 @@ export default {
       lastSpeakerWizard: "",
       lastSpeakerType: "",
 
-      // lock
-      lockedFunctions: {
-        VBOX: false,
-        MIC: false,
-        EDITOR: false,
-        MENU: false
-      },
-
       // voiceBoxes
       voiceBoxes: [
         {
@@ -251,34 +332,31 @@ export default {
           color: "#CDE589",
           content: "Please speak slower!",
           status: false,
-        },
-        {
-          id: 3,
-          color: "#CDE589",
-          content: "Can you repeat?",
-          status: false,
-        },
+        }
       ],
 
       runTimeContent: "",
       newContent: "",
       contentAnchor: 0,
 
-      // shortcuts
-      shortcuts: [
-        {
-          shortcut: "ctrl+q",
-          func: "Microphone On/Off",
-        },
-        {
-          shortcut: "ctrl+e",
-          func: "Send Voice",
-        },
-        {
-          shortcut: "esc",
-          func: " Review Content",
-        }
+      // labels
+      participantsLabel: [
+        ['#c9781c', 'user1'],
+        ['#94FADB', 'user2'],
+        ['#958DF1', 'user3'],
       ],
+      contentLabel: [
+        ['#F98181', 'Key'],
+        ['#70CFF8', 'Relevant'],
+        ['#b8b4b4', 'Irrelevant'],
+      ],
+
+      // note
+      noteContent: "",
+      openNoteEditor: false,
+
+      currentSelectedNote: {},
+      notesList: [],
     }
   },
   computed: {
@@ -295,13 +373,6 @@ export default {
     socket = await initSocket(this.nowDay);
 
     socket
-      .on('LOCKER', async target => {
-        console.log('LOCKER TARGET: ', target)
-        if (!this.userInfo.dominant) {
-          this.$data.lockedFunctions[target.target] = target.status
-          console.log(this.$data.lockedFunctions[target.target])
-        }
-      })
       .on("WEB_RECORDING", async (e) => {
         console.log("WEB RECORDING STATUS: ", e)
         this.isRecording = e
@@ -324,6 +395,14 @@ export default {
           })
         }
       })
+      .on("NOTE_ADDED", async (e) => {
+        console.log("Note Added: ", e.note.content)
+        this.notesList.push(e)
+      })
+      .on("NOTE_REMOVED", async (uuid) => {
+        console.log("Note Removed: ", uuid)
+        this.notesList = this.notesList.filter(note => note.uuid !== uuid)
+      });
 
     socket.emit("joinRoom", this.trialInfo.trialName);
 
@@ -353,21 +432,35 @@ export default {
       }
     };
 
+    this.editor.on("selectionUpdate", ({editor, event}) => {
+      if (editor.state.selection.content().size > 0) {
+        this.setCurrentSelectedNote(editor)
+      }
+    })
+    setTimeout(this.findCommentsAndStoreValues, 500)
+
     document.addEventListener('keydown', this._keyListener.bind(this));
   },
   methods: {
-    // lock
-    lockFunctionHandler(target) {
-      if (this.userInfo.dominant) {
-        this.$data.lockedFunctions[target] = !this.$data.lockedFunctions[target]
-        socket.emit('LOCK', {
-          trialName: this.trialInfo.trialName,
-          userId: this.userInfo.userId,
-          target: target,
-          status: this.$data.lockedFunctions[target]
-        })
-      }
+    // utils
+    uuidv4() {
+      return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      );
     },
+    getRandomColor() {
+      const list = [
+        "#958DF1",
+        "#F98181",
+        "#FBBC88",
+        "#FAF594",
+        "#70CFF8",
+        "#94FADB",
+        "#B9F18D",
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    },
+
     // mic record
     emitMicrophoneEvent(e) {
       socket.emit("MICROPHONE", {
@@ -407,29 +500,137 @@ export default {
         });
       }
     },
-    getRandomColor() {
-      const list = [
-        "#958DF1",
-        "#F98181",
-        "#FBBC88",
-        "#FAF594",
-        "#70CFF8",
-        "#94FADB",
-        "#B9F18D",
-      ];
-      return list[Math.floor(Math.random() * list.length)];
+
+    // label
+    addLabel(color, labelName) {
+      const {from, to, $from, $to} = this.editor.view.state.selection
+      // const fromIndex = $from.posAtIndex()
+      // const toIndex = $to.posAtIndex()
+      let nodes = []
+      let removeList = [...(this.participantsLabel.map(p => p[1])), ...(this.contentLabel.map(c => c[1])), '💬']
+
+      let tempText = ""
+      this.editor.state.doc.nodesBetween(from, to, (node, pos) => {
+        let {type: {name}, text, nodeSize, marks} = node
+        if (text) {
+          text = text.trim()
+          if (name === 'text' && !removeList.includes(text) && !text.includes('💬')) {
+            console.log(color, labelName, name, text)
+
+            if (nodes.length && marks.length && marks[0].type.name === 'highlight') {
+              tempText = text
+            } else if (!marks.length) {
+              if (!tempText.length) nodes.push([color, labelName, pos, text + ' ', nodeSize])
+              tempText = ''
+            }
+          }
+        }
+      })
+
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        const [color, labelName, pos, content, nodeSize] = nodes[i]
+
+        socket.emit('ADD_LABEL', {
+          trialName: this.trialInfo.trialName,
+          userId: this.userInfo.userId,
+          labelColor: color,
+          labelName: labelName,
+          labelPosition: pos,
+          content: content
+        })
+        this.editor
+          .chain()
+          .focus(pos)
+          .command(({editor, tr}) => {
+            tr.delete(pos, pos + nodeSize);
+            return true;
+          })
+          .insertContent(`<mark style="background-color: ${color}"> ${labelName} </mark> ${content}`)
+          .run();
+      }
+    },
+
+    // note
+    findCommentsAndStoreValues() {
+      const proseMirror = document.querySelector('.ProseMirror');
+      const notes = proseMirror.querySelectorAll('span[data-note]');
+
+      if (!notes) {
+        this.notesList = [];
+        return;
+      }
+
+      notes.forEach((node) => {
+        const noteNodes = node.getAttribute('data-note');
+        const jsonNotes = noteNodes ? JSON.parse(noteNodes) : null;
+        this.notesList.push(jsonNotes)
+      });
+    },
+    addNote() {
+      if (!this.noteContent.trim().length) return;
+      if (this.currentSelectedNote) {
+        this.editor.chain().focus().unsetNote().run();
+      }
+      let newNote = {
+        uuid: this.uuidv4(),
+        trialName: this.trialInfo.trialName,
+        userId: this.userInfo.userId,
+        note: {
+          username: this.userInfo.username,
+          time: Date.now(),
+          content: this.noteContent,
+        },
+      }
+
+      const {to} = this.editor.view.state.selection
+      socket.emit('ADD_NOTE', {...newNote})
+
+      this.editor.chain()
+        .setNote(JSON.stringify(newNote))
+        .focus(to)
+        .insertContent('💬')
+        .run();
+
+      this.noteContent = ""
+      this.openNoteEditor = false
+    },
+    clearNote(note) {
+      if (note) this.currentSelectedNote = note
+      this.noteContent = ""
+      this.openNoteEditor = false
+
+      socket.emit('REMOVE_NOTE', {...this.currentSelectedNote})
+
+      const {to} = this.editor.view.state.selection
+      this.editor.chain()
+        .unsetNote()
+        .focus(to)
+        .command(({editor, tr}) => {
+          tr.delete(to, to + 2);
+          return true;
+        })
+        .run();
+
+    },
+    setCurrentSelectedNote(editor) {
+      const note = editor.getAttributes('note').note
+      if (note) {
+        const parsedNote = JSON.parse(editor.getAttributes('note').note);
+        this.noteContent = parsedNote.note.content
+        this.currentSelectedNote = parsedNote
+        this.$refs.verticalNotesList.slideTo(
+          this.notesList.map(n => n.uuid).indexOf(parsedNote.uuid)
+        );
+      } else {
+        this.currentSelectedNote = {}
+        this.noteContent = ""
+      }
     },
   },
 }
 </script>
 
 <style scoped>
-.locked {
-  background-color: #f5f2f2;
-  pointer-events: none;
-  opacity: 0.4;
-}
-
 .editor {
   display: flex;
   flex-direction: column;
@@ -615,5 +816,26 @@ export default {
 .ProseMirror ul[data-type="taskList"] li > label {
   flex: 0 0 auto;
   margin-right: 0.5rem;
+}
+</style>
+
+<style lang="scss">
+.hooper-slide {
+  width: auto;
+}
+
+.currentNote {
+  background-color: #88b957 !important;
+  margin: 0 3px 2px 0;
+  border-style: outset;
+}
+
+span[data-note] {
+  background: #88b957;
+
+  //&::after {
+  //  content: "💬";
+  //  user-select: all;
+  //}
 }
 </style>

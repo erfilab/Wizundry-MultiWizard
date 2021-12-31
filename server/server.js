@@ -166,6 +166,15 @@ namespaces.on('connection', socket => {
         socket.join(room);
         console.log(`connect ${namespaceDir} - ${room}`)
 
+        // lock event
+        socket.on('LOCK', async e => {
+            await storeDataToFirebase({
+                type: "LOCK",
+                ...e
+            })
+            namespaces.in(room).emit('LOCKER', {...e})
+        })
+
         // microphone recording event
         socket.on('MICROPHONE', async e => {
             await storeDataToFirebase({
