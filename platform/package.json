@@ -1,10 +1,10 @@
 {
   "name": "woz",
   "title": "Wizard of Oz",
-  "version": "0.5.1",
+  "version": "1.2.1",
   "private": true,
-  "description": "Admin template based on Vue and Vuetify",
-  "author": "NelsonEAX <nelsoneax@gmail.com>",
+  "description": "WoZ research toolkit",
+  "author": "Ryan Yen <ryanmigi90840@gmail.com>",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build:prod": "vue-cli-service build --mode production",

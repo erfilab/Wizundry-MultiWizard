@@ -115,7 +115,7 @@ export default {
     tasks: Tasks,
     userInfo: {
       username: "wizard2",
-      userRole: "user",
+      userRole: "wizard",
       dominant: false,
       selectedTasks: ["DICT"]
     },
