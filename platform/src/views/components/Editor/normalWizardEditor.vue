@@ -1,32 +1,24 @@
 <template>
   <div class="ma-3">
     <v-row>
-      <v-col cols="4">
-<!--        label-->
-        <v-col cols="12" v-if="selectedTasks.includes('PLABEL') || selectedTasks.includes('CLABEL')">
+      <v-col cols="3" style="position: fixed">
+        <!--        label-->
+        <v-col cols="12"
+               v-if="selectedTasks.includes('PLABEL') || selectedTasks.includes('CLABEL')">
+          <v-btn
+            small
+            outlined
+            @click="createLabelDialog = !createLabelDialog"
+          >
+            Create Command Boxes
+          </v-btn>
           <v-card
-            class="mx-auto"
+            class="mx-auto pa-0"
             max-width="344"
             variant="outlined"
           >
-            <v-list-item two-line>
-              <v-list-item-content>
-                <v-list-item-title class="text-h5 mb-1">
-                  Label Store
-                </v-list-item-title>
-              </v-list-item-content>
-
-              <v-btn
-                fab
-                x-small
-                outlined
-                @click="createLabelDialog = !createLabelDialog"
-              >
-                +
-              </v-btn>
-            </v-list-item>
-            <v-card-text v-if="selectedTasks.includes('PLABEL')">
-              <v-list>
+            <v-card-text>
+              <v-list v-if="selectedTasks.includes('PLABEL')">
                 <v-list-group
                   :value="true"
                   no-action
@@ -77,9 +69,65 @@
               </v-list>
             </v-card-text>
           </v-card>
+          <!--    create label dialog-->
+          <v-dialog
+            v-model="createLabelDialog"
+            max-width="350px"
+          >
+            <v-card>
+              <v-card-text>
+                <v-container>
+                  <v-row>
+                    <v-col cols="12">
+                      <v-select
+                        v-model="newLabel.type"
+                        :items="['participants', 'content']"
+                        label="Categories"
+                      />
+                    </v-col>
+                    <v-col cols="12">
+                      <v-text-field
+                        v-model="newLabel.name"
+                        label="Label Name"
+                        required
+                      />
+                    </v-col>
+                    <v-col cols="12">
+                      <span> Label Color </span>
+                      <v-color-picker v-model="newLabel.color"/>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer/>
+                <v-btn
+                  color="blue darken-1"
+                  text
+                  @click="createLabelDialog = false"
+                >
+                  Close
+                </v-btn>
+                <v-btn
+                  color="blue darken-1"
+                  text
+                  @click="createNewLabel"
+                >
+                  Save
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
         </v-col>
         <!--        command boxes-->
         <v-col cols="12" v-if="selectedTasks.includes('SPEAK')">
+          <v-btn
+            small
+            outlined
+            @click="createCommandDialog = !createCommandDialog"
+          >
+            Create Command Boxes
+          </v-btn>
           <v-card
             v-for="item in voiceBoxes"
             :key="item.id"
@@ -105,53 +153,65 @@
               </v-btn>
             </div>
           </v-card>
+          <!--    create label dialog-->
+          <v-dialog
+            v-model="createCommandDialog"
+            max-width="400px" ㄋㄧ
+          >
+            <v-card>
+              <v-card-text>
+                <v-container>
+                  <v-row>
+                    <v-col cols="12">
+                      <v-select
+                        v-model="newCommand.color"
+                        :items="[
+                          {
+                            type: 'once',
+                            color: '#f0f0f0'
+                          },
+                          {
+                            type: 'loop',
+                            color: '#CDE589'
+                          }
+                        ]"
+                        item-text="type"
+                        item-value="color"
+                        label="Command Type"
+                      />
+                    </v-col>
+                    <v-col cols="12" v-if="newCommand.color==='#CDE589'">
+                      <v-text-field
+                        v-model="newCommand.content"
+                        label="Command Content"
+                      />
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer/>
+                <v-btn
+                  color="blue darken-1"
+                  text
+                  @click="createCommandDialog = false"
+                >
+                  Cancel
+                </v-btn>
+                <v-btn
+                  color="blue darken-1"
+                  text
+                  @click="createCommand"
+                >
+                  Create
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
         </v-col>
       </v-col>
-      <v-col cols="8">
-<!--        note taking-->
-        <v-row v-if="selectedTasks.includes('NOTE')">
-          <v-card
-            max-width="100%"
-            tile
-          >
-            <hooper
-              ref="verticalNotesList"
-              :items-to-show="3.5"
-              :center-mode="true"
-              style="width: 130vh"
-            >
-              <slide
-                v-for="note in notesList"
-                :key="note.uuid"
-                :index="note.uuid"
-              >
-                <v-card
-                  style="width: 90%"
-                  :class="{'currentNote': note.uuid === currentSelectedNote.uuid}"
-                >
-                  <v-card-title>
-                    {{ note.note.content }}
-                    <v-btn
-                      icon
-                      @click.end="clearNote(note)"
-                    >
-                      <v-icon>mdi-delete</v-icon>
-                    </v-btn>
-                  </v-card-title>
-                  <v-card-text>
-                    <p>Name : {{ note.note.username }}</p>
-                    <p>
-                      Time : {{
-                        new Date(note.note.time).toJSON().substring(0, 19).replace('T', ' ')
-                      }}
-                    </p>
-                  </v-card-text>
-                </v-card>
-              </slide>
-            </hooper>
-          </v-card>
-        </v-row>
-<!--        microphone-->
+      <v-col cols="6" style="margin: 0 auto;">
+        <!--        microphone-->
         <v-row v-if="selectedTasks.includes('MIC')">
           <v-col cols="3">
             <v-btn
@@ -172,7 +232,7 @@
             />
           </v-col>
         </v-row>
-<!--        text editor-->
+        <!--        text editor-->
         <div
           v-if="editor"
           class="editor"
@@ -292,57 +352,53 @@
           </div>
         </div>
       </v-col>
+      <v-col cols="3" v-if="selectedTasks.includes('NOTE')" style="position: fixed; right: 0">
+        <!--        note taking-->
+        <v-row>
+          <v-card
+            max-width="100%"
+            tile
+          >
+            <hooper
+              ref="verticalNotesList"
+              :vertical="true"
+              :center-mode="true"
+              style="height: 100vh"
+              :items-to-show="4.5"
+            >
+              <slide
+                v-for="note in notesList"
+                :key="note.uuid"
+                :index="note.uuid"
+              >
+                <v-card
+                  style="width: 90%"
+                  :class="{'currentNote': note.uuid === currentSelectedNote.uuid}"
+                >
+                  <v-card-title>
+                    {{ note.note.content }}
+                    <v-btn
+                      icon
+                      @click.end="clearNote(note)"
+                    >
+                      <v-icon>mdi-delete</v-icon>
+                    </v-btn>
+                  </v-card-title>
+                  <v-card-text>
+                    <p>Name : {{ note.note.username }}</p>
+                    <p>
+                      Time : {{
+                        new Date(note.note.time).toJSON().substring(0, 19).replace('T', ' ')
+                      }}
+                    </p>
+                  </v-card-text>
+                </v-card>
+              </slide>
+            </hooper>
+          </v-card>
+        </v-row>
+      </v-col>
     </v-row>
-
-<!--    create label dialog-->
-    <v-dialog
-      v-model="createLabelDialog"
-      max-width="350px"
-    >
-      <v-card>
-        <v-card-text>
-          <v-container>
-            <v-row>
-              <v-col cols="12">
-                <v-select
-                  v-model="newLabel.type"
-                  :items="[selectedTasks.includes('PLABEL')?'participants':null, selectedTasks.includes('CLABEL')?'content':null]"
-                  label="Categories"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="newLabel.name"
-                  label="Label Name"
-                  required
-                />
-              </v-col>
-              <v-col cols="12">
-                <span> Label Color </span>
-                <v-color-picker v-model="newLabel.color" />
-              </v-col>
-            </v-row>
-          </v-container>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            color="blue darken-1"
-            text
-            @click="createLabelDialog = false"
-          >
-            Close
-          </v-btn>
-          <v-btn
-            color="blue darken-1"
-            text
-            @click="createNewLabel"
-          >
-            Save
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
@@ -354,7 +410,7 @@ import {initEditor} from "../../../utils/tiptapEditor";
 import MenuBar from "./MenuBar";
 import {mapGetters} from 'vuex';
 import {Hooper, Slide} from 'hooper';
-// import 'hooper/dist/hooper.css';
+import 'hooper/dist/hooper.css';
 
 let socket;
 
@@ -402,6 +458,11 @@ export default {
       lastSpeakerType: "",
 
       // voiceBoxes
+      createCommandDialog: false,
+      newCommand: {
+        color: '',
+        content: ''
+      },
       voiceBoxes: [
         {
           id: 1,
@@ -559,6 +620,16 @@ export default {
       })
     },
     // speaker event
+    createCommand() {
+      const {color, content} = this.newCommand
+      this.voiceBoxes.push({
+        id: this.voiceBoxes.length + 1,
+        color: color,
+        content: content,
+        status: false
+      })
+      this.createCommandDialog = false
+    },
     emitSpeakerEvent(event) {
       // voice box speaker
       if (event.type === 'VOICE_BOX') {
@@ -592,8 +663,7 @@ export default {
 
     // label
     createNewLabel() {
-      const { type, color, name } = this.newLabel
-      console.log(type)
+      const {type, color, name} = this.newLabel
       if (type === 'participants') this.participantsLabel.push([color, name])
       else this.contentLabel.push([color, name])
 
@@ -917,8 +987,17 @@ export default {
 </style>
 
 <style lang="scss">
+//.hooper-slide {
+//  width: auto;
+//}
+
 .hooper-slide {
-  width: auto;
+  flex-shrink: 0;
+  height: 100% !important;
+  margin: 0;
+  padding: 0;
+  width: auto !important;
+  list-style: none;
 }
 
 .currentNote {
