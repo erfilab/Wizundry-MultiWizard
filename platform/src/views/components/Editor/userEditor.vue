@@ -2,6 +2,18 @@
   <div>
     <v-row>
       <v-col cols="8">
+        <div
+          v-if="editor"
+          class="editor"
+        >
+          <editor-content
+            style=""
+            class="editor__content"
+            :editor="editor"
+          />
+        </div>
+      </v-col>
+      <v-col cols="4" style="position: fixed; right: 0">
         <v-row>
           <v-col cols="3">
             <v-btn
@@ -42,18 +54,6 @@
             />
           </v-col>
         </v-row>
-        <div
-          v-if="editor"
-          class="editor"
-        >
-          <editor-content
-            style=""
-            class="editor__content"
-            :editor="editor"
-          />
-        </div>
-      </v-col>
-      <v-col cols="4">
         <v-card
           max-width="100%"
           tile
@@ -61,7 +61,7 @@
           <hooper
             ref="verticalNotesList"
             :vertical="true"
-            style="height: 550px"
+            style="height: 80vh"
             :items-to-show="4.5"
             :center-mode="true"
           >
@@ -369,12 +369,14 @@ export default {
 
 
 <style scoped>
+
 .editor {
   display: flex;
   flex-direction: column;
   /*min-height: 550px;*/
   /*width: 680px;*/
   color: #0d0d0d;
+  height: 150em !important;
   background-color: white;
   border: 3px solid #0d0d0d;
   border-radius: 0.75rem;

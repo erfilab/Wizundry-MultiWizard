@@ -120,11 +120,12 @@ const request = {
         sampleRateHertz: sampleRateHertz,
         languageCode: languageCode,
         profanityFilter: false,
-        enableWordTimeOffsets: true,
+        enableWordTimeOffsets: false,
+        enableSpokenPunctuation: true,
         enableAutomaticPunctuation: true,
-        // speechContexts: [{
-        //     phrases: ["hoful","shwazil"]
-        //    }] // add your own speech context for better recognition
+        minSpeakerCount: 2,
+        maxSpeakerCount: 2,
+        maxAlternatives: 1,
     },
     interimResults: true, // If you want interim results, set this to true
 };
@@ -240,6 +241,8 @@ namespaces.on('connection', socket => {
         // })
     })
 })
+let previousTransPos = 0
+const punctuations = ['.', '?', '!']
 
 function startRecognitionStream(room, params) {
     console.log("SSR", room)
@@ -247,7 +250,11 @@ function startRecognitionStream(room, params) {
         .streamingRecognize(request)
         .on('error', console.error)
         .on('data', async data => {
-            console.log(`Transcription: ${data.results[0].alternatives[0].transcript}`);
+            const trans = data.results[0].alternatives[0].transcript
+            // console.log(`Transcription: ${trans}`)
+
+            // console.log('>>', trans, ' : ', (trans.slice(previousTransPos)).trim())
+            // previousTransPos = trans.length
             // process.stdout.write(
             //     data.results[0] && data.results[0].alternatives[0]
             //         ? `Transcription: ${data.results[0].alternatives[0].transcript}\n`
@@ -255,13 +262,16 @@ function startRecognitionStream(room, params) {
             // );
             // console.log("DATA", data)
             namespaces.in(room).emit("SPEECH_DATA", { ...data });
+
             await storeDataToFirebase({
                 type: "SPEECH_DATA",
                 ...params,
                 ...data.results[0]
             })
 
-            if (data.results[0] && data.results[0].isFinal) {
+
+            if (data.results[0] && ((trans.length > 50 && punctuations.includes(trans.slice(-1))) || data.results[0].isFinal)) {
+                namespaces.in(room).emit("SPEECH_DATA", { ...data });
                 stopRecognitionStream();
                 startRecognitionStream(room, params);
                 console.log('Restarted Stream on Serverside');

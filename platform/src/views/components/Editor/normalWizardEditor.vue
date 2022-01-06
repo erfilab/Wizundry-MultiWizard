@@ -10,7 +10,7 @@
             outlined
             @click="createLabelDialog = !createLabelDialog"
           >
-            Create Command Boxes
+            Create New Label
           </v-btn>
           <v-card
             class="mx-auto pa-0"
@@ -19,53 +19,40 @@
           >
             <v-card-text>
               <v-list v-if="selectedTasks.includes('PLABEL')">
-                <v-list-group
-                  :value="true"
-                  no-action
+                <v-list-item-title>Participants</v-list-item-title>
+                <v-list-item
+                  v-for="([color, content], i) in participantsLabel"
+                  :key="i"
+                  link
                 >
-                  <template v-slot:activator>
-                    <v-list-item-title>Participants</v-list-item-title>
-                  </template>
-                  <v-list-item
-                    v-for="([color, content], i) in participantsLabel"
-                    :key="i"
-                    link
+                  <v-chip
+                    close
+                    :color="color"
+                    class="mr-2"
+                    @click="addLabel(color, content)"
+                    @click:close="deleteLabel(i)"
                   >
-                    <v-btn
-                      :color="color"
-                      small
-                      class="mr-2"
-                      @click="addLabel(color, content)"
-                    >
-                      {{ content }}
-                    </v-btn>
-                  </v-list-item>
-                </v-list-group>
+                    {{ content }}
+                  </v-chip>
+                </v-list-item>
               </v-list>
               <v-list v-if="selectedTasks.includes('CLABEL')">
-                <v-list-group
-                  no-action
-                  :value="true"
+                <v-list-item-title>Content</v-list-item-title>
+                <v-list-item
+                  v-for="([color, content], i) in contentLabel"
+                  :key="i"
+                  link
                 >
-                  <template v-slot:activator>
-                    <v-list-item-title>Content</v-list-item-title>
-                  </template>
-
-                  <v-list-item
-                    v-for="([color, content], i) in contentLabel"
-                    :key="i"
-                    link
+                  <v-chip
+                    close
+                    :color="color"
+                    class="mr-2"
+                    @click="addLabel(color, content)"
+                    @click:close="deleteLabel(i)"
                   >
-                    <v-btn
-                      :color="color"
-                      small
-                      class="mr-2"
-                      @click="addLabel(color, content)"
-                    >
-                      {{ content }}
-                    </v-btn>
-                  </v-list-item>
-                </v-list-group>
+                    {{ content }}
+                  </v-chip>
+                </v-list-item>
               </v-list>
             </v-card-text>
           </v-card>
@@ -119,6 +106,27 @@
             </v-card>
           </v-dialog>
         </v-col>
+        <!--        microphone-->
+        <v-col cols="12" v-if="selectedTasks.includes('MIC')">
+          <v-col cols="3">
+            <v-btn
+              text
+              :color="!isRecording ? 'grey' : 'cyan'"
+              @click="isRecording ? emitMicrophoneEvent(false) : emitMicrophoneEvent(true)"
+            >
+              {{ isRecording ? "speaking..." : "closed" }}
+              <v-icon>
+                {{ !isRecording ? "mdi-microphone-off" : "mdi-microphone" }}
+              </v-icon>
+            </v-btn>
+          </v-col>
+          <v-col class="pt-5 mt-2">
+            <v-progress-linear
+              :color="!isRecording ? 'cyan' : 'cyan darken-3'"
+              :indeterminate="isRecording"
+            />
+          </v-col>
+        </v-col>
         <!--        command boxes-->
         <v-col cols="12" v-if="selectedTasks.includes('SPEAK')">
           <v-btn
@@ -126,7 +134,7 @@
             outlined
             @click="createCommandDialog = !createCommandDialog"
           >
-            Create Command Boxes
+            Create Speech Boxes
           </v-btn>
           <v-card
             v-for="item in voiceBoxes"
@@ -156,7 +164,7 @@
           <!--    create label dialog-->
           <v-dialog
             v-model="createCommandDialog"
-            max-width="400px" ㄋㄧ
+            max-width="400px"
           >
             <v-card>
               <v-card-text>
@@ -177,13 +185,13 @@
                         ]"
                         item-text="type"
                         item-value="color"
-                        label="Command Type"
+                        label="Speech Type"
                       />
                     </v-col>
                     <v-col cols="12" v-if="newCommand.color==='#CDE589'">
                       <v-text-field
                         v-model="newCommand.content"
-                        label="Command Content"
+                        label="Speech Content"
                       />
                     </v-col>
                   </v-row>
@@ -211,27 +219,6 @@
         </v-col>
       </v-col>
       <v-col cols="6" style="margin: 0 auto;">
-        <!--        microphone-->
-        <v-row v-if="selectedTasks.includes('MIC')">
-          <v-col cols="3">
-            <v-btn
-              text
-              :color="!isRecording ? 'grey' : 'cyan'"
-              @click="isRecording ? emitMicrophoneEvent(false) : emitMicrophoneEvent(true)"
-            >
-              {{ isRecording ? "speaking..." : "closed" }}
-              <v-icon>
-                {{ !isRecording ? "mdi-microphone-off" : "mdi-microphone" }}
-              </v-icon>
-            </v-btn>
-          </v-col>
-          <v-col class="pt-5 mt-2">
-            <v-progress-linear
-              :color="!isRecording ? 'cyan' : 'cyan darken-3'"
-              :indeterminate="isRecording"
-            />
-          </v-col>
-        </v-row>
         <!--        text editor-->
         <div
           v-if="editor"
@@ -246,54 +233,45 @@
             v-if="editor"
             :editor="editor"
           >
-            <v-btn-toggle
-              dense
-              background-color="#b8b4b4"
+            <v-btn
+              small
+              @click="editor.chain().focus().toggleBold().run()"
             >
-              <v-btn
-                small
-                :class="{'is-active': editor.isActive('bold')}"
-                @click="editor.chain().focus().toggleBold().run()"
-              >
-                <v-icon>mdi-format-bold</v-icon>
-              </v-btn>
-              <v-btn
-                small
-                :class="{'is-active': editor.isActive('italic')}"
-                @click="editor.chain().focus().toggleItalic().run()"
-              >
-                <v-icon>mdi-format-italic</v-icon>
-              </v-btn>
-              <v-btn
-                small
-                :class="{'is-active': editor.isActive('strike')}"
-                @click="editor.chain().focus().toggleStrike().run()"
-              >
-                <v-icon>mdi-format-strikethrough-variant</v-icon>
-              </v-btn>
-              <v-btn
-                v-if="selectedTasks.includes('HIGH')"
-                small
-                :class="{'is-active': editor.isActive('highlight')}"
-                @click="editor.chain().focus().toggleHighlight().run()"
-              >
-                <v-icon>mdi-format-color-fill</v-icon>
-              </v-btn>
-              <v-btn
-                v-if="selectedTasks.includes('NOTE')"
-                small
-                @click="openNoteEditor = !openNoteEditor"
-              >
-                <v-icon>mdi-comment-edit</v-icon>
-              </v-btn>
-              <v-btn
-                v-if="selectedTasks.includes('NOTE')"
-                small
-                @click="clearNote(null)"
-              >
-                <v-icon>mdi-comment-remove-outline</v-icon>
-              </v-btn>
-            </v-btn-toggle>
+              <v-icon>mdi-format-bold</v-icon>
+            </v-btn>
+            <v-btn
+              small
+              @click="editor.chain().focus().toggleItalic().run()"
+            >
+              <v-icon>mdi-format-italic</v-icon>
+            </v-btn>
+            <v-btn
+              small
+              @click="editor.chain().focus().toggleStrike().run()"
+            >
+              <v-icon>mdi-format-strikethrough-variant</v-icon>
+            </v-btn>
+            <v-btn
+              v-if="selectedTasks.includes('HIGH')"
+              small
+              @click="editor.chain().focus().toggleHighlight().run()"
+            >
+              <v-icon>mdi-format-color-fill</v-icon>
+            </v-btn>
+            <v-btn
+              v-if="selectedTasks.includes('NOTE')"
+              small
+              @click="openNoteEditor = !openNoteEditor"
+            >
+              <v-icon>mdi-comment-edit</v-icon>
+            </v-btn>
+            <v-btn
+              v-if="selectedTasks.includes('NOTE')"
+              small
+              @click="clearNote(null)"
+            >
+              <v-icon>mdi-comment-remove-outline</v-icon>
+            </v-btn>
             <v-dialog v-if="selectedTasks.includes('NOTE')" v-model="openNoteEditor" width="400">
               <v-card>
                 <v-card-text>
@@ -493,12 +471,9 @@ export default {
       participantsLabel: [
         ['#c9781c', 'user1'],
         ['#94FADB', 'user2'],
-        ['#958DF1', 'user3'],
       ],
       contentLabel: [
         ['#F98181', 'Key'],
-        ['#70CFF8', 'Relevant'],
-        ['#b8b4b4', 'Irrelevant'],
       ],
 
       // note
@@ -669,6 +644,9 @@ export default {
 
       this.createLabelDialog = false
     },
+    deleteLabel(index) {
+      this.contentLabel.splice(index, 1)
+    },
     addLabel(color, labelName) {
       const {from, to, $from, $to} = this.editor.view.state.selection
       // const fromIndex = $from.posAtIndex()
@@ -734,10 +712,10 @@ export default {
       });
     },
     addNote() {
-      if (!this.noteContent.trim().length) return;
-      if (this.currentSelectedNote) {
-        this.editor.chain().focus().unsetNote().run();
-      }
+      // if (!this.noteContent.trim().length) return;
+      // if (this.currentSelectedNote) {
+      //   this.editor.chain().focus().unsetNote().run();
+      // }
       let newNote = {
         uuid: this.uuidv4(),
         trialName: this.trialInfo.trialName,
@@ -745,7 +723,7 @@ export default {
         note: {
           username: this.userInfo.username,
           time: Date.now(),
-          content: this.noteContent,
+          content: this.noteContent.trim(),
         },
       }
 
@@ -798,12 +776,14 @@ export default {
 </script>
 
 <style scoped>
+
 .editor {
   display: flex;
   flex-direction: column;
   /*min-height: 550px;*/
   /*width: 680px;*/
   color: #0d0d0d;
+  height: 150em;
   background-color: white;
   border: 3px solid #0d0d0d;
   border-radius: 0.75rem;
@@ -886,6 +866,11 @@ export default {
 </style>
 
 <style>
+.ProseMirror {
+  height: 150em !important;
+  padding: 10px;
+}
+
 .collaboration-cursor__caret {
   position: relative;
   margin-left: -1px;
