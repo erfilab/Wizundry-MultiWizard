@@ -20,6 +20,7 @@
 ## Environment
 * **MYSQL**: please check that your mysql server is available
 * **yarn**: package manager, by `npm install -g yarn`
+* **Firesbase**: place your firebase config file (JSON) to `server/config/firebase.js`
 
 ## Structure
 * **Server** (expressJS) => serve at localhost:3000
@@ -27,7 +28,7 @@
 * **Database** (mySQL:8)
     * Make sure the server is running
     * Check the Root User with password: `mysql -uroot -p`
-    * Create a database called `wizard_of_oz`: `create database wizard_of_oz`
+    * Create a database called `wizard_of_oz`: `create database wizard_of_oz;`
     * Change the `.env` with your mySQL settings
 * **Google Cloud Speech Recognition**
   * Go to Google Cloud Platform
@@ -36,7 +37,13 @@
   * Change the `.env`, `GOOGLE_APPLICATION_CREDENTIALS` to the JSON file location
 * **Firebase**
   * [Follow this Firebase Tutorial](https://firebase.google.com/docs/web/setup#with-npm_1)
-  * Add the credentials to `.env` with the keyName as `.env.example` 
+  * Add the credentials to `.env` with the keyName as `.env.example`
+  * OR, adding the credential JSON file to the root folder and specify it in the `server/config/firebase.js`
+
+
+## Install dependencies
+1. `cd server && yarn`
+2. `cd platform && npm install`
 
 ## Initialize DB
 ### Logs Tables
@@ -109,3 +116,14 @@ CREATE TABLE `user_info` (
 COLLATE='latin1_swedish_ci'
 ENGINE=InnoDB;
 ```
+
+
+## Run the Code
+Before running the code, make sure:
+1. MYSQL database is running and initialized
+2. Firebase and Google Cloud credential file has been specified in `.env` or config folder
+3. All the dependencies has been installed by `yarn` or `npm`
+
+To run the code:
+1. go to the server folder, `yarn local:dev`
+2. go to the platform folder, `npm run serve`
