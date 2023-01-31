@@ -1,4 +1,17 @@
-# Wizard Of Oz
+# Wizundry: A Cooperative Wizard of Oz Platform for Simulating Future Speech-based Interfaces with Multiple Wizards
+### Authors
+- Siying Hu Department of Computer Science, City University of Hong Kong, Hong Kong, China
+- Hen Chen Yen Computer Science, City University of Hong Kong, Kowloon Tong, Hong Kong
+- Mingjian ZHAO School of Computer Science, City University of Hong Kong, Hong Kong, China
+- Ziwei Yu School of Design, Hunan University, Changsha, Hunan, China
+- Dr Katie Seaborn Department of Industrial Engineering and Economics, Tokyo Institute of Technology, Tokyo, Japan
+- Dr Can Liu School of Creative Media, City University of Hong Kong, Hong Kong, China
+
+
+### Abstract
+Wizard of Oz (WoZ) as a prototyping method has been used to simulate intelligent user interfaces, particularly for speech-based systems. However, as our societies' expectations on artificial intelligence (AI) grows, the question remains whether a single Wizard is sufficient for it to simulate smarter systems and more complex interactions. Optimistic visions of 'what artificial intelligence (AI) can do' places demands on WoZ platforms to simulate smarter systems and more complex interactions. This raises the question of whether the typical approach of employing a single Wizard is sufficient. Moreover, while existing work has employed multiple Wizards in WoZ studies, a Multi-Wizard approach has not been systematically studied in terms of feasibility, effectiveness, and challenges. We offer Wizundry, a real-time, web-based WoZ platform that allows multiple Wizards to collaboratively operate a speech-to-text based system remotely. We outline the design and technical specifications of our open-source platform, which we iterated over two design phases. We report on two studies in which participant-Wizards were tasked with negotiating how to cooperatively simulate an interface that can handle natural speech for dictation and text editing as well as other intelligent text processing tasks. We offer qualitative findings on the Multi-Wizard experience for Dyads and Triads of Wizards. Our findings reveal the promises and challenges of the Multi-Wizard approach and open up new research questions.
+
+
 <p>
   <a href="https://circleci.com/gh/vuejs/vue/tree/dev"><img src="https://img.shields.io/circleci/project/github/vuejs/vue/dev.svg?sanitize=true" alt="Build Status"></a>
   <a href="https://www.npmjs.com/package/vue"><img src="https://img.shields.io/npm/l/vue.svg?sanitize=true" alt="License"></a>
